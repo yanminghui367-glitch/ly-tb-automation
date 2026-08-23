@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}工作台 · ly-tb-automation{% endblock %}
+{% block content %}
+  <section class="hero">
+    <p class="eyebrow">内部商品生产系统</p>
+    <h1>工作台</h1>
+    <p>当前为工程骨架阶段。后续模块将按目的地、生产、审核、发布的顺序逐步开放。</p>
+  </section>
+  <section class="cards" aria-label="系统状态">
+    <article class="card">
+      <span class="card-label">应用服务</span>
+      <strong class="status status-ok">运行正常</strong>
+    </article>
+    <article class="card">
+      <span class="card-label">SQLite 数据库</span>
+      {% if database_ok %}
+        <strong class="status status-ok">连接正常</strong>
+      {% else %}
+        <strong class="status status-error">需要检查</strong>
+      {% endif %}
+    </article>
+    <article class="card">
+      <span class="card-label">当前阶段</span>
+      <strong>Step 1 · 工程骨架</strong>
+    </article>
+  </section>
+{% endblock %}
+

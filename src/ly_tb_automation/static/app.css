@@ -1,0 +1,35 @@
+:root {
+  color-scheme: light;
+  font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  color: #17202a;
+  background: #f4f6f8;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+.topbar {
+  align-items: center;
+  background: #17202a;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  min-height: 64px;
+  padding: 0 32px;
+}
+.brand { color: inherit; font-size: 18px; font-weight: 700; text-decoration: none; }
+.environment { background: #34495e; border-radius: 999px; font-size: 12px; padding: 5px 10px; }
+.container { margin: 0 auto; max-width: 1120px; padding: 64px 24px; }
+.hero { max-width: 720px; }
+.eyebrow { color: #2878ff; font-size: 13px; font-weight: 700; letter-spacing: .08em; }
+h1 { font-size: clamp(36px, 7vw, 64px); margin: 8px 0 16px; }
+.hero > p:last-child { color: #5d6d7e; font-size: 18px; line-height: 1.7; }
+.cards { display: grid; gap: 20px; grid-template-columns: repeat(3, 1fr); margin-top: 48px; }
+.card { background: #fff; border: 1px solid #e5e9ed; border-radius: 16px; padding: 24px; }
+.card-label { color: #718096; display: block; font-size: 14px; margin-bottom: 12px; }
+.status-ok { color: #16803c; }
+.status-error { color: #b42318; }
+@media (max-width: 720px) {
+  .cards { grid-template-columns: 1fr; }
+  .topbar { padding: 0 20px; }
+}
+
