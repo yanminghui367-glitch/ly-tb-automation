@@ -17,9 +17,12 @@ dependencies = [
     "uvicorn[standard]>=0.34,<1.0",
 ]
 
+[project.scripts]
+ly-tb-automation = "ly_tb_automation.cli:run"
+
 [project.optional-dependencies]
 dev = [
-    "httpx>=0.28,<1.0",
+    "httpx2>=2.12,<3.0",
     "mypy>=1.15,<2.0",
     "pytest>=8.3,<10.0",
     "ruff>=0.11,<1.0",

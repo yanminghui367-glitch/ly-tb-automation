@@ -389,27 +389,32 @@ def read_destination_workbook(file: BinaryIO) -> list[dict[str, Any]]:
     from openpyxl import load_workbook
 
     workbook = load_workbook(file, read_only=True, data_only=True)
-    worksheet = workbook.active
-    iterator = worksheet.iter_rows(values_only=True)
-    headers = tuple(_text(value) for value in next(iterator, ()))
-    missing = [name for name in IMPORT_HEADERS if name not in headers]
-    if missing:
-        raise ValueError(f"Excel 缺少字段: {', '.join(missing)}")
-    indexes = {name: headers.index(name) for name in IMPORT_HEADERS}
-    rows: list[dict[str, Any]] = []
-    for values in iterator:
-        if not any(value is not None and _text(value) for value in values):
-            continue
-        rows.append(
-            {
-                name: values[index] if index < len(values) else None
-                for name, index in indexes.items()
-            }
-        )
-        if len(rows) > MAX_IMPORT_ROWS:
-            raise ValueError(f"单次导入不能超过 {MAX_IMPORT_ROWS} 行")
-    workbook.close()
-    return rows
+    try:
+        worksheet = workbook.active
+        if worksheet is None:
+            raise ValueError("Excel 不包含可读取的工作表")
+
+        iterator = worksheet.iter_rows(values_only=True)
+        headers = tuple(_text(value) for value in next(iterator, ()))
+        missing = [name for name in IMPORT_HEADERS if name not in headers]
+        if missing:
+            raise ValueError(f"Excel 缺少字段: {', '.join(missing)}")
+        indexes = {name: headers.index(name) for name in IMPORT_HEADERS}
+        rows: list[dict[str, Any]] = []
+        for values in iterator:
+            if not any(value is not None and _text(value) for value in values):
+                continue
+            rows.append(
+                {
+                    name: values[index] if index < len(values) else None
+                    for name, index in indexes.items()
+                }
+            )
+            if len(rows) > MAX_IMPORT_ROWS:
+                raise ValueError(f"单次导入不能超过 {MAX_IMPORT_ROWS} 行")
+        return rows
+    finally:
+        workbook.close()
 
 
 def build_destination_template() -> bytes:
@@ -417,20 +422,26 @@ def build_destination_template() -> bytes:
 
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill
+    from openpyxl.utils import get_column_letter
 
     workbook = Workbook()
-    worksheet = workbook.active
-    worksheet.title = "目的地导入"
-    worksheet.append(IMPORT_HEADERS)
-    worksheet.append(("JP", "日本", "Japan", "JP-TOKYO", "东京", "Tokyo", "tokyo", 1, 10, 1))
-    for cell in worksheet[1]:
-        cell.font = Font(bold=True, color="FFFFFF")
-        cell.fill = PatternFill("solid", fgColor="1F4E78")
-    worksheet.freeze_panes = "A2"
-    worksheet.auto_filter.ref = f"A1:J{worksheet.max_row}"
-    for column in worksheet.columns:
-        worksheet.column_dimensions[column[0].column_letter].width = 20
-    output = io.BytesIO()
-    workbook.save(output)
-    workbook.close()
-    return output.getvalue()
+    try:
+        worksheet = workbook.active
+        if worksheet is None:
+            raise RuntimeError("无法创建 Excel 工作表")
+
+        worksheet.title = "目的地导入"
+        worksheet.append(IMPORT_HEADERS)
+        worksheet.append(("JP", "日本", "Japan", "JP-TOKYO", "东京", "Tokyo", "tokyo", 1, 10, 1))
+        for cell in worksheet[1]:
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.fill = PatternFill("solid", fgColor="1F4E78")
+        worksheet.freeze_panes = "A2"
+        worksheet.auto_filter.ref = f"A1:J{worksheet.max_row}"
+        for column_index in range(1, len(IMPORT_HEADERS) + 1):
+            worksheet.column_dimensions[get_column_letter(column_index)].width = 20
+        output = io.BytesIO()
+        workbook.save(output)
+        return output.getvalue()
+    finally:
+        workbook.close()

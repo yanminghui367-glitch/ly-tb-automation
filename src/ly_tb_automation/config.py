@@ -6,6 +6,12 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+INSECURE_SECRET_KEYS = {
+    "",
+    "development-only-change-me",
+    "replace-with-a-long-random-value",
+}
+
 
 class ConfigurationError(ValueError):
     """Raised when an environment variable contains an invalid value."""
@@ -50,8 +56,10 @@ class Settings:
             raise ConfigurationError("LYTB_HOST 不能为空")
         if log_level not in {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}:
             raise ConfigurationError("LYTB_LOG_LEVEL 不是有效日志级别")
-        if environment == "production" and secret_key == "development-only-change-me":
-            raise ConfigurationError("生产环境必须设置 LYTB_SECRET_KEY")
+        if environment == "production" and (
+            secret_key in INSECURE_SECRET_KEYS or len(secret_key) < 32
+        ):
+            raise ConfigurationError("生产环境 LYTB_SECRET_KEY 必须是至少 32 位的非示例密钥")
 
         return cls(
             environment=environment,

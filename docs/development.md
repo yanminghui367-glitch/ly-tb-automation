@@ -13,14 +13,15 @@
 .\scripts\start-dev.ps1
 ```
 
-脚本会创建 `.venv`、安装开发依赖、从 `.env.example` 创建本地 `.env`，然后读取该文件并仅在配置的本机地址启动开发服务。首次启动后应修改 `.env` 中的密钥；不要提交 `.env`。
+脚本会创建 `.venv`、按照 `requirements-dev.lock` 安装已验证的开发依赖、从 `.env.example` 创建本地 `.env`，然后读取该文件并仅在配置的本机地址启动开发服务。首次启动后应修改 `.env` 中的密钥；不要提交 `.env`。
 
 ## 手动启动
 
 ```bash
 python -m venv .venv
-python -m pip install -e '.[dev]'
-python -m uvicorn ly_tb_automation.main:app --reload
+python -m pip install -r requirements-dev.lock
+python -m pip install --no-build-isolation --no-deps -e .
+python -m ly_tb_automation.cli
 ```
 
 访问：

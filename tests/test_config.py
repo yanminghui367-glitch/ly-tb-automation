@@ -32,9 +32,18 @@ def test_invalid_port_is_rejected(monkeypatch: pytest.MonkeyPatch, value: str) -
         Settings.from_env()
 
 
-def test_production_rejects_default_secret(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize(
+    "secret_key",
+    [None, "replace-with-a-long-random-value", "too-short"],
+)
+def test_production_rejects_insecure_secret(
+    monkeypatch: pytest.MonkeyPatch, secret_key: str | None
+) -> None:
     monkeypatch.setenv("LYTB_ENVIRONMENT", "production")
-    monkeypatch.delenv("LYTB_SECRET_KEY", raising=False)
+    if secret_key is None:
+        monkeypatch.delenv("LYTB_SECRET_KEY", raising=False)
+    else:
+        monkeypatch.setenv("LYTB_SECRET_KEY", secret_key)
 
     with pytest.raises(ConfigurationError, match="LYTB_SECRET_KEY"):
         Settings.from_env()

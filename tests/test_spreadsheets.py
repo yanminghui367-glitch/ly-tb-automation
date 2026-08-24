@@ -23,6 +23,7 @@ def test_generated_template_can_be_read() -> None:
 def test_workbook_missing_required_header_is_rejected() -> None:
     workbook = Workbook()
     worksheet = workbook.active
+    assert worksheet is not None
     worksheet.append(IMPORT_HEADERS[:-1])
     output = io.BytesIO()
     workbook.save(output)
