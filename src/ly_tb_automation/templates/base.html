@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}ly-tb-automation{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/">ly-tb-automation</a>
+      <nav class="nav" aria-label="主要导航">
+        <a href="/">工作台</a>
+        <a href="/destinations">目的地</a>
+      </nav>
+      <span class="environment">{{ environment }}</span>
+    </header>
+    <main class="container">{% block content %}{% endblock %}</main>
+  </body>
+</html>

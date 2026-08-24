@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}目的地 · ly-tb-automation{% endblock %}
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">基础数据</p>
+      <h1>目的地</h1>
+      <p>统一维护国家与城市。重复导入会更新已有城市，不会创建重复记录。</p>
+    </div>
+    <a class="button button-secondary" href="/destinations/template.xlsx">下载 Excel 模板</a>
+  </section>
+
+  <section class="panel">
+    <h2>导入目的地</h2>
+    <form class="upload-form" action="/destinations/import" method="post" enctype="multipart/form-data">
+      <input type="file" name="file" accept=".xlsx" required>
+      <button class="button" type="submit">校验并导入</button>
+    </form>
+    {% if upload_error %}<p class="notice notice-error">{{ upload_error }}</p>{% endif %}
+    {% if report %}
+      <div class="import-summary">
+        <span>总行数 <strong>{{ report.total_rows }}</strong></span>
+        <span>新增 <strong>{{ report.inserted_rows }}</strong></span>
+        <span>更新 <strong>{{ report.updated_rows }}</strong></span>
+        <span>跳过 <strong>{{ report.skipped_rows }}</strong></span>
+        <span>错误 <strong>{{ report.error_count }}</strong></span>
+      </div>
+      {% if report.errors %}
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>行</th><th>字段</th><th>错误码</th><th>说明</th><th>原值</th></tr></thead>
+            <tbody>
+              {% for error in report.errors %}
+                <tr>
+                  <td>{{ error.row_number }}</td><td>{{ error.field }}</td>
+                  <td><code>{{ error.error_code }}</code></td><td>{{ error.message_zh }}</td>
+                  <td>{{ error.raw_value or '—' }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <div class="section-heading"><h2>当前城市</h2><span>{{ destinations|length }} 条</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>国家</th><th>城市</th><th>代码</th><th>核心城市</th><th>优先级</th><th>素材</th><th>状态</th></tr>
+        </thead>
+        <tbody>
+          {% for destination in destinations %}
+            <tr>
+              <td>{{ destination.country_name_zh }} <small>{{ destination.country_code }}</small></td>
+              <td>{{ destination.city_name_zh }} <small>{{ destination.city_name_en }}</small></td>
+              <td><code>{{ destination.city_code }}</code></td>
+              <td>{{ '是' if destination.is_core_city else '否' }}</td>
+              <td>{{ destination.priority }}</td>
+              <td><span class="badge">{{ destination.image_status }}</span></td>
+              <td>{{ '启用' if destination.is_enabled else '禁用' }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="7" class="empty">暂无目的地，请先导入 Excel。</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}
+
