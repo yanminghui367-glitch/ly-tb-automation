@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}商品批次 {{ batch.batch_code }} · ly-tb-automation{% endblock %}
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">商品生产批次</p>
+      <h1>{{ batch.batch_code }}</h1>
+      <p>每件商品独立提交；失败任务不会回滚已经完成的商品。</p>
+    </div>
+    <a class="button button-secondary" href="/products">返回商品生产</a>
+  </section>
+
+  {% if created == '1' %}<div class="notice notice-success">批次已创建并执行。</div>{% endif %}
+  {% if created == '0' %}<div class="notice notice-warning">相同输入批次已存在，本次没有重复创建。</div>{% endif %}
+  {% if retried %}<div class="notice notice-success">失败或中断任务已执行一次人工重试。</div>{% endif %}
+
+  <section class="cards compact-cards" aria-label="批次统计">
+    <article class="card"><span class="card-label">批次状态</span><strong>{{ batch.status }}</strong></article>
+    <article class="card"><span class="card-label">成功</span><strong>{{ batch.succeeded_count }}/{{ batch.target_count }}</strong></article>
+    <article class="card"><span class="card-label">确定性复用</span><strong>{{ batch.reused_count }}</strong></article>
+    <article class="card"><span class="card-label">受保护跳过</span><strong>{{ batch.protected_count }}</strong></article>
+    <article class="card"><span class="card-label">失败</span><strong>{{ batch.failed_count }}</strong></article>
+  </section>
+
+  {% if batch.failed_count or batch.status == 'RUNNING' %}
+    <section class="panel action-panel">
+      <div>
+        <h2>恢复批次</h2>
+        <p class="muted">只处理失败、待执行或中断的任务；已成功任务不会重复生成。</p>
+      </div>
+      <form action="/product-batches/{{ batch.id }}/retry" method="post">
+        <input type="hidden" name="execution_version" value="{{ batch.execution_version }}">
+        <button class="button" type="submit">人工重试一次</button>
+      </form>
+    </section>
+  {% endif %}
+
+  <section class="panel">
+    <h2>逐件任务</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>目标</th><th>状态</th><th>尝试次数</th><th>错误码</th><th>说明</th></tr></thead>
+        <tbody>
+          {% for job in jobs %}
+            <tr>
+              <td>
+                {% if job.product_id %}
+                  <a class="text-link" href="/products/{{ job.product_id }}">{{ job.target_code }}</a>
+                {% else %}
+                  <code>{{ job.target_code }}</code>
+                {% endif %}
+              </td>
+              <td><span class="badge">{{ job.status }}</span></td>
+              <td>{{ job.attempt_count }}</td>
+              <td>{{ job.error_code or '—' }}</td>
+              <td>{{ job.error_message or '—' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

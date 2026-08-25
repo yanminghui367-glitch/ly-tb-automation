@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}商品生产 · ly-tb-automation{% endblock %}
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">STEP 3 · 规则草稿</p>
+      <h1>商品生产</h1>
+      <p>创建国家级或城市级商品任务，确定性生成两个标题候选，并保留任务与选择记录。</p>
+    </div>
+  </section>
+
+  <div class="notice notice-warning">
+    <strong>当前输出不是淘宝合规结论。</strong>
+    标题规则、平台长度和八类服务覆盖尚待业务确认；本页只生成内部草稿，不会批准或发布商品。
+  </div>
+  {% if error %}
+    <div class="notice notice-error"><strong>{{ error.code }}</strong> · {{ error.message_zh }}</div>
+  {% endif %}
+
+  <section class="cards compact-cards" aria-label="商品统计">
+    <article class="card"><span class="card-label">商品总数</span><strong>{{ counts.total }}</strong></article>
+    <article class="card"><span class="card-label">国家级</span><strong>{{ counts.countries }}</strong></article>
+    <article class="card"><span class="card-label">城市级</span><strong>{{ counts.cities }}</strong></article>
+    <article class="card"><span class="card-label">已选草稿标题</span><strong>{{ counts.selected }}</strong></article>
+  </section>
+
+  <section class="panel">
+    <div class="section-heading">
+      <div>
+        <h2>创建商品批次</h2>
+        <p class="muted">默认仅补缺失商品；首批全部范围应产生 3 个国家商品和 15 个城市商品。</p>
+      </div>
+    </div>
+    <form class="inline-form" action="/product-batches" method="post">
+      <label>
+        范围
+        <select name="scope">
+          <option value="ALL">全部启用目的地</option>
+          <option value="COUNTRIES">仅国家级</option>
+          <option value="CITIES">仅城市级</option>
+          <option value="CORE_CITIES">仅核心城市</option>
+        </select>
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" name="missing_only" value="1" checked>
+        仅补缺失商品
+      </label>
+      <button class="button" type="submit">创建并执行批次</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>商品草稿</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>商品</th><th>层级</th><th>状态</th><th>标题选择</th><th>服务覆盖</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for product in products %}
+            <tr>
+              <td>
+                <strong>{{ product.city_name_zh or product.country_name_zh }}</strong>
+                <small><code>{{ product.product_code }}</code></small>
+              </td>
+              <td>{{ '国家级' if product.product_level == 'COUNTRY' else '城市级' }}</td>
+              <td><span class="badge badge-{{ product.status|lower }}">{{ product.status }}</span></td>
+              <td>
+                {% if product.selected_title %}
+                  {{ product.selected_title }}
+                  <small>仅为草稿选择，尚未批准</small>
+                {% else %}
+                  <span class="muted">待人工选择</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if product.unverified_service_count %}
+                  <span class="status status-warning">{{ product.unverified_service_count }} 项待确认</span>
+                {% else %}
+                  已确认
+                {% endif %}
+              </td>
+              <td><a class="text-link" href="/products/{{ product.id }}">查看标题</a></td>
+            </tr>
+          {% else %}
+            <tr><td colspan="6" class="empty">尚未创建商品。可先执行“全部启用目的地”的缺失商品批次。</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>最近批次</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>批次</th><th>范围</th><th>状态</th><th>成功</th><th>复用</th><th>保护</th><th>失败</th></tr>
+        </thead>
+        <tbody>
+          {% for batch in batches %}
+            <tr>
+              <td><a class="text-link" href="/product-batches/{{ batch.id }}">{{ batch.batch_code }}</a></td>
+              <td>{{ batch.scope }}</td>
+              <td><span class="badge">{{ batch.status }}</span></td>
+              <td>{{ batch.succeeded_count }}/{{ batch.target_count }}</td>
+              <td>{{ batch.reused_count }}</td>
+              <td>{{ batch.protected_count }}</td>
+              <td>{{ batch.failed_count }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="7" class="empty">暂无商品生产批次。</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{{ product.product_code }} · ly-tb-automation{% endblock %}
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">{{ '国家级商品' if product.product_level == 'COUNTRY' else '城市级商品' }}</p>
+      <h1>{{ product.city_name_zh or product.country_name_zh }}</h1>
+      <p><code>{{ product.product_code }}</code> · 规则 {{ product.rule_version }} · 版本 {{ product.version }}</p>
+    </div>
+    <a class="button button-secondary" href="/products">返回商品列表</a>
+  </section>
+
+  <div class="notice notice-warning">
+    本页标题仅为内部草稿。平台规则和服务覆盖未确认，选择标题不等于审核批准或发布就绪。
+  </div>
+  {% if selected %}<div class="notice notice-success">草稿标题选择已保存，普通重跑不会静默覆盖。</div>{% endif %}
+  {% if error %}<div class="notice notice-error"><strong>{{ error.code }}</strong> · {{ error.message_zh }}</div>{% endif %}
+
+  <section class="panel">
+    <h2>服务输入快照</h2>
+    <p class="muted">以下服务来自基础数据，覆盖状态仍需逐目的地确认。</p>
+    <div class="tag-list">
+      {% for service in services %}
+        <span class="tag">{{ service.name_zh }} · {{ service.coverage_status }}</span>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="section-heading">
+      <div>
+        <h2>标题候选</h2>
+        <p class="muted">系统不自动选择；人工选择仍保持 WAITING_REVIEW，完整商品批准留到 Step 5。</p>
+      </div>
+    </div>
+    <div class="candidate-list">
+      {% for title in titles %}
+        <article class="candidate {% if title.is_selected %}candidate-selected{% endif %}">
+          <div class="candidate-meta">
+            <strong>候选 {{ title.candidate_code }}</strong>
+            <span class="badge">{{ title.validation_status }}</span>
+            <span>{{ title.length_units }} 内部计数单位</span>
+            <span>任务 #{{ title.generation_job_id }}</span>
+          </div>
+          <p class="candidate-title">{{ title.title }}</p>
+          {% if title.validation_issues %}
+            <ul class="issue-list">
+              {% for issue in title.validation_issues %}
+                <li><code>{{ issue.code }}</code> {{ issue.message_zh }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+          {% if title.is_selected %}
+            <strong class="status status-ok">当前已选草稿</strong>
+          {% elif title.generation_job_id == product.current_title_job_id and title.validation_status != 'INVALID' %}
+            <form action="/products/{{ product.id }}/title-selection" method="post">
+              <input type="hidden" name="candidate_id" value="{{ title.id }}">
+              <input type="hidden" name="version" value="{{ product.version }}">
+              <button class="button button-secondary" type="submit">选择这个草稿标题</button>
+            </form>
+          {% else %}
+            <span class="muted">历史版本或校验未通过，不能直接选择</span>
+          {% endif %}
+        </article>
+      {% else %}
+        <p class="empty">当前商品没有标题候选。</p>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

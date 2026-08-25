@@ -23,6 +23,8 @@ from .destinations import (
     read_destination_workbook,
 )
 from .logging import configure_logging
+from .product_routes import build_product_router
+from .products import product_counts
 
 PACKAGE_DIR = Path(__file__).parent
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
@@ -50,6 +52,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = current_settings
     app.mount("/static", StaticFiles(directory=PACKAGE_DIR / "static"), name="static")
     templates = Jinja2Templates(directory=PACKAGE_DIR / "templates")
+    app.include_router(build_product_router(current_settings.database_path, templates))
 
     @app.get("/health", tags=["system"])
     def health() -> dict[str, str]:
@@ -59,6 +62,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/", response_class=HTMLResponse, include_in_schema=False)
     def dashboard(request: Request) -> HTMLResponse:
         country_count, city_count = destination_counts(current_settings.database_path)
+        current_product_counts = product_counts(current_settings.database_path)
         return templates.TemplateResponse(
             request=request,
             name="dashboard.html",
@@ -67,6 +71,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "database_ok": database_health(current_settings.database_path),
                 "country_count": country_count,
                 "city_count": city_count,
+                "product_counts": current_product_counts,
             },
         )
 

@@ -4,7 +4,7 @@
   <section class="hero">
     <p class="eyebrow">内部商品生产系统</p>
     <h1>工作台</h1>
-    <p>当前为工程骨架阶段。后续模块将按目的地、生产、审核、发布的顺序逐步开放。</p>
+    <p>目的地数据中心已就绪，当前开始建立可追踪、可恢复的商品标题草稿生产流程。</p>
   </section>
   <section class="cards" aria-label="系统状态">
     <article class="card">
@@ -25,7 +25,11 @@
     </article>
     <article class="card">
       <span class="card-label">当前阶段</span>
-      <strong>Step 2 · 目的地数据中心</strong>
+      <strong>Step 3 · 商品任务与标题规则</strong>
+    </article>
+    <article class="card">
+      <span class="card-label">商品草稿</span>
+      <strong>{{ product_counts.total }} 件 · {{ product_counts.selected }} 件已选标题</strong>
     </article>
   </section>
 {% endblock %}

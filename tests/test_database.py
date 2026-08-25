@@ -13,6 +13,8 @@ def test_migration_initializes_database_and_is_idempotent(tmp_path: Path) -> Non
         "0001_initial",
         "0002_destinations",
         "0003_seed_destinations",
+        "0004_product_tasks",
+        "0005_product_safety",
     ]
     assert migrate(database_path) == []
     assert database_health(database_path)
@@ -26,6 +28,7 @@ def test_migration_initializes_database_and_is_idempotent(tmp_path: Path) -> Non
         assert connection.execute("SELECT COUNT(*) FROM countries").fetchone()[0] == 3
         assert connection.execute("SELECT COUNT(*) FROM cities").fetchone()[0] == 15
         assert connection.execute("SELECT COUNT(*) FROM service_types").fetchone()[0] == 8
+        assert connection.execute("SELECT COUNT(*) FROM title_rule_versions").fetchone()[0] == 1
 
 
 def test_modified_applied_migration_is_rejected(tmp_path: Path) -> None:

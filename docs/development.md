@@ -29,6 +29,7 @@ python -m ly_tb_automation.cli
 - 管理后台：`http://127.0.0.1:8000/`
 - 健康检查：`http://127.0.0.1:8000/health`
 - 开发 API 文档：`http://127.0.0.1:8000/api/docs`
+- 商品生产：`http://127.0.0.1:8000/products`
 
 ## 自动化检查
 
@@ -46,3 +47,5 @@ pytest
 SQLite 会在启动时执行只向前迁移。已经应用的 SQL 迁移文件不得修改；需要改变结构时必须新增迁移。
 
 目的地数据的 Excel 字段及错误码见 [目的地 Excel 导入](destination-import.md)。
+
+商品批次、标题草稿、失败恢复和业务确认门见 [商品任务与标题草稿](product-tasks.md)。
