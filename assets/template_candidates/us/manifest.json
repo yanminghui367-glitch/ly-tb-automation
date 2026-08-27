@@ -1,0 +1,32 @@
+{
+  "batch_code": "US_MAIN_TEMPLATE_SELECTION_V1",
+  "generated_at": "2026-08-26",
+  "generator": "Codex built-in image_gen",
+  "use_case": "ads-marketing",
+  "status": "WAITING_SELECTION",
+  "canvas": {
+    "width": 1254,
+    "height": 1254,
+    "format": "PNG",
+    "aspect_ratio": "1:1"
+  },
+  "fixed_text": [
+    "美国",
+    "中文地陪｜导游翻译",
+    "包车接送机 · 一日游 · 商务陪同",
+    "行程按需定制｜下单前请先咨询"
+  ],
+  "candidates": [
+    {"id": "01", "direction": "cinematic", "file": "us-main-01-cinematic.png", "sha256": "9b7ccabacf8820a8c33109937b2f222310f248e0038967bd218f8163cb4f2bcb"},
+    {"id": "02", "direction": "editorial", "file": "us-main-02-editorial.png", "sha256": "3cf31363a611bda71f6eccf0028f1f7184189d8eda0cb4270325c7de403c3048"},
+    {"id": "03", "direction": "luxury", "file": "us-main-03-luxury.png", "sha256": "e6144af56b87811a3de5e4e1064578277337ee53b41835768febbe12f108e64c"},
+    {"id": "04", "direction": "modern-ecommerce", "file": "us-main-04-modern-ecommerce.png", "sha256": "7dec414758f987e33fbefe59808ae949b569de7fc821e7bf5a1afd284937a133"},
+    {"id": "05", "direction": "minimal-poster", "file": "us-main-05-minimal-poster.png", "sha256": "0b7baf60712c896a92d12122b1dd0846849ebff347dad09b92657adb3c8c202c"},
+    {"id": "06", "direction": "scrapbook", "file": "us-main-06-scrapbook.png", "sha256": "4f4fcd290bad5fe8ef8224f6386d7668135367e46ed5a268ec23f4be62c402e3"},
+    {"id": "07", "direction": "map-infographic", "file": "us-main-07-map-infographic.png", "sha256": "1f2473b1c1ad07877fc8c077009f8fc2408980f5ba683e3562583e6e38af2ce2"},
+    {"id": "08", "direction": "night-glass", "file": "us-main-08-night-glass.png", "sha256": "bbc4558767bdc66da6b38e9e65033db04f692c5db203da3589d131ef36900d8d"},
+    {"id": "09", "direction": "nature-city", "file": "us-main-09-nature-city.png", "sha256": "6aaa4054ec85c40c17df25411014ff5584fc5bdf24616fbe0b71ab2ac5420e2b"},
+    {"id": "10", "direction": "conversion-poster", "file": "us-main-10-conversion-poster.png", "sha256": "07fa29133cf3403525ae62eb0f07abdf5766701deb3b49125fab594d6a66a1c9"}
+  ],
+  "selected_candidate_id": null
+}
