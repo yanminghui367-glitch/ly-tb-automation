@@ -1,0 +1,16 @@
+{
+  "shopId": "",
+  "taskHashes": [],
+  "profileHash": "",
+  "expiresAt": "",
+  "authorizationReference": "",
+  "reviewer": "",
+  "onlineDuplicateEvidence": "",
+  "p4Ready": false,
+  "qaEvidence": "",
+  "liveAuthorized": false,
+  "p4Evidence": "",
+  "submitQaEvidence": "",
+  "p5Evidence": "",
+  "batchQaEvidence": ""
+}

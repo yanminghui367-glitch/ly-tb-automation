@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#041329"><title>星途 Travel OS</title><link rel="icon" href="favicon.svg?v=travel-os-star-transparent-20260924" type="image/svg+xml"><link rel="stylesheet" href="travel-home.css"><script>if(location.protocol==='file:')location.replace('http://127.0.0.1:4318/');if(['home','tasks','monitor','exceptions','records','settings'].includes(location.hash.slice(1)))location.replace('/index.html'+location.search+location.hash);</script><script type="module" src="travel-home.js"></script><link rel="stylesheet" href="typography.css?v=20260925-type1"></head>
+<body>
+<a class="skip" href="#citySearch">跳到目的地搜索</a>
+<div class="landing">
+ <header class="header">
+  <a class="brand" href="/" aria-label="星途 Travel OS 首页"><span class="brand-star" aria-hidden="true"></span><span>星途 <b>Travel OS</b><small>用世界的坐标，连接更多旅行可能</small></span></a>
+  <nav class="home-navbar" aria-label="主导航">
+   <a href="/" aria-current="page">首页</a>
+   <div class="nav-item"><button type="button" class="nav-trigger" aria-expanded="false" aria-controls="navTasks">任务中心</button><div id="navTasks" class="nav-dropdown" hidden><a href="/travel-os.html#tasks"><strong>自动化任务</strong><span>查看任务队列与处理进度</span></a><a href="/travel-os.html#destinations"><strong>目的地中心</strong><span>按目的地查找商品资料</span></a></div></div>
+   <div class="nav-item"><button type="button" class="nav-trigger" aria-expanded="false" aria-controls="navMonitor">执行监控</button><div id="navMonitor" class="nav-dropdown" hidden><a href="/index.html#monitor"><strong>执行监控</strong><span>查看当前执行状态与日志</span></a><a href="/index.html#exceptions"><strong>异常处理</strong><span>核对待人工处理的问题</span></a></div></div>
+   <div class="nav-item"><button type="button" class="nav-trigger" aria-expanded="false" aria-controls="navRecords">上架记录</button><div id="navRecords" class="nav-dropdown" hidden><a href="/travel-os.html#records"><strong>上架记录</strong><span>查询商品上架结果</span></a></div></div>
+   <div class="nav-item"><button type="button" class="nav-trigger" aria-expanded="false" aria-controls="navHelp">使用帮助</button><div id="navHelp" class="nav-dropdown" hidden><button type="button" id="helpButton"><strong>首页使用指南</strong><span>了解搜索、地球与资料查看</span></button><a href="/travel-os.html#settings"><strong>资料设置</strong><span>查看工作台配置</span></a></div></div>
+  </nav>
+  <div class="header-actions"><a id="loginStatus" class="status-link" href="/travel-os.html#settings">登录状态待检查</a><a class="button small" href="/travel-os.html#overview">进入工作台<img src="assets/travel-os/icons/arrow-right.svg" alt=""></a></div>
+ </header>
+ <div id="connectionNotice" class="connection" role="status" hidden><span>连接中断，当前显示上次读取的数据。</span><button id="reconnect">重新连接</button></div>
+ <a id="homeAttention" class="home-attention" href="/index.html#exceptions" role="status" hidden></a>
+ <div id="testBanner" class="test-banner" hidden>隔离测试模式 · 不连接店铺，不执行上架</div>
+ <main id="main">
+  <section class="hero" aria-label="目的地工作空间">
+   <div class="globe-side">
+    <div class="globe-stage"><button id="exitGlobe" class="exit-globe" hidden><img src="assets/travel-os/icons/x.svg" alt="">返回首页 <kbd>Esc</kbd></button><div id="interactiveGlobe" class="interactive-globe" data-state="loading"></div><div id="globeMarkers" class="globe-markers" aria-label="地图目的地"></div><div class="globe-tools" aria-label="地球控制"><button disabled id="expandGlobe" title="全屏探索" aria-label="全屏探索地球"><img src="assets/travel-os/icons/arrow-square-out.svg" alt=""></button><button disabled id="zoomInGlobe" title="放大" aria-label="放大地球"><img src="assets/travel-os/icons/plus.svg" alt=""></button><button disabled id="zoomOutGlobe" title="缩小" aria-label="缩小地球"><img src="assets/travel-os/icons/minus.svg" alt=""></button><button disabled id="resetGlobe" title="回到初始视角" aria-label="重置地球视角"><img src="assets/travel-os/icons/globe-hemisphere-east.svg" alt=""></button><button disabled id="toggleMapDensity" title="显示所有地址 · 随地球缩放聚合或展开" aria-label="显示所有地址，随地球缩放调整" aria-pressed="false"><img src="assets/travel-os/icons/map-pin.svg" alt=""><span class="tool-tooltip" aria-hidden="true">显示所有地址 · 随缩放调整</span></button><button disabled id="rotateGlobe" title="自动旋转" aria-label="自动旋转地球" aria-pressed="true"><img src="assets/travel-os/icons/arrow-clockwise.svg" alt=""></button></div><div id="mapPanel" class="map-panel" hidden></div><p id="globeStatus" class="globe-status" role="status">正在载入 3D 地球与目的地…</p></div>
+   </div>
+   <div class="hero-content">
+    <div class="hero-heading"><p class="local-label"><img src="assets/travel-os/icons/globe-hemisphere-east.svg" alt="">你的目的地，连接每一次出发</p><h1>把世界，变成你的下一站。</h1><p class="intro">从目的地资料到商品上架，<br>集中管理素材、任务与执行进度。</p></div>
+    <form id="searchForm" role="search"><label class="sr-only" for="citySearch">搜索国家、城市或商品</label><div class="search-box"><img src="assets/travel-os/icons/magnifying-glass.svg" alt=""><input id="citySearch" type="search" autocomplete="off" placeholder="搜索目的地，地球将为你转动" maxlength="120" aria-controls="searchResults"><button type="button" id="clearSearch" aria-label="清除搜索" hidden><img src="assets/travel-os/icons/x.svg" alt=""></button><button type="submit" aria-label="搜索目的地"><img src="assets/travel-os/icons/arrow-right.svg" alt=""></button></div><div id="searchResults" class="search-results" hidden aria-label="搜索结果"></div></form>
+    <div class="quick-row"><span>试试这些目的地：</span><div id="quickCities" class="quick-cities"></div></div>
+    <article id="destinationCard" class="city-card" aria-live="polite"><div class="card-empty"><strong>正在读取目的地资料…</strong><p>资料、任务与上架记录保存在本机。</p></div></article>
+    <div class="primary-actions"><a class="button primary" href="/travel-os.html#overview">打开工作台<img src="assets/travel-os/icons/arrow-right.svg" alt=""></a><div class="journey" aria-label="上架流程"><p>从一个目的地，开始你的旅行商品</p><div><span><b>1</b> 选择城市</span><span><b>2</b> 核对资料</span><span><b>3</b> 打开工作台</span></div></div></div>
+   </div>
+  </section>
+ </main>
+ <footer><span>星途 Travel OS<span class="footer-divider">·</span>让每一座城市，成为新的可能</span><span class="footer-status"><span id="serviceState">服务状态待检查</span><span id="updatedAt">本地工作台 · 正在连接</span></span></footer>
+</div>
+<dialog id="materialDialog" class="material-dialog"><div class="dialog-head"><div><small>目的地资料</small><h2 id="materialTitle"></h2></div><button data-close="materialDialog" class="icon-button" aria-label="关闭资料"><img src="assets/travel-os/icons/x.svg" alt=""></button></div><div id="materialBody"></div></dialog>
+<dialog id="helpDialog"><div class="dialog-head"><h2>开始你的上架工作</h2><button data-close="helpDialog" class="icon-button" aria-label="关闭帮助"><img src="assets/travel-os/icons/x.svg" alt=""></button></div><ol class="help-steps"><li><strong>检查店铺</strong><p>在系统设置中检查执行 Chrome；未登录时打开专用浏览器，手动登录。</p></li><li><strong>导入并核对资料</strong><p>选择 Excel 和图片目录，核对标题、价格、库存及素材，确认本批范围。</p></li><li><strong>确认后执行</strong><p>生成任务不会自动上架。验证码在执行 Chrome 中人工处理，再回工作台检查并继续。</p></li></ol><div id="recentDestinations" class="recent-destinations" hidden></div><p id="catalogSource" class="source-note">正在读取资料来源…</p><a class="button primary" href="/index.html?portal=import#tasks">导入商品资料<img src="assets/travel-os/icons/arrow-right.svg" alt=""></a></dialog>
+<noscript>请启用 JavaScript，或<a href="/index.html">进入原工作台</a>。</noscript>
+</body></html>

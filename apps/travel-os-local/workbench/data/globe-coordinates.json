@@ -1,0 +1,5648 @@
+{
+  "version": 1,
+  "at": "2026-09-23T10:44:05.692Z",
+  "crs": "WGS84",
+  "scope": "城市中心点和国家示意位置，仅用于资料导航，不代表服务地址或供给范围",
+  "entries": [
+    {
+      "id": "country|英国|",
+      "lat": 54,
+      "lng": -2,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "GB"
+    },
+    {
+      "id": "country|墨西哥|",
+      "lat": 23,
+      "lng": -102,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "MX"
+    },
+    {
+      "id": "country|日本|",
+      "lat": 36,
+      "lng": 138,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "JP"
+    },
+    {
+      "id": "country|西班牙|",
+      "lat": 40,
+      "lng": -4,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "ES"
+    },
+    {
+      "id": "country|德国|",
+      "lat": 51,
+      "lng": 9,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "DE"
+    },
+    {
+      "id": "country|美国|",
+      "lat": 38,
+      "lng": -97,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "US"
+    },
+    {
+      "id": "country|法国|",
+      "lat": 46,
+      "lng": 2,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "FR"
+    },
+    {
+      "id": "country|俄罗斯|",
+      "lat": 60,
+      "lng": 100,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "RU"
+    },
+    {
+      "id": "country|土耳其|",
+      "lat": 39,
+      "lng": 35,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "TR"
+    },
+    {
+      "id": "country|韩国|",
+      "lat": 37,
+      "lng": 127.5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "KR"
+    },
+    {
+      "id": "country|意大利|",
+      "lat": 42.83333333,
+      "lng": 12.83333333,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "IT"
+    },
+    {
+      "id": "country|印度尼西亚|",
+      "lat": -5,
+      "lng": 120,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "ID"
+    },
+    {
+      "id": "country|泰国|",
+      "lat": 15,
+      "lng": 100,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "TH"
+    },
+    {
+      "id": "country|加拿大|",
+      "lat": 60,
+      "lng": -95,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "CA"
+    },
+    {
+      "id": "country|印度|",
+      "lat": 20,
+      "lng": 77,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "IN"
+    },
+    {
+      "id": "country|越南|",
+      "lat": 16.16666666,
+      "lng": 107.83333333,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "VN"
+    },
+    {
+      "id": "country|新加坡|",
+      "lat": 1.36666666,
+      "lng": 103.8,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "SG"
+    },
+    {
+      "id": "country|波兰|",
+      "lat": 52,
+      "lng": 20,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "PL"
+    },
+    {
+      "id": "country|阿拉伯联合酋长国|",
+      "lat": 24,
+      "lng": 54,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "AE"
+    },
+    {
+      "id": "country|奥地利|",
+      "lat": 47.33333333,
+      "lng": 13.33333333,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "AT"
+    },
+    {
+      "id": "country|匈牙利|",
+      "lat": 47,
+      "lng": 20,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "HU"
+    },
+    {
+      "id": "country|马来西亚|",
+      "lat": 2.5,
+      "lng": 112.5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "MY"
+    },
+    {
+      "id": "country|荷兰|",
+      "lat": 52.5,
+      "lng": 5.75,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "NL"
+    },
+    {
+      "id": "country|爱尔兰|",
+      "lat": 53,
+      "lng": -8,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "IE"
+    },
+    {
+      "id": "country|沙特阿拉伯|",
+      "lat": 25,
+      "lng": 45,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "SA"
+    },
+    {
+      "id": "country|埃及|",
+      "lat": 27,
+      "lng": 30,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "EG"
+    },
+    {
+      "id": "country|巴西|",
+      "lat": -10,
+      "lng": -55,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "BR"
+    },
+    {
+      "id": "country|捷克|",
+      "lat": 49.75,
+      "lng": 15.5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "CZ"
+    },
+    {
+      "id": "country|澳大利亚|",
+      "lat": -27,
+      "lng": 133,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "AU"
+    },
+    {
+      "id": "country|伊朗|",
+      "lat": 32,
+      "lng": 53,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "IR"
+    },
+    {
+      "id": "country|希腊|",
+      "lat": 39,
+      "lng": 22,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "GR"
+    },
+    {
+      "id": "country|南非|",
+      "lat": -29,
+      "lng": 24,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "ZA"
+    },
+    {
+      "id": "country|阿根廷|",
+      "lat": -34,
+      "lng": -64,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "AR"
+    },
+    {
+      "id": "country|菲律宾|",
+      "lat": 13,
+      "lng": 122,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "PH"
+    },
+    {
+      "id": "country|比利时|",
+      "lat": 50.83333333,
+      "lng": 4,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "BE"
+    },
+    {
+      "id": "country|丹麦|",
+      "lat": 56,
+      "lng": 10,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "DK"
+    },
+    {
+      "id": "country|葡萄牙|",
+      "lat": 39.5,
+      "lng": -8,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "PT"
+    },
+    {
+      "id": "country|罗马尼亚|",
+      "lat": 46,
+      "lng": 25,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "RO"
+    },
+    {
+      "id": "country|哥伦比亚|",
+      "lat": 4,
+      "lng": -72,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "CO"
+    },
+    {
+      "id": "country|智利|",
+      "lat": -30,
+      "lng": -71,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "CL"
+    },
+    {
+      "id": "country|摩洛哥|",
+      "lat": 32,
+      "lng": -5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "MA"
+    },
+    {
+      "id": "country|秘鲁|",
+      "lat": -10,
+      "lng": -76,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "PE"
+    },
+    {
+      "id": "country|哈萨克斯坦|",
+      "lat": 48,
+      "lng": 68,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "KZ"
+    },
+    {
+      "id": "country|瑞典|",
+      "lat": 62,
+      "lng": 15,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "SE"
+    },
+    {
+      "id": "country|瑞士|",
+      "lat": 47,
+      "lng": 8,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "CH"
+    },
+    {
+      "id": "country|克罗地亚|",
+      "lat": 45.16666666,
+      "lng": 15.5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "HR"
+    },
+    {
+      "id": "country|乌兹别克斯坦|",
+      "lat": 41,
+      "lng": 64,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "UZ"
+    },
+    {
+      "id": "country|伊拉克|",
+      "lat": 33,
+      "lng": 44,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "IQ"
+    },
+    {
+      "id": "country|乌克兰|",
+      "lat": 49,
+      "lng": 32,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "UA"
+    },
+    {
+      "id": "country|保加利亚|",
+      "lat": 43,
+      "lng": 25,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "BG"
+    },
+    {
+      "id": "country|巴基斯坦|",
+      "lat": 30,
+      "lng": 70,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "PK"
+    },
+    {
+      "id": "country|阿尔及利亚|",
+      "lat": 28,
+      "lng": 3,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "DZ"
+    },
+    {
+      "id": "country|芬兰|",
+      "lat": 64,
+      "lng": 26,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "FI"
+    },
+    {
+      "id": "country|科威特|",
+      "lat": 29.5,
+      "lng": 45.75,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "KW"
+    },
+    {
+      "id": "country|新西兰|",
+      "lat": -41,
+      "lng": 174,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "NZ"
+    },
+    {
+      "id": "country|突尼斯|",
+      "lat": 34,
+      "lng": 9,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "TN"
+    },
+    {
+      "id": "country|多米尼加共和国|",
+      "lat": 19,
+      "lng": -70.66666666,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "DO"
+    },
+    {
+      "id": "country|以色列|",
+      "lat": 31.47,
+      "lng": 35.13,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "IL"
+    },
+    {
+      "id": "country|白俄罗斯|",
+      "lat": 53,
+      "lng": 28,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "BY"
+    },
+    {
+      "id": "country|阿曼|",
+      "lat": 21,
+      "lng": 57,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "OM"
+    },
+    {
+      "id": "country|拉脱维亚|",
+      "lat": 57,
+      "lng": 25,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "LV"
+    },
+    {
+      "id": "country|巴林|",
+      "lat": 26,
+      "lng": 50.55,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "BH"
+    },
+    {
+      "id": "country|厄瓜多尔|",
+      "lat": -2,
+      "lng": -77.5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "EC"
+    },
+    {
+      "id": "country|肯尼亚|",
+      "lat": 1,
+      "lng": 38,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "KE"
+    },
+    {
+      "id": "country|挪威|",
+      "lat": 62,
+      "lng": 10,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "NO"
+    },
+    {
+      "id": "country|卡塔尔|",
+      "lat": 25.5,
+      "lng": 51.25,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "QA"
+    },
+    {
+      "id": "country|约旦|",
+      "lat": 31,
+      "lng": 36,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "JO"
+    },
+    {
+      "id": "country|斯洛伐克|",
+      "lat": 48.66666666,
+      "lng": 19.5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "SK"
+    },
+    {
+      "id": "country|柬埔寨|",
+      "lat": 13,
+      "lng": 105,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "KH"
+    },
+    {
+      "id": "country|缅甸|",
+      "lat": 22,
+      "lng": 98,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "MM"
+    },
+    {
+      "id": "country|阿塞拜疆|",
+      "lat": 40.5,
+      "lng": 47.5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "AZ"
+    },
+    {
+      "id": "country|斯里兰卡|",
+      "lat": 7,
+      "lng": 81,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "LK"
+    },
+    {
+      "id": "country|古巴|",
+      "lat": 21.5,
+      "lng": -80,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "CU"
+    },
+    {
+      "id": "country|巴拿马|",
+      "lat": 9,
+      "lng": -80,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "PA"
+    },
+    {
+      "id": "country|委内瑞拉|",
+      "lat": 8,
+      "lng": -66,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "VE"
+    },
+    {
+      "id": "country|乌拉圭|",
+      "lat": -33,
+      "lng": -56,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "UY"
+    },
+    {
+      "id": "country|孟加拉国|",
+      "lat": 24,
+      "lng": 90,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "BD"
+    },
+    {
+      "id": "country|波多黎各|",
+      "lat": 18.25,
+      "lng": -66.5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "PR"
+    },
+    {
+      "id": "country|埃塞俄比亚|",
+      "lat": 8,
+      "lng": 38,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "ET"
+    },
+    {
+      "id": "country|土库曼斯坦|",
+      "lat": 40,
+      "lng": 60,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "TM"
+    },
+    {
+      "id": "country|吉尔吉斯斯坦|",
+      "lat": 41,
+      "lng": 75,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "KG"
+    },
+    {
+      "id": "country|哥斯达黎加|",
+      "lat": 10,
+      "lng": -84,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "CR"
+    },
+    {
+      "id": "country|格鲁吉亚|",
+      "lat": 42,
+      "lng": 43.5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "GE"
+    },
+    {
+      "id": "country|塞尔维亚|",
+      "lat": 44,
+      "lng": 21,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "RS"
+    },
+    {
+      "id": "country|尼日利亚|",
+      "lat": 10,
+      "lng": 8,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "NG"
+    },
+    {
+      "id": "country|巴拉圭|",
+      "lat": -23,
+      "lng": -58,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "PY"
+    },
+    {
+      "id": "country|斯洛文尼亚|",
+      "lat": 46.11666666,
+      "lng": 14.81666666,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "SI"
+    },
+    {
+      "id": "country|也门|",
+      "lat": 15,
+      "lng": 48,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "YE"
+    },
+    {
+      "id": "country|立陶宛|",
+      "lat": 56,
+      "lng": 24,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "LT"
+    },
+    {
+      "id": "country|危地马拉|",
+      "lat": 15.5,
+      "lng": -90.25,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "GT"
+    },
+    {
+      "id": "country|阿富汗|",
+      "lat": 33,
+      "lng": 65,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "AF"
+    },
+    {
+      "id": "country|朝鲜|",
+      "lat": 40,
+      "lng": 127,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "KP"
+    },
+    {
+      "id": "country|黎巴嫩|",
+      "lat": 33.83333333,
+      "lng": 35.83333333,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "LB"
+    },
+    {
+      "id": "country|巴哈马|",
+      "lat": 24.25,
+      "lng": -76,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "BS"
+    },
+    {
+      "id": "country|科特迪瓦|",
+      "lat": 8,
+      "lng": -5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "CI"
+    },
+    {
+      "id": "country|阿尔巴尼亚|",
+      "lat": 41,
+      "lng": 20,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "AL"
+    },
+    {
+      "id": "country|老挝|",
+      "lat": 18,
+      "lng": 105,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "LA"
+    },
+    {
+      "id": "country|津巴布韦|",
+      "lat": -20,
+      "lng": 30,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "ZW"
+    },
+    {
+      "id": "country|直布罗陀|",
+      "lat": 36.13333333,
+      "lng": -5.35,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "GI"
+    },
+    {
+      "id": "country|爱沙尼亚|",
+      "lat": 59,
+      "lng": 26,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "EE"
+    },
+    {
+      "id": "country|科索沃|",
+      "lat": 42.666667,
+      "lng": 21.166667,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "XK"
+    },
+    {
+      "id": "country|刚果（金）|",
+      "lat": 0,
+      "lng": 25,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "CD"
+    },
+    {
+      "id": "country|塞浦路斯|",
+      "lat": 35,
+      "lng": 33,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "CY"
+    },
+    {
+      "id": "country|坦桑尼亚|",
+      "lat": -6,
+      "lng": 35,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "TZ"
+    },
+    {
+      "id": "country|尼泊尔|",
+      "lat": 28,
+      "lng": 84,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "NP"
+    },
+    {
+      "id": "country|莫桑比克|",
+      "lat": -18.25,
+      "lng": 35,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "MZ"
+    },
+    {
+      "id": "country|玻利维亚|",
+      "lat": -17,
+      "lng": -65,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "BO"
+    },
+    {
+      "id": "country|叙利亚|",
+      "lat": 35,
+      "lng": 38,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "SY"
+    },
+    {
+      "id": "country|萨尔瓦多|",
+      "lat": 13.83333333,
+      "lng": -88.91666666,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "SV"
+    },
+    {
+      "id": "country|亚美尼亚|",
+      "lat": 40,
+      "lng": 45,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "AM"
+    },
+    {
+      "id": "country|苏丹|",
+      "lat": 15,
+      "lng": 30,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "SD"
+    },
+    {
+      "id": "country|牙买加|",
+      "lat": 18.25,
+      "lng": -77.5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "JM"
+    },
+    {
+      "id": "country|安哥拉|",
+      "lat": -12.5,
+      "lng": 18.5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "AO"
+    },
+    {
+      "id": "country|冰岛|",
+      "lat": 65,
+      "lng": -18,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "IS"
+    },
+    {
+      "id": "country|法属圭亚那|",
+      "lat": 4,
+      "lng": -53,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "GF"
+    },
+    {
+      "id": "country|加纳|",
+      "lat": 8,
+      "lng": -2,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "GH"
+    },
+    {
+      "id": "country|卢旺达|",
+      "lat": -2,
+      "lng": 30,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "RW"
+    },
+    {
+      "id": "country|卢森堡|",
+      "lat": 49.75,
+      "lng": 6.16666666,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "LU"
+    },
+    {
+      "id": "country|文莱|",
+      "lat": 4.5,
+      "lng": 114.66666666,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "BN"
+    },
+    {
+      "id": "country|马耳他|",
+      "lat": 35.83333333,
+      "lng": 14.58333333,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "MT"
+    },
+    {
+      "id": "country|利比亚|",
+      "lat": 25,
+      "lng": 17,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "LY"
+    },
+    {
+      "id": "country|马恩岛|",
+      "lat": 54.25,
+      "lng": -4.5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "IM"
+    },
+    {
+      "id": "country|喀麦隆|",
+      "lat": 6,
+      "lng": 12,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "CM"
+    },
+    {
+      "id": "country|赞比亚|",
+      "lat": -15,
+      "lng": 30,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "ZM"
+    },
+    {
+      "id": "country|美属维尔京群岛|",
+      "lat": 18.35,
+      "lng": -64.933333,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "VI"
+    },
+    {
+      "id": "country|洪都拉斯|",
+      "lat": 15,
+      "lng": -86.5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "HN"
+    },
+    {
+      "id": "country|尼加拉瓜|",
+      "lat": 13,
+      "lng": -85,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "NI"
+    },
+    {
+      "id": "country|多哥|",
+      "lat": 8,
+      "lng": 1.16666666,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "TG"
+    },
+    {
+      "id": "country|海地|",
+      "lat": 19,
+      "lng": -72.41666666,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "HT"
+    },
+    {
+      "id": "country|黑山|",
+      "lat": 42.5,
+      "lng": 19.3,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "ME"
+    },
+    {
+      "id": "country|泽西岛|",
+      "lat": 49.25,
+      "lng": -2.16666666,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "JE"
+    },
+    {
+      "id": "country|法罗群岛|",
+      "lat": 62,
+      "lng": -7,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "FO"
+    },
+    {
+      "id": "country|乌干达|",
+      "lat": 1,
+      "lng": 32,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "UG"
+    },
+    {
+      "id": "country|根西岛|",
+      "lat": 49.46666666,
+      "lng": -2.58333333,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "GG"
+    },
+    {
+      "id": "country|北马其顿|",
+      "lat": 41.83333333,
+      "lng": 22,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "MK"
+    },
+    {
+      "id": "country|几内亚|",
+      "lat": 11,
+      "lng": -10,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "GN"
+    },
+    {
+      "id": "country|蒙古|",
+      "lat": 46,
+      "lng": 105,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "MN"
+    },
+    {
+      "id": "country|塞内加尔|",
+      "lat": 14,
+      "lng": -14,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "SN"
+    },
+    {
+      "id": "country|博茨瓦纳|",
+      "lat": -22,
+      "lng": 24,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "BW"
+    },
+    {
+      "id": "country|塔吉克斯坦|",
+      "lat": 39,
+      "lng": 71,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "TJ"
+    },
+    {
+      "id": "country|马尔代夫|",
+      "lat": 3.25,
+      "lng": 73,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "MV"
+    },
+    {
+      "id": "country|波斯尼亚和黑塞哥维那|",
+      "lat": 44,
+      "lng": 18,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "BA"
+    },
+    {
+      "id": "country|马里|",
+      "lat": 17,
+      "lng": -4,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "ML"
+    },
+    {
+      "id": "country|巴布亚新几内亚|",
+      "lat": -6,
+      "lng": 147,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "PG"
+    },
+    {
+      "id": "country|马达加斯加|",
+      "lat": -20,
+      "lng": 47,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "MG"
+    },
+    {
+      "id": "country|特立尼达和多巴哥|",
+      "lat": 11,
+      "lng": -61,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "TT"
+    },
+    {
+      "id": "country|开曼群岛|",
+      "lat": 19.5,
+      "lng": -80.5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "KY"
+    },
+    {
+      "id": "country|加蓬|",
+      "lat": -1,
+      "lng": 11.75,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "GA"
+    },
+    {
+      "id": "country|摩尔多瓦|",
+      "lat": 47,
+      "lng": 29,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "MD"
+    },
+    {
+      "id": "country|福克兰群岛|",
+      "lat": -51.75,
+      "lng": -59,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "FK"
+    },
+    {
+      "id": "country|毛里求斯|",
+      "lat": -20.28333333,
+      "lng": 57.55,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "MU"
+    },
+    {
+      "id": "country|纳米比亚|",
+      "lat": -22,
+      "lng": 17,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "NA"
+    },
+    {
+      "id": "country|布基纳法索|",
+      "lat": 13,
+      "lng": -2,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "BF"
+    },
+    {
+      "id": "country|巴巴多斯|",
+      "lat": 13.16666666,
+      "lng": -59.53333333,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "BB"
+    },
+    {
+      "id": "country|斐济|",
+      "lat": -18,
+      "lng": 175,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "FJ"
+    },
+    {
+      "id": "country|毛里塔尼亚|",
+      "lat": 20,
+      "lng": -12,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "MR"
+    },
+    {
+      "id": "country|索马里|",
+      "lat": 10,
+      "lng": 49,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "SO"
+    },
+    {
+      "id": "country|贝宁|",
+      "lat": 9.5,
+      "lng": 2.25,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "BJ"
+    },
+    {
+      "id": "country|马拉维|",
+      "lat": -13.5,
+      "lng": 34,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "MW"
+    },
+    {
+      "id": "country|刚果（布）|",
+      "lat": -1,
+      "lng": 15,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "CG"
+    },
+    {
+      "id": "country|马提尼克|",
+      "lat": 14.666667,
+      "lng": -61,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "MQ"
+    },
+    {
+      "id": "country|库拉索|",
+      "lat": 12.116667,
+      "lng": -68.933333,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "CW"
+    },
+    {
+      "id": "country|南苏丹|",
+      "lat": 7,
+      "lng": 30,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "SS"
+    },
+    {
+      "id": "country|乍得|",
+      "lat": 15,
+      "lng": 19,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "TD"
+    },
+    {
+      "id": "country|苏里南|",
+      "lat": 4,
+      "lng": -56,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "SR"
+    },
+    {
+      "id": "country|阿鲁巴|",
+      "lat": 12.5,
+      "lng": -69.96666666,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "AW"
+    },
+    {
+      "id": "country|尼日尔|",
+      "lat": 16,
+      "lng": 8,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "NE"
+    },
+    {
+      "id": "country|吉布提|",
+      "lat": 11.5,
+      "lng": 43,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "DJ"
+    },
+    {
+      "id": "country|莱索托|",
+      "lat": -29.5,
+      "lng": 28.5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "LS"
+    },
+    {
+      "id": "country|留尼汪|",
+      "lat": -21.15,
+      "lng": 55.5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "RE"
+    },
+    {
+      "id": "country|伯利兹|",
+      "lat": 17.25,
+      "lng": -88.75,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "BZ"
+    },
+    {
+      "id": "country|佛得角|",
+      "lat": 16,
+      "lng": -24,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "CV"
+    },
+    {
+      "id": "country|格陵兰|",
+      "lat": 72,
+      "lng": -40,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "GL"
+    },
+    {
+      "id": "country|马约特|",
+      "lat": -12.83333333,
+      "lng": 45.16666666,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "YT"
+    },
+    {
+      "id": "country|利比里亚|",
+      "lat": 6.5,
+      "lng": -9.5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "LR"
+    },
+    {
+      "id": "country|安提瓜和巴布达|",
+      "lat": 17.05,
+      "lng": -61.8,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "AG"
+    },
+    {
+      "id": "country|圣卢西亚|",
+      "lat": 13.88333333,
+      "lng": -60.96666666,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "LC"
+    },
+    {
+      "id": "country|塞拉利昂|",
+      "lat": 8.5,
+      "lng": -11.5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "SL"
+    },
+    {
+      "id": "country|关岛|",
+      "lat": 13.46666666,
+      "lng": 144.78333333,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "GU"
+    },
+    {
+      "id": "country|赤道几内亚|",
+      "lat": 2,
+      "lng": 10,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "GQ"
+    },
+    {
+      "id": "country|布隆迪|",
+      "lat": -3.5,
+      "lng": 30,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "BI"
+    },
+    {
+      "id": "country|荷属圣马丁|",
+      "lat": 18.033333,
+      "lng": -63.05,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "SX"
+    },
+    {
+      "id": "country|圭亚那|",
+      "lat": 5,
+      "lng": -59,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "GY"
+    },
+    {
+      "id": "country|不丹|",
+      "lat": 27.5,
+      "lng": 90.5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "BT"
+    },
+    {
+      "id": "country|斯威士兰|",
+      "lat": -26.5,
+      "lng": 31.5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "SZ"
+    },
+    {
+      "id": "country|冈比亚|",
+      "lat": 13.46666666,
+      "lng": -16.56666666,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "GM"
+    },
+    {
+      "id": "country|百慕大|",
+      "lat": 32.33333333,
+      "lng": -64.75,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "BM"
+    },
+    {
+      "id": "country|塞舌尔|",
+      "lat": -4.58333333,
+      "lng": 55.66666666,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "SC"
+    },
+    {
+      "id": "country|法属波利尼西亚|",
+      "lat": -15,
+      "lng": -140,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "PF"
+    },
+    {
+      "id": "country|圣文森特和格林纳丁斯|",
+      "lat": 13.25,
+      "lng": -61.2,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "VC"
+    },
+    {
+      "id": "country|瓦努阿图|",
+      "lat": -16,
+      "lng": 167,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "VU"
+    },
+    {
+      "id": "country|英属维尔京群岛|",
+      "lat": 18.431383,
+      "lng": -64.62305,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "VG"
+    },
+    {
+      "id": "country|厄立特里亚|",
+      "lat": 15,
+      "lng": 39,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "ER"
+    },
+    {
+      "id": "country|东帝汶|",
+      "lat": -8.83333333,
+      "lng": 125.91666666,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "TL"
+    },
+    {
+      "id": "country|新喀里多尼亚|",
+      "lat": -21.5,
+      "lng": 165.5,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "NC"
+    },
+    {
+      "id": "country|圣皮埃尔和密克隆群岛|",
+      "lat": 46.83333333,
+      "lng": -56.33333333,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "PM"
+    },
+    {
+      "id": "country|萨摩亚|",
+      "lat": -13.58333333,
+      "lng": -172.33333333,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "WS"
+    },
+    {
+      "id": "country|所罗门群岛|",
+      "lat": -8,
+      "lng": 159,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "SB"
+    },
+    {
+      "id": "country|特克斯和凯科斯群岛|",
+      "lat": 21.75,
+      "lng": -71.58333333,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "TC"
+    },
+    {
+      "id": "country|汤加|",
+      "lat": -20,
+      "lng": -175,
+      "precision": "country",
+      "source": "https://github.com/mledoze/countries",
+      "sourceId": "TO"
+    },
+    {
+      "id": "city|英国|伦敦",
+      "lat": 51.50853,
+      "lng": -0.12574,
+      "precision": "city",
+      "source": "https://www.geonames.org/2643743",
+      "sourceId": "2643743"
+    },
+    {
+      "id": "city|墨西哥|墨西哥城",
+      "lat": 19.42847,
+      "lng": -99.12766,
+      "precision": "city",
+      "source": "https://www.geonames.org/3530597",
+      "sourceId": "3530597"
+    },
+    {
+      "id": "city|日本|东京",
+      "lat": 35.6895,
+      "lng": 139.69171,
+      "precision": "city",
+      "source": "https://www.geonames.org/1850147",
+      "sourceId": "1850147"
+    },
+    {
+      "id": "city|西班牙|马德里",
+      "lat": 40.4165,
+      "lng": -3.70256,
+      "precision": "city",
+      "source": "https://www.geonames.org/3117735",
+      "sourceId": "3117735"
+    },
+    {
+      "id": "city|德国|柏林",
+      "lat": 52.52437,
+      "lng": 13.41053,
+      "precision": "city",
+      "source": "https://www.geonames.org/2950159",
+      "sourceId": "2950159"
+    },
+    {
+      "id": "city|美国|华盛顿特区",
+      "lat": 38.89511,
+      "lng": -77.03637,
+      "precision": "city",
+      "source": "https://www.geonames.org/4140963",
+      "sourceId": "4140963"
+    },
+    {
+      "id": "city|法国|巴黎",
+      "lat": 48.85341,
+      "lng": 2.3488,
+      "precision": "city",
+      "source": "https://www.geonames.org/2988507",
+      "sourceId": "2988507"
+    },
+    {
+      "id": "city|俄罗斯|莫斯科",
+      "lat": 55.75204,
+      "lng": 37.61781,
+      "precision": "city",
+      "source": "https://www.geonames.org/524901",
+      "sourceId": "524901"
+    },
+    {
+      "id": "city|土耳其|安卡拉",
+      "lat": 39.91987,
+      "lng": 32.85427,
+      "precision": "city",
+      "source": "https://www.geonames.org/323786",
+      "sourceId": "323786"
+    },
+    {
+      "id": "city|韩国|首尔特别市",
+      "lat": 37.566,
+      "lng": 126.9784,
+      "precision": "city",
+      "source": "https://www.geonames.org/1835848",
+      "sourceId": "1835848"
+    },
+    {
+      "id": "city|意大利|罗马市",
+      "lat": 41.89193,
+      "lng": 12.51133,
+      "precision": "city",
+      "source": "https://www.geonames.org/3169070",
+      "sourceId": "3169070"
+    },
+    {
+      "id": "city|印度尼西亚|雅加达",
+      "lat": -6.21462,
+      "lng": 106.84513,
+      "precision": "city",
+      "source": "https://www.geonames.org/1642911",
+      "sourceId": "1642911"
+    },
+    {
+      "id": "city|泰国|曼谷",
+      "lat": 13.75398,
+      "lng": 100.50144,
+      "precision": "city",
+      "source": "https://www.geonames.org/1609350",
+      "sourceId": "1609350"
+    },
+    {
+      "id": "city|美国|凤凰城",
+      "lat": 32.47098,
+      "lng": -85.00077,
+      "precision": "city",
+      "source": "https://www.geonames.org/4082866",
+      "sourceId": "4082866"
+    },
+    {
+      "id": "city|美国|奥斯汀",
+      "lat": 30.26715,
+      "lng": -97.74306,
+      "precision": "city",
+      "source": "https://www.geonames.org/4671654",
+      "sourceId": "4671654"
+    },
+    {
+      "id": "city|美国|哥伦布",
+      "lat": 33.49567,
+      "lng": -88.42726,
+      "precision": "city",
+      "source": "https://www.geonames.org/4422442",
+      "sourceId": "4422442",
+      "matchNote": "同名地点按源表第 7480 行英文名及服务机场 Golden Triangle Regional Airport 消歧，距机场 16 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|美国|印第安纳波利斯",
+      "lat": 39.76838,
+      "lng": -86.15804,
+      "precision": "city",
+      "source": "https://www.geonames.org/4259418",
+      "sourceId": "4259418"
+    },
+    {
+      "id": "city|加拿大|渥太华",
+      "lat": 45.41117,
+      "lng": -75.69812,
+      "precision": "city",
+      "source": "https://www.geonames.org/6094817",
+      "sourceId": "6094817"
+    },
+    {
+      "id": "city|美国|丹佛",
+      "lat": 39.73915,
+      "lng": -104.9847,
+      "precision": "city",
+      "source": "https://www.geonames.org/5419384",
+      "sourceId": "5419384"
+    },
+    {
+      "id": "city|美国|纳什维尔",
+      "lat": 36.16589,
+      "lng": -86.78444,
+      "precision": "city",
+      "source": "https://www.geonames.org/4644585",
+      "sourceId": "4644585"
+    },
+    {
+      "id": "city|美国|奥克拉荷马市",
+      "lat": 35.46756,
+      "lng": -97.51643,
+      "precision": "city",
+      "source": "https://www.geonames.org/4544349",
+      "sourceId": "4544349"
+    },
+    {
+      "id": "city|印度|孟买",
+      "lat": 19.07283,
+      "lng": 72.88261,
+      "precision": "city",
+      "source": "https://www.geonames.org/1275339",
+      "sourceId": "1275339"
+    },
+    {
+      "id": "city|美国|波士顿",
+      "lat": 42.35843,
+      "lng": -71.05977,
+      "precision": "city",
+      "source": "https://www.geonames.org/4930956",
+      "sourceId": "4930956"
+    },
+    {
+      "id": "city|印度|德里",
+      "lat": 28.65195,
+      "lng": 77.23149,
+      "precision": "city",
+      "source": "https://www.geonames.org/1273294",
+      "sourceId": "1273294"
+    },
+    {
+      "id": "city|美国|沙加缅度",
+      "lat": 38.58157,
+      "lng": -121.4944,
+      "precision": "city",
+      "source": "https://www.geonames.org/5389489",
+      "sourceId": "5389489"
+    },
+    {
+      "id": "city|越南|河内市",
+      "lat": 21.0245,
+      "lng": 105.84117,
+      "precision": "city",
+      "source": "https://www.geonames.org/1581130",
+      "sourceId": "1581130"
+    },
+    {
+      "id": "city|美国|亚特兰大",
+      "lat": 33.749,
+      "lng": -84.38798,
+      "precision": "city",
+      "source": "https://www.geonames.org/4180439",
+      "sourceId": "4180439"
+    },
+    {
+      "id": "city|美国|罗利",
+      "lat": 35.7721,
+      "lng": -78.63861,
+      "precision": "city",
+      "source": "https://www.geonames.org/4487042",
+      "sourceId": "4487042"
+    },
+    {
+      "id": "city|印度|班加罗尔",
+      "lat": 12.97194,
+      "lng": 77.59369,
+      "precision": "city",
+      "source": "https://www.geonames.org/1277333",
+      "sourceId": "1277333"
+    },
+    {
+      "id": "city|日本|横滨市",
+      "lat": 35.43333,
+      "lng": 139.65,
+      "precision": "city",
+      "source": "https://www.geonames.org/1848354",
+      "sourceId": "1848354"
+    },
+    {
+      "id": "city|新加坡|新加坡",
+      "lat": 1.28967,
+      "lng": 103.85007,
+      "precision": "city",
+      "source": "https://www.geonames.org/1880252",
+      "sourceId": "1880252"
+    },
+    {
+      "id": "city|德国|汉堡",
+      "lat": 53.55073,
+      "lng": 9.99302,
+      "precision": "city",
+      "source": "https://www.geonames.org/2911298",
+      "sourceId": "2911298"
+    },
+    {
+      "id": "city|西班牙|巴塞罗那",
+      "lat": 41.38879,
+      "lng": 2.15899,
+      "precision": "city",
+      "source": "https://www.geonames.org/3128760",
+      "sourceId": "3128760"
+    },
+    {
+      "id": "city|印度|海得拉巴",
+      "lat": 17.38405,
+      "lng": 78.45636,
+      "precision": "city",
+      "source": "https://www.geonames.org/1269843",
+      "sourceId": "1269843"
+    },
+    {
+      "id": "city|美国|檀香山",
+      "lat": 21.30694,
+      "lng": -157.85833,
+      "precision": "city",
+      "source": "https://www.geonames.org/5856195",
+      "sourceId": "5856195"
+    },
+    {
+      "id": "city|土耳其|伊兹密尔",
+      "lat": 38.41273,
+      "lng": 27.13838,
+      "precision": "city",
+      "source": "https://www.geonames.org/311046",
+      "sourceId": "311046"
+    },
+    {
+      "id": "city|波兰|华沙",
+      "lat": 52.22977,
+      "lng": 21.01178,
+      "precision": "city",
+      "source": "https://www.geonames.org/756135",
+      "sourceId": "756135"
+    },
+    {
+      "id": "city|日本|大阪市",
+      "lat": 34.69379,
+      "lng": 135.50107,
+      "precision": "city",
+      "source": "https://www.geonames.org/1853909",
+      "sourceId": "1853909"
+    },
+    {
+      "id": "city|美国|洛杉矶",
+      "lat": 34.05223,
+      "lng": -118.24368,
+      "precision": "city",
+      "source": "https://www.geonames.org/5368361",
+      "sourceId": "5368361"
+    },
+    {
+      "id": "city|德国|慕尼黑",
+      "lat": 48.13743,
+      "lng": 11.57549,
+      "precision": "city",
+      "source": "https://www.geonames.org/2867714",
+      "sourceId": "2867714"
+    },
+    {
+      "id": "city|美国|圣保罗",
+      "lat": 44.94441,
+      "lng": -93.09327,
+      "precision": "city",
+      "source": "https://www.geonames.org/5045360",
+      "sourceId": "5045360"
+    },
+    {
+      "id": "city|阿拉伯联合酋长国|阿布扎比",
+      "lat": 24.45118,
+      "lng": 54.39696,
+      "precision": "city",
+      "source": "https://www.geonames.org/292968",
+      "sourceId": "292968"
+    },
+    {
+      "id": "city|俄罗斯|圣彼得堡",
+      "lat": 59.93863,
+      "lng": 30.31413,
+      "precision": "city",
+      "source": "https://www.geonames.org/498817",
+      "sourceId": "498817"
+    },
+    {
+      "id": "city|法国|马赛",
+      "lat": 43.29695,
+      "lng": 5.38107,
+      "precision": "city",
+      "source": "https://www.geonames.org/2995469",
+      "sourceId": "2995469"
+    },
+    {
+      "id": "city|土耳其|加济安泰普",
+      "lat": 37.05944,
+      "lng": 37.3825,
+      "precision": "city",
+      "source": "https://www.geonames.org/314830",
+      "sourceId": "314830"
+    },
+    {
+      "id": "city|墨西哥|普埃布拉",
+      "lat": 19.04778,
+      "lng": -98.20723,
+      "precision": "city",
+      "source": "https://www.geonames.org/3521081",
+      "sourceId": "3521081"
+    },
+    {
+      "id": "city|墨西哥|克雷塔罗",
+      "lat": 20.58806,
+      "lng": -100.38806,
+      "precision": "city",
+      "source": "https://www.geonames.org/3991164",
+      "sourceId": "3991164"
+    },
+    {
+      "id": "city|印度|金奈",
+      "lat": 13.08784,
+      "lng": 80.27847,
+      "precision": "city",
+      "source": "https://www.geonames.org/1264527",
+      "sourceId": "1264527"
+    },
+    {
+      "id": "city|印度|加尔各答",
+      "lat": 22.56263,
+      "lng": 88.36304,
+      "precision": "city",
+      "source": "https://www.geonames.org/1275004",
+      "sourceId": "1275004"
+    },
+    {
+      "id": "city|美国|博伊西",
+      "lat": 43.6135,
+      "lng": -116.20345,
+      "precision": "city",
+      "source": "https://www.geonames.org/5586437",
+      "sourceId": "5586437"
+    },
+    {
+      "id": "city|美国|里士满",
+      "lat": 37.74786,
+      "lng": -84.29465,
+      "precision": "city",
+      "source": "https://www.geonames.org/4305974",
+      "sourceId": "4305974",
+      "matchNote": "同名地点按源表第 10650 行英文名及服务机场 Blue Grass Airport 消歧，距机场 42 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|墨西哥|瓜达拉哈拉",
+      "lat": 20.67738,
+      "lng": -103.34749,
+      "precision": "city",
+      "source": "https://www.geonames.org/4005539",
+      "sourceId": "4005539"
+    },
+    {
+      "id": "city|美国|布鲁克林区",
+      "lat": 40.6501,
+      "lng": -73.94958,
+      "precision": "city",
+      "source": "https://www.geonames.org/5110302",
+      "sourceId": "5110302"
+    },
+    {
+      "id": "city|美国|芝加哥",
+      "lat": 41.85003,
+      "lng": -87.65005,
+      "precision": "city",
+      "source": "https://www.geonames.org/4887398",
+      "sourceId": "4887398"
+    },
+    {
+      "id": "city|印度|新德里",
+      "lat": 28.62137,
+      "lng": 77.2148,
+      "precision": "city",
+      "source": "https://www.geonames.org/1261481",
+      "sourceId": "1261481"
+    },
+    {
+      "id": "city|美国|盐湖城",
+      "lat": 40.76078,
+      "lng": -111.89105,
+      "precision": "city",
+      "source": "https://www.geonames.org/5780993",
+      "sourceId": "5780993"
+    },
+    {
+      "id": "city|美国|德梅因",
+      "lat": 41.60054,
+      "lng": -93.60911,
+      "precision": "city",
+      "source": "https://www.geonames.org/4853828",
+      "sourceId": "4853828"
+    },
+    {
+      "id": "city|土耳其|阿达纳",
+      "lat": 36.98615,
+      "lng": 35.32531,
+      "precision": "city",
+      "source": "https://www.geonames.org/325363",
+      "sourceId": "325363"
+    },
+    {
+      "id": "city|美国|普罗维登斯",
+      "lat": 41.82399,
+      "lng": -71.41283,
+      "precision": "city",
+      "source": "https://www.geonames.org/5224151",
+      "sourceId": "5224151"
+    },
+    {
+      "id": "city|墨西哥|梅里达",
+      "lat": 20.967,
+      "lng": -89.62318,
+      "precision": "city",
+      "source": "https://www.geonames.org/3523349",
+      "sourceId": "3523349"
+    },
+    {
+      "id": "city|墨西哥|蒙特雷",
+      "lat": 25.68435,
+      "lng": -100.31721,
+      "precision": "city",
+      "source": "https://www.geonames.org/3995465",
+      "sourceId": "3995465"
+    },
+    {
+      "id": "city|西班牙|巴伦西亚",
+      "lat": 39.47391,
+      "lng": -0.37966,
+      "precision": "city",
+      "source": "https://www.geonames.org/2509954",
+      "sourceId": "2509954"
+    },
+    {
+      "id": "city|加拿大|多伦多",
+      "lat": 43.70643,
+      "lng": -79.39864,
+      "precision": "city",
+      "source": "https://www.geonames.org/6167865",
+      "sourceId": "6167865"
+    },
+    {
+      "id": "city|日本|福冈市",
+      "lat": 33.6,
+      "lng": 130.41667,
+      "precision": "city",
+      "source": "https://www.geonames.org/1863967",
+      "sourceId": "1863967"
+    },
+    {
+      "id": "city|美国|休斯敦",
+      "lat": 29.76328,
+      "lng": -95.36327,
+      "precision": "city",
+      "source": "https://www.geonames.org/4699066",
+      "sourceId": "4699066"
+    },
+    {
+      "id": "city|奥地利|维也纳",
+      "lat": 48.20849,
+      "lng": 16.37208,
+      "precision": "city",
+      "source": "https://www.geonames.org/2761369",
+      "sourceId": "2761369"
+    },
+    {
+      "id": "city|土耳其|开塞利",
+      "lat": 38.73222,
+      "lng": 35.48528,
+      "precision": "city",
+      "source": "https://www.geonames.org/308464",
+      "sourceId": "308464"
+    },
+    {
+      "id": "city|日本|神户市",
+      "lat": 34.6913,
+      "lng": 135.183,
+      "precision": "city",
+      "source": "https://www.geonames.org/1859171",
+      "sourceId": "1859171"
+    },
+    {
+      "id": "city|法国|里昂",
+      "lat": 45.74906,
+      "lng": 4.84789,
+      "precision": "city",
+      "source": "https://www.geonames.org/2996944",
+      "sourceId": "2996944"
+    },
+    {
+      "id": "city|土耳其|科尼亚",
+      "lat": 37.87135,
+      "lng": 32.48464,
+      "precision": "city",
+      "source": "https://www.geonames.org/306571",
+      "sourceId": "306571"
+    },
+    {
+      "id": "city|土耳其|安塔利亚",
+      "lat": 36.90812,
+      "lng": 30.69556,
+      "precision": "city",
+      "source": "https://www.geonames.org/323777",
+      "sourceId": "323777"
+    },
+    {
+      "id": "city|西班牙|萨拉戈萨",
+      "lat": 41.65606,
+      "lng": -0.87734,
+      "precision": "city",
+      "source": "https://www.geonames.org/3104324",
+      "sourceId": "3104324"
+    },
+    {
+      "id": "city|西班牙|塞维利亚",
+      "lat": 37.38283,
+      "lng": -5.97317,
+      "precision": "city",
+      "source": "https://www.geonames.org/2510911",
+      "sourceId": "2510911"
+    },
+    {
+      "id": "city|印度|斋浦尔",
+      "lat": 26.91962,
+      "lng": 75.78781,
+      "precision": "city",
+      "source": "https://www.geonames.org/1269515",
+      "sourceId": "1269515"
+    },
+    {
+      "id": "city|土耳其|伊斯坦布尔",
+      "lat": 41.01384,
+      "lng": 28.94966,
+      "precision": "city",
+      "source": "https://www.geonames.org/745044",
+      "sourceId": "745044"
+    },
+    {
+      "id": "city|墨西哥|奇瓦瓦市",
+      "lat": 28.63528,
+      "lng": -106.08889,
+      "precision": "city",
+      "source": "https://www.geonames.org/4014338",
+      "sourceId": "4014338"
+    },
+    {
+      "id": "city|法国|图卢兹",
+      "lat": 43.60426,
+      "lng": 1.44367,
+      "precision": "city",
+      "source": "https://www.geonames.org/2972315",
+      "sourceId": "2972315"
+    },
+    {
+      "id": "city|匈牙利|布达佩斯",
+      "lat": 47.49835,
+      "lng": 19.04045,
+      "precision": "city",
+      "source": "https://www.geonames.org/3054643",
+      "sourceId": "3054643"
+    },
+    {
+      "id": "city|马来西亚|吉隆坡",
+      "lat": 3.1412,
+      "lng": 101.68653,
+      "precision": "city",
+      "source": "https://www.geonames.org/1735161",
+      "sourceId": "1735161"
+    },
+    {
+      "id": "city|墨西哥|埃莫西约",
+      "lat": 29.08874,
+      "lng": -110.96677,
+      "precision": "city",
+      "source": "https://www.geonames.org/4004898",
+      "sourceId": "4004898"
+    },
+    {
+      "id": "city|墨西哥|库利亚坎",
+      "lat": 24.80209,
+      "lng": -107.39421,
+      "precision": "city",
+      "source": "https://www.geonames.org/4012176",
+      "sourceId": "4012176"
+    },
+    {
+      "id": "city|印度|勒克瑙",
+      "lat": 26.83928,
+      "lng": 80.92313,
+      "precision": "city",
+      "source": "https://www.geonames.org/1264733",
+      "sourceId": "1264733"
+    },
+    {
+      "id": "city|德国|杜塞尔多夫",
+      "lat": 51.22319,
+      "lng": 6.77927,
+      "precision": "city",
+      "source": "https://www.geonames.org/2934246",
+      "sourceId": "2934246"
+    },
+    {
+      "id": "city|英国|爱丁堡",
+      "lat": 55.95206,
+      "lng": -3.19648,
+      "precision": "city",
+      "source": "https://www.geonames.org/2650225",
+      "sourceId": "2650225"
+    },
+    {
+      "id": "city|美国|费城",
+      "lat": 39.95238,
+      "lng": -75.16362,
+      "precision": "city",
+      "source": "https://www.geonames.org/4560349",
+      "sourceId": "4560349"
+    },
+    {
+      "id": "city|墨西哥|莫雷利亚",
+      "lat": 19.70078,
+      "lng": -101.18443,
+      "precision": "city",
+      "source": "https://www.geonames.org/3995402",
+      "sourceId": "3995402"
+    },
+    {
+      "id": "city|德国|斯图加特",
+      "lat": 48.78232,
+      "lng": 9.17702,
+      "precision": "city",
+      "source": "https://www.geonames.org/2825297",
+      "sourceId": "2825297"
+    },
+    {
+      "id": "city|德国|德累斯顿",
+      "lat": 51.05089,
+      "lng": 13.73832,
+      "precision": "city",
+      "source": "https://www.geonames.org/2935022",
+      "sourceId": "2935022"
+    },
+    {
+      "id": "city|美国|圣安东尼奥",
+      "lat": 29.42412,
+      "lng": -98.49363,
+      "precision": "city",
+      "source": "https://www.geonames.org/4726206",
+      "sourceId": "4726206"
+    },
+    {
+      "id": "city|美国|曼哈顿",
+      "lat": 39.18361,
+      "lng": -96.57167,
+      "precision": "city",
+      "source": "https://www.geonames.org/4274994",
+      "sourceId": "4274994",
+      "matchNote": "同名地点按源表第 5326 行英文名及服务机场 Manhattan Regional Airport 消歧，距机场 10 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|墨西哥|阿瓜斯卡连特斯",
+      "lat": 21.88262,
+      "lng": -102.2843,
+      "precision": "city",
+      "source": "https://www.geonames.org/4019233",
+      "sourceId": "4019233"
+    },
+    {
+      "id": "city|美国|哈特福",
+      "lat": 41.76371,
+      "lng": -72.68509,
+      "precision": "city",
+      "source": "https://www.geonames.org/4835797",
+      "sourceId": "4835797"
+    },
+    {
+      "id": "city|意大利|米兰",
+      "lat": 45.46427,
+      "lng": 9.18951,
+      "precision": "city",
+      "source": "https://www.geonames.org/3173435",
+      "sourceId": "3173435"
+    },
+    {
+      "id": "city|德国|不来梅",
+      "lat": 53.07582,
+      "lng": 8.80717,
+      "precision": "city",
+      "source": "https://www.geonames.org/2944388",
+      "sourceId": "2944388"
+    },
+    {
+      "id": "city|美国|圣地牙哥",
+      "lat": 32.71571,
+      "lng": -117.16472,
+      "precision": "city",
+      "source": "https://www.geonames.org/5391811",
+      "sourceId": "5391811"
+    },
+    {
+      "id": "city|美国|达拉斯",
+      "lat": 32.78306,
+      "lng": -96.80667,
+      "precision": "city",
+      "source": "https://www.geonames.org/4684888",
+      "sourceId": "4684888"
+    },
+    {
+      "id": "city|土耳其|埃斯基谢希尔",
+      "lat": 39.77667,
+      "lng": 30.52056,
+      "precision": "city",
+      "source": "https://www.geonames.org/315202",
+      "sourceId": "315202"
+    },
+    {
+      "id": "city|西班牙|穆尔西亚",
+      "lat": 37.98704,
+      "lng": -1.13004,
+      "precision": "city",
+      "source": "https://www.geonames.org/2513416",
+      "sourceId": "2513416"
+    },
+    {
+      "id": "city|西班牙|帕尔马",
+      "lat": 39.56939,
+      "lng": 2.65024,
+      "precision": "city",
+      "source": "https://www.geonames.org/2512989",
+      "sourceId": "2512989"
+    },
+    {
+      "id": "city|德国|汉诺威",
+      "lat": 52.37052,
+      "lng": 9.73322,
+      "precision": "city",
+      "source": "https://www.geonames.org/2910831",
+      "sourceId": "2910831"
+    },
+    {
+      "id": "city|英国|加的夫",
+      "lat": 51.48,
+      "lng": -3.18,
+      "precision": "city",
+      "source": "https://www.geonames.org/2653822",
+      "sourceId": "2653822"
+    },
+    {
+      "id": "city|法国|南特",
+      "lat": 47.21725,
+      "lng": -1.55336,
+      "precision": "city",
+      "source": "https://www.geonames.org/2990969",
+      "sourceId": "2990969"
+    },
+    {
+      "id": "city|美国|奥尔巴尼",
+      "lat": 44.63651,
+      "lng": -123.10593,
+      "precision": "city",
+      "source": "https://www.geonames.org/5710756",
+      "sourceId": "5710756",
+      "matchNote": "同名地点按源表第 7474 行英文名及服务机场 Portland International Airport 消歧，距机场 113 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|印度|博帕尔",
+      "lat": 23.25469,
+      "lng": 77.40289,
+      "precision": "city",
+      "source": "https://www.geonames.org/1275841",
+      "sourceId": "1275841"
+    },
+    {
+      "id": "city|荷兰|阿姆斯特丹",
+      "lat": 52.37403,
+      "lng": 4.88969,
+      "precision": "city",
+      "source": "https://www.geonames.org/2759794",
+      "sourceId": "2759794"
+    },
+    {
+      "id": "city|西班牙|拉斯帕尔马斯",
+      "lat": 28.10178,
+      "lng": -15.41573,
+      "precision": "city",
+      "source": "https://www.geonames.org/2515270",
+      "sourceId": "2515270"
+    },
+    {
+      "id": "city|英国|贝尔法斯特",
+      "lat": 54.59682,
+      "lng": -5.92541,
+      "precision": "city",
+      "source": "https://www.geonames.org/2655984",
+      "sourceId": "2655984"
+    },
+    {
+      "id": "city|俄罗斯|新西伯利亚",
+      "lat": 55.02259,
+      "lng": 82.93175,
+      "precision": "city",
+      "source": "https://www.geonames.org/1496747",
+      "sourceId": "1496747"
+    },
+    {
+      "id": "city|日本|熊本市",
+      "lat": 32.80589,
+      "lng": 130.69181,
+      "precision": "city",
+      "source": "https://www.geonames.org/1858421",
+      "sourceId": "1858421"
+    },
+    {
+      "id": "city|墨西哥|托卢卡",
+      "lat": 19.28786,
+      "lng": -99.65324,
+      "precision": "city",
+      "source": "https://www.geonames.org/3515302",
+      "sourceId": "3515302"
+    },
+    {
+      "id": "city|法国|斯特拉斯堡",
+      "lat": 48.58392,
+      "lng": 7.74553,
+      "precision": "city",
+      "source": "https://www.geonames.org/2973783",
+      "sourceId": "2973783"
+    },
+    {
+      "id": "city|法国|波尔多",
+      "lat": 44.84124,
+      "lng": -0.58046,
+      "precision": "city",
+      "source": "https://www.geonames.org/3031582",
+      "sourceId": "3031582"
+    },
+    {
+      "id": "city|俄罗斯|叶卡捷琳堡",
+      "lat": 56.85733,
+      "lng": 60.61529,
+      "precision": "city",
+      "source": "https://www.geonames.org/1486209",
+      "sourceId": "1486209"
+    },
+    {
+      "id": "city|日本|静冈市",
+      "lat": 34.98333,
+      "lng": 138.38333,
+      "precision": "city",
+      "source": "https://www.geonames.org/1851717",
+      "sourceId": "1851717"
+    },
+    {
+      "id": "city|美国|杰克逊维尔",
+      "lat": 34.8662,
+      "lng": -92.11015,
+      "precision": "city",
+      "source": "https://www.geonames.org/4116315",
+      "sourceId": "4116315",
+      "matchNote": "同名地点按源表第 13643 行英文名及服务机场 Bill & Hillary Clinton National Airport/Adams Field 消歧，距机场 18 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|美国|圣荷西",
+      "lat": 37.33939,
+      "lng": -121.89496,
+      "precision": "city",
+      "source": "https://www.geonames.org/5392171",
+      "sourceId": "5392171"
+    },
+    {
+      "id": "city|爱尔兰|都柏林",
+      "lat": 53.33306,
+      "lng": -6.24889,
+      "precision": "city",
+      "source": "https://www.geonames.org/2964574",
+      "sourceId": "2964574"
+    },
+    {
+      "id": "city|意大利|那不勒斯",
+      "lat": 40.85216,
+      "lng": 14.26811,
+      "precision": "city",
+      "source": "https://www.geonames.org/3172394",
+      "sourceId": "3172394"
+    },
+    {
+      "id": "city|美国|夏洛特",
+      "lat": 35.22709,
+      "lng": -80.84313,
+      "precision": "city",
+      "source": "https://www.geonames.org/4460243",
+      "sourceId": "4460243"
+    },
+    {
+      "id": "city|法国|里尔",
+      "lat": 50.63391,
+      "lng": 3.05512,
+      "precision": "city",
+      "source": "https://www.geonames.org/2998324",
+      "sourceId": "2998324"
+    },
+    {
+      "id": "city|俄罗斯|喀山",
+      "lat": 55.78874,
+      "lng": 49.12214,
+      "precision": "city",
+      "source": "https://www.geonames.org/551487",
+      "sourceId": "551487"
+    },
+    {
+      "id": "city|加拿大|埃德蒙顿",
+      "lat": 53.55014,
+      "lng": -113.46871,
+      "precision": "city",
+      "source": "https://www.geonames.org/5946768",
+      "sourceId": "5946768"
+    },
+    {
+      "id": "city|意大利|都灵",
+      "lat": 45.07049,
+      "lng": 7.68682,
+      "precision": "city",
+      "source": "https://www.geonames.org/3165524",
+      "sourceId": "3165524"
+    },
+    {
+      "id": "city|美国|旧金山",
+      "lat": 37.77493,
+      "lng": -122.41942,
+      "precision": "city",
+      "source": "https://www.geonames.org/5391959",
+      "sourceId": "5391959"
+    },
+    {
+      "id": "city|印度|斯利那加",
+      "lat": 34.08565,
+      "lng": 74.80555,
+      "precision": "city",
+      "source": "https://www.geonames.org/1255634",
+      "sourceId": "1255634"
+    },
+    {
+      "id": "city|俄罗斯|车里雅宾斯克",
+      "lat": 55.1611,
+      "lng": 61.42877,
+      "precision": "city",
+      "source": "https://www.geonames.org/1508291",
+      "sourceId": "1508291"
+    },
+    {
+      "id": "city|俄罗斯|鄂木斯克",
+      "lat": 54.99244,
+      "lng": 73.36859,
+      "precision": "city",
+      "source": "https://www.geonames.org/1496153",
+      "sourceId": "1496153"
+    },
+    {
+      "id": "city|俄罗斯|乌法",
+      "lat": 54.74306,
+      "lng": 55.96779,
+      "precision": "city",
+      "source": "https://www.geonames.org/479561",
+      "sourceId": "479561"
+    },
+    {
+      "id": "city|德国|威斯巴登",
+      "lat": 50.08601,
+      "lng": 8.24435,
+      "precision": "city",
+      "source": "https://www.geonames.org/2809346",
+      "sourceId": "2809346"
+    },
+    {
+      "id": "city|美国|西雅图",
+      "lat": 47.60621,
+      "lng": -122.33207,
+      "precision": "city",
+      "source": "https://www.geonames.org/5809844",
+      "sourceId": "5809844"
+    },
+    {
+      "id": "city|墨西哥|比亚埃尔莫萨",
+      "lat": 17.98625,
+      "lng": -92.93928,
+      "precision": "city",
+      "source": "https://www.geonames.org/3514670",
+      "sourceId": "3514670"
+    },
+    {
+      "id": "city|韩国|釜山广域市",
+      "lat": 35.10168,
+      "lng": 129.03004,
+      "precision": "city",
+      "source": "https://www.geonames.org/1838524",
+      "sourceId": "1838524"
+    },
+    {
+      "id": "city|日本|松山市",
+      "lat": 33.83916,
+      "lng": 132.76574,
+      "precision": "city",
+      "source": "https://www.geonames.org/1926099",
+      "sourceId": "1926099"
+    },
+    {
+      "id": "city|美国|艾尔帕索",
+      "lat": 31.75872,
+      "lng": -106.48693,
+      "precision": "city",
+      "source": "https://www.geonames.org/5520993",
+      "sourceId": "5520993"
+    },
+    {
+      "id": "city|韩国|仁川广域市",
+      "lat": 37.45646,
+      "lng": 126.70515,
+      "precision": "city",
+      "source": "https://www.geonames.org/1843564",
+      "sourceId": "1843564"
+    },
+    {
+      "id": "city|俄罗斯|伏尔加格勒",
+      "lat": 48.71378,
+      "lng": 44.4976,
+      "precision": "city",
+      "source": "https://www.geonames.org/472757",
+      "sourceId": "472757"
+    },
+    {
+      "id": "city|俄罗斯|彼尔姆",
+      "lat": 58.01046,
+      "lng": 56.25017,
+      "precision": "city",
+      "source": "https://www.geonames.org/511196",
+      "sourceId": "511196"
+    },
+    {
+      "id": "city|印度|昌迪加尔",
+      "lat": 30.73629,
+      "lng": 76.7884,
+      "precision": "city",
+      "source": "https://www.geonames.org/1274746",
+      "sourceId": "1274746"
+    },
+    {
+      "id": "city|日本|金泽市",
+      "lat": 36.6,
+      "lng": 136.61667,
+      "precision": "city",
+      "source": "https://www.geonames.org/1860243",
+      "sourceId": "1860243"
+    },
+    {
+      "id": "city|沙特阿拉伯|利雅德",
+      "lat": 24.68773,
+      "lng": 46.72185,
+      "precision": "city",
+      "source": "https://www.geonames.org/108410",
+      "sourceId": "108410"
+    },
+    {
+      "id": "city|印度尼西亚|泗水",
+      "lat": -7.24917,
+      "lng": 112.75083,
+      "precision": "city",
+      "source": "https://www.geonames.org/1625822",
+      "sourceId": "1625822"
+    },
+    {
+      "id": "city|加拿大|温尼伯",
+      "lat": 49.8844,
+      "lng": -97.14704,
+      "precision": "city",
+      "source": "https://www.geonames.org/6183235",
+      "sourceId": "6183235"
+    },
+    {
+      "id": "city|美国|波特兰",
+      "lat": 43.65737,
+      "lng": -70.2589,
+      "precision": "city",
+      "source": "https://www.geonames.org/4975802",
+      "sourceId": "4975802",
+      "matchNote": "同名地点按源表第 389 行英文名及服务机场 Portland International Jetport 消歧，距机场 4 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|意大利|巴勒莫市",
+      "lat": 38.1166,
+      "lng": 13.3636,
+      "precision": "city",
+      "source": "https://www.geonames.org/2523920",
+      "sourceId": "2523920"
+    },
+    {
+      "id": "city|美国|底特律",
+      "lat": 42.33143,
+      "lng": -83.04575,
+      "precision": "city",
+      "source": "https://www.geonames.org/4990729",
+      "sourceId": "4990729"
+    },
+    {
+      "id": "city|美国|拉斯维加斯",
+      "lat": 36.17497,
+      "lng": -115.13722,
+      "precision": "city",
+      "source": "https://www.geonames.org/5506956",
+      "sourceId": "5506956"
+    },
+    {
+      "id": "city|美国|孟菲斯",
+      "lat": 35.14953,
+      "lng": -90.04898,
+      "precision": "city",
+      "source": "https://www.geonames.org/4641239",
+      "sourceId": "4641239"
+    },
+    {
+      "id": "city|美国|路易维尔",
+      "lat": 38.25424,
+      "lng": -85.75941,
+      "precision": "city",
+      "source": "https://www.geonames.org/4299276",
+      "sourceId": "4299276"
+    },
+    {
+      "id": "city|西班牙|奥维耶多",
+      "lat": 43.36029,
+      "lng": -5.84476,
+      "precision": "city",
+      "source": "https://www.geonames.org/3114711",
+      "sourceId": "3114711"
+    },
+    {
+      "id": "city|西班牙|圣克鲁斯-德特内里费",
+      "lat": 28.46824,
+      "lng": -16.25462,
+      "precision": "city",
+      "source": "https://www.geonames.org/2511174",
+      "sourceId": "2511174"
+    },
+    {
+      "id": "city|阿拉伯联合酋长国|迪拜",
+      "lat": 25.07725,
+      "lng": 55.30927,
+      "precision": "city",
+      "source": "https://www.geonames.org/292223",
+      "sourceId": "292223"
+    },
+    {
+      "id": "city|俄罗斯|克拉斯诺达尔",
+      "lat": 45.04534,
+      "lng": 38.98178,
+      "precision": "city",
+      "source": "https://www.geonames.org/542420",
+      "sourceId": "542420"
+    },
+    {
+      "id": "city|日本|高松市",
+      "lat": 34.33333,
+      "lng": 134.05,
+      "precision": "city",
+      "source": "https://www.geonames.org/1851100",
+      "sourceId": "1851100"
+    },
+    {
+      "id": "city|日本|长崎市",
+      "lat": 32.75,
+      "lng": 129.88333,
+      "precision": "city",
+      "source": "https://www.geonames.org/1856177",
+      "sourceId": "1856177",
+      "matchNote": "同名地点按源表第 166 行英文名及服务机场 Nagasaki Airport 消歧，距机场 19 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|埃及|开罗",
+      "lat": 30.06263,
+      "lng": 31.24967,
+      "precision": "city",
+      "source": "https://www.geonames.org/360630",
+      "sourceId": "360630"
+    },
+    {
+      "id": "city|美国|巴尔的摩",
+      "lat": 39.29038,
+      "lng": -76.61219,
+      "precision": "city",
+      "source": "https://www.geonames.org/4347778",
+      "sourceId": "4347778"
+    },
+    {
+      "id": "city|意大利|热那亚",
+      "lat": 44.40478,
+      "lng": 8.94439,
+      "precision": "city",
+      "source": "https://www.geonames.org/3176219",
+      "sourceId": "3176219"
+    },
+    {
+      "id": "city|德国|美因茨",
+      "lat": 49.98185,
+      "lng": 8.28008,
+      "precision": "city",
+      "source": "https://www.geonames.org/2874225",
+      "sourceId": "2874225"
+    },
+    {
+      "id": "city|巴西|巴西利亚",
+      "lat": -15.77972,
+      "lng": -47.92972,
+      "precision": "city",
+      "source": "https://www.geonames.org/3469058",
+      "sourceId": "3469058"
+    },
+    {
+      "id": "city|俄罗斯|萨拉托夫",
+      "lat": 51.54048,
+      "lng": 45.9901,
+      "precision": "city",
+      "source": "https://www.geonames.org/498677",
+      "sourceId": "498677"
+    },
+    {
+      "id": "city|印度尼西亚|棉兰",
+      "lat": 3.58333,
+      "lng": 98.66667,
+      "precision": "city",
+      "source": "https://www.geonames.org/1214520",
+      "sourceId": "1214520"
+    },
+    {
+      "id": "city|美国|阿布奎基",
+      "lat": 35.08449,
+      "lng": -106.65114,
+      "precision": "city",
+      "source": "https://www.geonames.org/5454711",
+      "sourceId": "5454711"
+    },
+    {
+      "id": "city|美国|密尔沃基",
+      "lat": 45.44623,
+      "lng": -122.63926,
+      "precision": "city",
+      "source": "https://www.geonames.org/5740900",
+      "sourceId": "5740900"
+    },
+    {
+      "id": "city|美国|图森",
+      "lat": 32.22174,
+      "lng": -110.92648,
+      "precision": "city",
+      "source": "https://www.geonames.org/5318313",
+      "sourceId": "5318313"
+    },
+    {
+      "id": "city|美国|弗雷斯诺",
+      "lat": 36.74773,
+      "lng": -119.77237,
+      "precision": "city",
+      "source": "https://www.geonames.org/5350937",
+      "sourceId": "5350937"
+    },
+    {
+      "id": "city|墨西哥|瓦哈卡市",
+      "lat": 17.06025,
+      "lng": -96.72544,
+      "precision": "city",
+      "source": "https://www.geonames.org/3522507",
+      "sourceId": "3522507"
+    },
+    {
+      "id": "city|德国|埃尔福特",
+      "lat": 50.97734,
+      "lng": 11.03536,
+      "precision": "city",
+      "source": "https://www.geonames.org/2929670",
+      "sourceId": "2929670"
+    },
+    {
+      "id": "city|美国|安那波利斯",
+      "lat": 38.97859,
+      "lng": -76.49184,
+      "precision": "city",
+      "source": "https://www.geonames.org/4347242",
+      "sourceId": "4347242"
+    },
+    {
+      "id": "city|韩国|大邱广域市",
+      "lat": 35.87028,
+      "lng": 128.59111,
+      "precision": "city",
+      "source": "https://www.geonames.org/1835329",
+      "sourceId": "1835329"
+    },
+    {
+      "id": "city|印度|特里凡得琅",
+      "lat": 8.4855,
+      "lng": 76.94924,
+      "precision": "city",
+      "source": "https://www.geonames.org/1254163",
+      "sourceId": "1254163"
+    },
+    {
+      "id": "city|俄罗斯|秋明",
+      "lat": 57.15222,
+      "lng": 65.52722,
+      "precision": "city",
+      "source": "https://www.geonames.org/1488754",
+      "sourceId": "1488754"
+    },
+    {
+      "id": "city|美国|迈阿密",
+      "lat": 25.77427,
+      "lng": -80.19366,
+      "precision": "city",
+      "source": "https://www.geonames.org/4164138",
+      "sourceId": "4164138"
+    },
+    {
+      "id": "city|美国|奥马哈",
+      "lat": 41.25626,
+      "lng": -95.94043,
+      "precision": "city",
+      "source": "https://www.geonames.org/5074472",
+      "sourceId": "5074472"
+    },
+    {
+      "id": "city|日本|那霸市",
+      "lat": 26.213,
+      "lng": 127.67851,
+      "precision": "city",
+      "source": "https://www.geonames.org/1856035",
+      "sourceId": "1856035"
+    },
+    {
+      "id": "city|加拿大|魁北克市",
+      "lat": 46.81228,
+      "lng": -71.21454,
+      "precision": "city",
+      "source": "https://www.geonames.org/6325494",
+      "sourceId": "6325494"
+    },
+    {
+      "id": "city|美国|科罗拉多斯普林斯",
+      "lat": 38.83388,
+      "lng": -104.82136,
+      "precision": "city",
+      "source": "https://www.geonames.org/5417598",
+      "sourceId": "5417598"
+    },
+    {
+      "id": "city|美国|维珍尼亚海滩",
+      "lat": 36.85293,
+      "lng": -75.97799,
+      "precision": "city",
+      "source": "https://www.geonames.org/4791259",
+      "sourceId": "4791259"
+    },
+    {
+      "id": "city|德国|波茨坦",
+      "lat": 52.39886,
+      "lng": 13.06566,
+      "precision": "city",
+      "source": "https://www.geonames.org/2852458",
+      "sourceId": "2852458"
+    },
+    {
+      "id": "city|俄罗斯|巴尔瑙尔",
+      "lat": 53.36199,
+      "lng": 83.72786,
+      "precision": "city",
+      "source": "https://www.geonames.org/1510853",
+      "sourceId": "1510853"
+    },
+    {
+      "id": "city|俄罗斯|伊尔库茨克",
+      "lat": 52.29566,
+      "lng": 104.29076,
+      "precision": "city",
+      "source": "https://www.geonames.org/2023469",
+      "sourceId": "2023469"
+    },
+    {
+      "id": "city|美国|奥克兰",
+      "lat": 37.80437,
+      "lng": -122.2708,
+      "precision": "city",
+      "source": "https://www.geonames.org/5378538",
+      "sourceId": "5378538"
+    },
+    {
+      "id": "city|美国|坦帕",
+      "lat": 27.94752,
+      "lng": -82.45843,
+      "precision": "city",
+      "source": "https://www.geonames.org/4174757",
+      "sourceId": "4174757"
+    },
+    {
+      "id": "city|美国|图尔萨",
+      "lat": 36.15398,
+      "lng": -95.99277,
+      "precision": "city",
+      "source": "https://www.geonames.org/4553433",
+      "sourceId": "4553433"
+    },
+    {
+      "id": "city|美国|明尼阿波利斯",
+      "lat": 44.97997,
+      "lng": -93.26384,
+      "precision": "city",
+      "source": "https://www.geonames.org/5037649",
+      "sourceId": "5037649"
+    },
+    {
+      "id": "city|日本|青森市",
+      "lat": 40.81667,
+      "lng": 140.73333,
+      "precision": "city",
+      "source": "https://www.geonames.org/2130658",
+      "sourceId": "2130658"
+    },
+    {
+      "id": "city|俄罗斯|雅罗斯拉夫尔",
+      "lat": 57.62987,
+      "lng": 39.87368,
+      "precision": "city",
+      "source": "https://www.geonames.org/468902",
+      "sourceId": "468902"
+    },
+    {
+      "id": "city|俄罗斯|托木斯克",
+      "lat": 56.50049,
+      "lng": 84.98216,
+      "precision": "city",
+      "source": "https://www.geonames.org/1489425",
+      "sourceId": "1489425"
+    },
+    {
+      "id": "city|意大利|博洛尼亚",
+      "lat": 44.49381,
+      "lng": 11.33875,
+      "precision": "city",
+      "source": "https://www.geonames.org/3181928",
+      "sourceId": "3181928"
+    },
+    {
+      "id": "city|日本|津市",
+      "lat": 34.73333,
+      "lng": 136.51667,
+      "precision": "city",
+      "source": "https://www.geonames.org/1849796",
+      "sourceId": "1849796"
+    },
+    {
+      "id": "city|印度尼西亚|三宝珑",
+      "lat": -6.99306,
+      "lng": 110.42083,
+      "precision": "city",
+      "source": "https://www.geonames.org/1627896",
+      "sourceId": "1627896"
+    },
+    {
+      "id": "city|俄罗斯|克麦罗沃",
+      "lat": 55.35417,
+      "lng": 86.10435,
+      "precision": "city",
+      "source": "https://www.geonames.org/1503901",
+      "sourceId": "1503901"
+    },
+    {
+      "id": "city|俄罗斯|阿斯特拉罕",
+      "lat": 46.34968,
+      "lng": 48.04076,
+      "precision": "city",
+      "source": "https://www.geonames.org/580497",
+      "sourceId": "580497"
+    },
+    {
+      "id": "city|意大利|佛罗伦萨",
+      "lat": 43.77925,
+      "lng": 11.24626,
+      "precision": "city",
+      "source": "https://www.geonames.org/3176959",
+      "sourceId": "3176959"
+    },
+    {
+      "id": "city|美国|克里夫兰",
+      "lat": 41.4995,
+      "lng": -81.69541,
+      "precision": "city",
+      "source": "https://www.geonames.org/5150529",
+      "sourceId": "5150529"
+    },
+    {
+      "id": "city|美国|新奥尔良",
+      "lat": 29.95465,
+      "lng": -90.07507,
+      "precision": "city",
+      "source": "https://www.geonames.org/4335045",
+      "sourceId": "4335045"
+    },
+    {
+      "id": "city|美国|奥兰多",
+      "lat": 28.53834,
+      "lng": -81.37924,
+      "precision": "city",
+      "source": "https://www.geonames.org/4167147",
+      "sourceId": "4167147"
+    },
+    {
+      "id": "city|美国|里弗赛德",
+      "lat": 33.95335,
+      "lng": -117.39616,
+      "precision": "city",
+      "source": "https://www.geonames.org/5387877",
+      "sourceId": "5387877"
+    },
+    {
+      "id": "city|意大利|巴里",
+      "lat": 41.12066,
+      "lng": 16.86982,
+      "precision": "city",
+      "source": "https://www.geonames.org/3182351",
+      "sourceId": "3182351"
+    },
+    {
+      "id": "city|日本|佐贺市",
+      "lat": 33.23333,
+      "lng": 130.3,
+      "precision": "city",
+      "source": "https://www.geonames.org/1853303",
+      "sourceId": "1853303"
+    },
+    {
+      "id": "city|墨西哥|蒂华纳",
+      "lat": 32.5027,
+      "lng": -117.00371,
+      "precision": "city",
+      "source": "https://www.geonames.org/3981609",
+      "sourceId": "3981609"
+    },
+    {
+      "id": "city|捷克|布拉格",
+      "lat": 50.08804,
+      "lng": 14.42076,
+      "precision": "city",
+      "source": "https://www.geonames.org/3067696",
+      "sourceId": "3067696"
+    },
+    {
+      "id": "city|澳大利亚|悉尼",
+      "lat": -33.86785,
+      "lng": 151.20732,
+      "precision": "city",
+      "source": "https://www.geonames.org/2147714",
+      "sourceId": "2147714"
+    },
+    {
+      "id": "city|美国|纽约",
+      "lat": 40.71427,
+      "lng": -74.00597,
+      "precision": "city",
+      "source": "https://www.geonames.org/5128581",
+      "sourceId": "5128581"
+    },
+    {
+      "id": "city|英国|伯明翰",
+      "lat": 52.48142,
+      "lng": -1.89983,
+      "precision": "city",
+      "source": "https://www.geonames.org/2655603",
+      "sourceId": "2655603"
+    },
+    {
+      "id": "city|俄罗斯|加里宁格勒",
+      "lat": 54.70639,
+      "lng": 20.51102,
+      "precision": "city",
+      "source": "https://www.geonames.org/554234",
+      "sourceId": "554234"
+    },
+    {
+      "id": "city|美国|辛辛那提",
+      "lat": 39.12711,
+      "lng": -84.51439,
+      "precision": "city",
+      "source": "https://www.geonames.org/4508722",
+      "sourceId": "4508722"
+    },
+    {
+      "id": "city|美国|圣安娜",
+      "lat": 33.74557,
+      "lng": -117.86783,
+      "precision": "city",
+      "source": "https://www.geonames.org/5392900",
+      "sourceId": "5392900"
+    },
+    {
+      "id": "city|美国|匹兹堡",
+      "lat": 37.41088,
+      "lng": -94.70496,
+      "precision": "city",
+      "source": "https://www.geonames.org/4277241",
+      "sourceId": "4277241",
+      "matchNote": "同名地点按源表第 16475 行英文名及服务机场 Joplin Regional Airport 消歧，距机场 34 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|美国|安克拉治",
+      "lat": 61.21806,
+      "lng": -149.90028,
+      "precision": "city",
+      "source": "https://www.geonames.org/5879400",
+      "sourceId": "5879400"
+    },
+    {
+      "id": "city|阿拉伯联合酋长国|夏尔迦",
+      "lat": 25.3342,
+      "lng": 55.41221,
+      "precision": "city",
+      "source": "https://www.geonames.org/292672",
+      "sourceId": "292672"
+    },
+    {
+      "id": "city|西班牙|圣地亚哥-德孔波斯特拉",
+      "lat": 42.88052,
+      "lng": -8.54569,
+      "precision": "city",
+      "source": "https://www.geonames.org/3109642",
+      "sourceId": "3109642"
+    },
+    {
+      "id": "city|澳大利亚|墨尔本",
+      "lat": -37.814,
+      "lng": 144.96332,
+      "precision": "city",
+      "source": "https://www.geonames.org/2158177",
+      "sourceId": "2158177"
+    },
+    {
+      "id": "city|美国|纽华克",
+      "lat": 37.52966,
+      "lng": -122.04024,
+      "precision": "city",
+      "source": "https://www.geonames.org/5376803",
+      "sourceId": "5376803",
+      "matchNote": "同名地点按源表第 2157 行英文名及服务机场 Mineta San Jose International Airport 消歧，距机场 21 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|美国|圣路易斯",
+      "lat": 32.487,
+      "lng": -114.78218,
+      "precision": "city",
+      "source": "https://www.geonames.org/5312913",
+      "sourceId": "5312913"
+    },
+    {
+      "id": "city|美国|泽西市",
+      "lat": 40.72816,
+      "lng": -74.07764,
+      "precision": "city",
+      "source": "https://www.geonames.org/5099836",
+      "sourceId": "5099836"
+    },
+    {
+      "id": "city|美国|雷诺",
+      "lat": 39.52963,
+      "lng": -119.8138,
+      "precision": "city",
+      "source": "https://www.geonames.org/5511077",
+      "sourceId": "5511077"
+    },
+    {
+      "id": "city|日本|名古屋市",
+      "lat": 35.18147,
+      "lng": 136.90641,
+      "precision": "city",
+      "source": "https://www.geonames.org/1856057",
+      "sourceId": "1856057"
+    },
+    {
+      "id": "city|加拿大|维多利亚",
+      "lat": 48.4359,
+      "lng": -123.35155,
+      "precision": "city",
+      "source": "https://www.geonames.org/6174041",
+      "sourceId": "6174041"
+    },
+    {
+      "id": "city|墨西哥|华雷斯城",
+      "lat": 31.72024,
+      "lng": -106.46084,
+      "precision": "city",
+      "source": "https://www.geonames.org/4013708",
+      "sourceId": "4013708"
+    },
+    {
+      "id": "city|墨西哥|萨波潘",
+      "lat": 20.72111,
+      "lng": -103.38742,
+      "precision": "city",
+      "source": "https://www.geonames.org/3979770",
+      "sourceId": "3979770"
+    },
+    {
+      "id": "city|美国|水牛城",
+      "lat": 42.88645,
+      "lng": -78.87837,
+      "precision": "city",
+      "source": "https://www.geonames.org/5110629",
+      "sourceId": "5110629"
+    },
+    {
+      "id": "city|美国|德罕",
+      "lat": 35.99403,
+      "lng": -78.89862,
+      "precision": "city",
+      "source": "https://www.geonames.org/4464368",
+      "sourceId": "4464368"
+    },
+    {
+      "id": "city|美国|温斯顿-塞勒姆",
+      "lat": 36.09986,
+      "lng": -80.24422,
+      "precision": "city",
+      "source": "https://www.geonames.org/4499612",
+      "sourceId": "4499612"
+    },
+    {
+      "id": "city|巴西|圣保罗",
+      "lat": -23.5475,
+      "lng": -46.63611,
+      "precision": "city",
+      "source": "https://www.geonames.org/3448439",
+      "sourceId": "3448439"
+    },
+    {
+      "id": "city|印度|苏拉特",
+      "lat": 21.19594,
+      "lng": 72.83023,
+      "precision": "city",
+      "source": "https://www.geonames.org/1255364",
+      "sourceId": "1255364"
+    },
+    {
+      "id": "city|韩国|昌原市",
+      "lat": 35.22806,
+      "lng": 128.68111,
+      "precision": "city",
+      "source": "https://www.geonames.org/1846326",
+      "sourceId": "1846326"
+    },
+    {
+      "id": "city|俄罗斯|乌兰乌德",
+      "lat": 51.82648,
+      "lng": 107.59979,
+      "precision": "city",
+      "source": "https://www.geonames.org/2014407",
+      "sourceId": "2014407"
+    },
+    {
+      "id": "city|俄罗斯|赤塔",
+      "lat": 52.04311,
+      "lng": 113.49171,
+      "precision": "city",
+      "source": "https://www.geonames.org/2025339",
+      "sourceId": "2025339"
+    },
+    {
+      "id": "city|美国|诺福克",
+      "lat": 42.02834,
+      "lng": -97.417,
+      "precision": "city",
+      "source": "https://www.geonames.org/5073965",
+      "sourceId": "5073965",
+      "matchNote": "同名地点按源表第 18869 行英文名及服务机场 Sioux Gateway Airport / Brigadier General Bud Day Field 消歧，距机场 95 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|美国|切萨皮克",
+      "lat": 36.81904,
+      "lng": -76.27494,
+      "precision": "city",
+      "source": "https://www.geonames.org/4752186",
+      "sourceId": "4752186"
+    },
+    {
+      "id": "city|美国|斯波坎",
+      "lat": 47.65966,
+      "lng": -117.42908,
+      "precision": "city",
+      "source": "https://www.geonames.org/5811696",
+      "sourceId": "5811696"
+    },
+    {
+      "id": "city|美国|塔科马",
+      "lat": 47.25288,
+      "lng": -122.44429,
+      "precision": "city",
+      "source": "https://www.geonames.org/5812944",
+      "sourceId": "5812944"
+    },
+    {
+      "id": "city|日本|札幌市",
+      "lat": 43.06667,
+      "lng": 141.35,
+      "precision": "city",
+      "source": "https://www.geonames.org/2128295",
+      "sourceId": "2128295"
+    },
+    {
+      "id": "city|印度尼西亚|巴东",
+      "lat": -0.94924,
+      "lng": 100.35427,
+      "precision": "city",
+      "source": "https://www.geonames.org/1633419",
+      "sourceId": "1633419"
+    },
+    {
+      "id": "city|俄罗斯|萨兰斯克",
+      "lat": 54.18485,
+      "lng": 45.17166,
+      "precision": "city",
+      "source": "https://www.geonames.org/498698",
+      "sourceId": "498698"
+    },
+    {
+      "id": "city|美国|圣贝纳迪诺",
+      "lat": 34.10834,
+      "lng": -117.28977,
+      "precision": "city",
+      "source": "https://www.geonames.org/5391710",
+      "sourceId": "5391710"
+    },
+    {
+      "id": "city|美国|罗彻斯特",
+      "lat": 43.30453,
+      "lng": -70.97562,
+      "precision": "city",
+      "source": "https://www.geonames.org/5091872",
+      "sourceId": "5091872",
+      "matchNote": "同名地点按源表第 8967 行英文名及服务机场 Portland International Jetport 消歧，距机场 66 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|美国|阿灵顿县",
+      "lat": 38.88101,
+      "lng": -77.10428,
+      "precision": "city",
+      "source": "https://www.geonames.org/4744709",
+      "sourceId": "4744709"
+    },
+    {
+      "id": "city|伊朗|德黑兰",
+      "lat": 35.69439,
+      "lng": 51.42151,
+      "precision": "city",
+      "source": "https://www.geonames.org/112931",
+      "sourceId": "112931"
+    },
+    {
+      "id": "city|沙特阿拉伯|麦地那",
+      "lat": 24.46861,
+      "lng": 39.61417,
+      "precision": "city",
+      "source": "https://www.geonames.org/109223",
+      "sourceId": "109223"
+    },
+    {
+      "id": "city|德国|科隆",
+      "lat": 50.93333,
+      "lng": 6.95,
+      "precision": "city",
+      "source": "https://www.geonames.org/2886242",
+      "sourceId": "2886242"
+    },
+    {
+      "id": "city|俄罗斯|摩尔曼斯克",
+      "lat": 68.96778,
+      "lng": 33.09922,
+      "precision": "city",
+      "source": "https://www.geonames.org/524305",
+      "sourceId": "524305"
+    },
+    {
+      "id": "city|美国|温哥华",
+      "lat": 45.63873,
+      "lng": -122.66149,
+      "precision": "city",
+      "source": "https://www.geonames.org/5814616",
+      "sourceId": "5814616"
+    },
+    {
+      "id": "city|美国|伯明翰",
+      "lat": 33.52066,
+      "lng": -86.80249,
+      "precision": "city",
+      "source": "https://www.geonames.org/4049979",
+      "sourceId": "4049979"
+    },
+    {
+      "id": "city|美国|大急流城",
+      "lat": 42.96336,
+      "lng": -85.66809,
+      "precision": "city",
+      "source": "https://www.geonames.org/4994358",
+      "sourceId": "4994358"
+    },
+    {
+      "id": "city|美国|诺克斯维尔",
+      "lat": 35.96064,
+      "lng": -83.92074,
+      "precision": "city",
+      "source": "https://www.geonames.org/4634946",
+      "sourceId": "4634946"
+    },
+    {
+      "id": "city|美国|劳德代尔堡",
+      "lat": 26.12231,
+      "lng": -80.14338,
+      "precision": "city",
+      "source": "https://www.geonames.org/4155966",
+      "sourceId": "4155966"
+    },
+    {
+      "id": "city|日本|川崎市",
+      "lat": 35.52056,
+      "lng": 139.71722,
+      "precision": "city",
+      "source": "https://www.geonames.org/1859642",
+      "sourceId": "1859642",
+      "matchNote": "同名地点按源表第 277 行英文名及服务机场 Tokyo Haneda International Airport 消歧，距机场 7 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|日本|京都",
+      "lat": 35.02107,
+      "lng": 135.75385,
+      "precision": "city",
+      "source": "https://www.geonames.org/1857910",
+      "sourceId": "1857910"
+    },
+    {
+      "id": "city|波兰|克拉科夫",
+      "lat": 50.06143,
+      "lng": 19.93658,
+      "precision": "city",
+      "source": "https://www.geonames.org/3094802",
+      "sourceId": "3094802"
+    },
+    {
+      "id": "city|英国|格拉斯哥",
+      "lat": 55.86515,
+      "lng": -4.25763,
+      "precision": "city",
+      "source": "https://www.geonames.org/2648579",
+      "sourceId": "2648579"
+    },
+    {
+      "id": "city|越南|海防市",
+      "lat": 20.86481,
+      "lng": 106.68345,
+      "precision": "city",
+      "source": "https://www.geonames.org/1581298",
+      "sourceId": "1581298"
+    },
+    {
+      "id": "city|美国|亚历山德里亚",
+      "lat": 31.31129,
+      "lng": -92.44514,
+      "precision": "city",
+      "source": "https://www.geonames.org/4314550",
+      "sourceId": "4314550",
+      "matchNote": "同名地点按源表第 5530 行英文名及服务机场 Alexandria International Airport 消歧，距机场 10 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|希腊|雅典",
+      "lat": 37.98376,
+      "lng": 23.72784,
+      "precision": "city",
+      "source": "https://www.geonames.org/264371",
+      "sourceId": "264371"
+    },
+    {
+      "id": "city|印度尼西亚|坤甸",
+      "lat": -0.03194,
+      "lng": 109.325,
+      "precision": "city",
+      "source": "https://www.geonames.org/1630789",
+      "sourceId": "1630789"
+    },
+    {
+      "id": "city|印度尼西亚|丹帕沙",
+      "lat": -8.65,
+      "lng": 115.21667,
+      "precision": "city",
+      "source": "https://www.geonames.org/1645528",
+      "sourceId": "1645528"
+    },
+    {
+      "id": "city|意大利|卡利亚里",
+      "lat": 39.23054,
+      "lng": 9.11917,
+      "precision": "city",
+      "source": "https://www.geonames.org/2525473",
+      "sourceId": "2525473"
+    },
+    {
+      "id": "city|英国|曼彻斯特",
+      "lat": 53.48095,
+      "lng": -2.23743,
+      "precision": "city",
+      "source": "https://www.geonames.org/2643123",
+      "sourceId": "2643123"
+    },
+    {
+      "id": "city|美国|萨凡纳",
+      "lat": 32.08354,
+      "lng": -81.09983,
+      "precision": "city",
+      "source": "https://www.geonames.org/4221552",
+      "sourceId": "4221552"
+    },
+    {
+      "id": "city|美国|帕特森",
+      "lat": 37.4716,
+      "lng": -121.12966,
+      "precision": "city",
+      "source": "https://www.geonames.org/5381515",
+      "sourceId": "5381515"
+    },
+    {
+      "id": "city|墨西哥|瓜纳华托",
+      "lat": 21.01858,
+      "lng": -101.2591,
+      "precision": "city",
+      "source": "https://www.geonames.org/4005270",
+      "sourceId": "4005270"
+    },
+    {
+      "id": "city|澳大利亚|布里斯班",
+      "lat": -27.46794,
+      "lng": 153.02809,
+      "precision": "city",
+      "source": "https://www.geonames.org/2174003",
+      "sourceId": "2174003"
+    },
+    {
+      "id": "city|墨西哥|瑙卡尔潘",
+      "lat": 19.47851,
+      "lng": -99.23963,
+      "precision": "city",
+      "source": "https://www.geonames.org/3522790",
+      "sourceId": "3522790"
+    },
+    {
+      "id": "city|波兰|弗罗茨瓦夫",
+      "lat": 51.10286,
+      "lng": 17.03006,
+      "precision": "city",
+      "source": "https://www.geonames.org/3081368",
+      "sourceId": "3081368"
+    },
+    {
+      "id": "city|西班牙|马拉加",
+      "lat": 36.72016,
+      "lng": -4.42034,
+      "precision": "city",
+      "source": "https://www.geonames.org/2514256",
+      "sourceId": "2514256"
+    },
+    {
+      "id": "city|英国|利兹",
+      "lat": 53.79648,
+      "lng": -1.54785,
+      "precision": "city",
+      "source": "https://www.geonames.org/2644688",
+      "sourceId": "2644688"
+    },
+    {
+      "id": "city|美国|锡拉丘兹",
+      "lat": 43.04812,
+      "lng": -76.14742,
+      "precision": "city",
+      "source": "https://www.geonames.org/5140405",
+      "sourceId": "5140405"
+    },
+    {
+      "id": "city|美国|橙市",
+      "lat": 33.78779,
+      "lng": -117.85311,
+      "precision": "city",
+      "source": "https://www.geonames.org/5379513",
+      "sourceId": "5379513"
+    },
+    {
+      "id": "city|美国|汉普顿",
+      "lat": 37.02987,
+      "lng": -76.34522,
+      "precision": "city",
+      "source": "https://www.geonames.org/4762894",
+      "sourceId": "4762894"
+    },
+    {
+      "id": "city|泰国|沙没巴干府",
+      "lat": 13.5976,
+      "lng": 100.5972,
+      "precision": "city",
+      "source": "https://www.geonames.org/1606590",
+      "sourceId": "1606590"
+    },
+    {
+      "id": "city|巴西|里约热内卢",
+      "lat": -22.90642,
+      "lng": -43.18223,
+      "precision": "city",
+      "source": "https://www.geonames.org/3451190",
+      "sourceId": "3451190"
+    },
+    {
+      "id": "city|印度|那格浦尔",
+      "lat": 21.14631,
+      "lng": 79.08491,
+      "precision": "city",
+      "source": "https://www.geonames.org/1262180",
+      "sourceId": "1262180"
+    },
+    {
+      "id": "city|日本|广岛市",
+      "lat": 34.4,
+      "lng": 132.45,
+      "precision": "city",
+      "source": "https://www.geonames.org/1862415",
+      "sourceId": "1862415"
+    },
+    {
+      "id": "city|俄罗斯|南萨哈林斯克",
+      "lat": 46.9543,
+      "lng": 142.73559,
+      "precision": "city",
+      "source": "https://www.geonames.org/2119441",
+      "sourceId": "2119441"
+    },
+    {
+      "id": "city|波兰|罗兹",
+      "lat": 51.77058,
+      "lng": 19.47395,
+      "precision": "city",
+      "source": "https://www.geonames.org/3093133",
+      "sourceId": "3093133"
+    },
+    {
+      "id": "city|英国|利物浦",
+      "lat": 53.41058,
+      "lng": -2.97794,
+      "precision": "city",
+      "source": "https://www.geonames.org/2644210",
+      "sourceId": "2644210"
+    },
+    {
+      "id": "city|英国|布里斯托尔",
+      "lat": 51.45523,
+      "lng": -2.59665,
+      "precision": "city",
+      "source": "https://www.geonames.org/2654675",
+      "sourceId": "2654675"
+    },
+    {
+      "id": "city|美国|查尔斯顿",
+      "lat": 38.34982,
+      "lng": -81.63262,
+      "precision": "city",
+      "source": "https://www.geonames.org/4801859",
+      "sourceId": "4801859",
+      "matchNote": "同名地点按源表第 1267 行英文名及服务机场 Yeager Airport 消歧，距机场 4 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|美国|伊丽莎白",
+      "lat": 37.69395,
+      "lng": -85.85913,
+      "precision": "city",
+      "source": "https://www.geonames.org/4290988",
+      "sourceId": "4290988"
+    },
+    {
+      "id": "city|美国|诺曼",
+      "lat": 35.22257,
+      "lng": -97.43948,
+      "precision": "city",
+      "source": "https://www.geonames.org/4543762",
+      "sourceId": "4543762"
+    },
+    {
+      "id": "city|澳大利亚|珀斯",
+      "lat": -31.95224,
+      "lng": 115.8614,
+      "precision": "city",
+      "source": "https://www.geonames.org/2063523",
+      "sourceId": "2063523"
+    },
+    {
+      "id": "city|加拿大|蒙特利尔",
+      "lat": 45.50884,
+      "lng": -73.58781,
+      "precision": "city",
+      "source": "https://www.geonames.org/6077243",
+      "sourceId": "6077243"
+    },
+    {
+      "id": "city|俄罗斯|阿巴坎",
+      "lat": 53.7154,
+      "lng": 91.42593,
+      "precision": "city",
+      "source": "https://www.geonames.org/1512236",
+      "sourceId": "1512236"
+    },
+    {
+      "id": "city|俄罗斯|堪察加的彼得巴甫洛夫斯克",
+      "lat": 53.06393,
+      "lng": 158.62751,
+      "precision": "city",
+      "source": "https://www.geonames.org/2122104",
+      "sourceId": "2122104"
+    },
+    {
+      "id": "city|意大利|佩鲁贾",
+      "lat": 43.1122,
+      "lng": 12.38878,
+      "precision": "city",
+      "source": "https://www.geonames.org/3171180",
+      "sourceId": "3171180"
+    },
+    {
+      "id": "city|美国|西棕榈滩",
+      "lat": 26.71534,
+      "lng": -80.05337,
+      "precision": "city",
+      "source": "https://www.geonames.org/4177887",
+      "sourceId": "4177887"
+    },
+    {
+      "id": "city|美国|克利尔沃特",
+      "lat": 27.96585,
+      "lng": -82.8001,
+      "precision": "city",
+      "source": "https://www.geonames.org/4151316",
+      "sourceId": "4151316"
+    },
+    {
+      "id": "city|土耳其|内夫谢希尔",
+      "lat": 38.625,
+      "lng": 34.71222,
+      "precision": "city",
+      "source": "https://www.geonames.org/303831",
+      "sourceId": "303831"
+    },
+    {
+      "id": "city|日本|千叶市",
+      "lat": 35.6,
+      "lng": 140.11667,
+      "precision": "city",
+      "source": "https://www.geonames.org/2113015",
+      "sourceId": "2113015"
+    },
+    {
+      "id": "city|南非|约翰内斯堡",
+      "lat": -26.20227,
+      "lng": 28.04363,
+      "precision": "city",
+      "source": "https://www.geonames.org/993800",
+      "sourceId": "993800"
+    },
+    {
+      "id": "city|墨西哥|特拉克帕克",
+      "lat": 20.64121,
+      "lng": -103.29342,
+      "precision": "city",
+      "source": "https://www.geonames.org/3981461",
+      "sourceId": "3981461"
+    },
+    {
+      "id": "city|波兰|波兹南",
+      "lat": 52.40692,
+      "lng": 16.92993,
+      "precision": "city",
+      "source": "https://www.geonames.org/3088171",
+      "sourceId": "3088171"
+    },
+    {
+      "id": "city|法国|尼斯",
+      "lat": 43.70313,
+      "lng": 7.26608,
+      "precision": "city",
+      "source": "https://www.geonames.org/2990440",
+      "sourceId": "2990440"
+    },
+    {
+      "id": "city|土耳其|亚洛瓦",
+      "lat": 40.65501,
+      "lng": 29.27693,
+      "precision": "city",
+      "source": "https://www.geonames.org/738025",
+      "sourceId": "738025"
+    },
+    {
+      "id": "city|日本|北九州市",
+      "lat": 33.85181,
+      "lng": 130.85034,
+      "precision": "city",
+      "source": "https://www.geonames.org/1859307",
+      "sourceId": "1859307"
+    },
+    {
+      "id": "city|沙特阿拉伯|塔布克",
+      "lat": 28.3998,
+      "lng": 36.57151,
+      "precision": "city",
+      "source": "https://www.geonames.org/101628",
+      "sourceId": "101628"
+    },
+    {
+      "id": "city|印度尼西亚|万鸦老",
+      "lat": 1.48218,
+      "lng": 124.84892,
+      "precision": "city",
+      "source": "https://www.geonames.org/1636544",
+      "sourceId": "1636544"
+    },
+    {
+      "id": "city|印度尼西亚|马塔兰",
+      "lat": -8.58333,
+      "lng": 116.11667,
+      "precision": "city",
+      "source": "https://www.geonames.org/1635882",
+      "sourceId": "1635882"
+    },
+    {
+      "id": "city|波兰|格但斯克",
+      "lat": 54.35227,
+      "lng": 18.64912,
+      "precision": "city",
+      "source": "https://www.geonames.org/3099434",
+      "sourceId": "3099434"
+    },
+    {
+      "id": "city|美国|朴次茅斯",
+      "lat": 43.07704,
+      "lng": -70.75766,
+      "precision": "city",
+      "source": "https://www.geonames.org/5091383",
+      "sourceId": "5091383",
+      "matchNote": "同名地点按源表第 14095 行英文名及服务机场 Portsmouth International Airport at Pease 消歧，距机场 5 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|阿根廷|布宜诺斯艾利斯",
+      "lat": -34.80041,
+      "lng": -58.38384,
+      "precision": "city",
+      "source": "https://www.geonames.org/10172104",
+      "sourceId": "10172104"
+    },
+    {
+      "id": "city|菲律宾|马尼拉",
+      "lat": 14.6042,
+      "lng": 120.9822,
+      "precision": "city",
+      "source": "https://www.geonames.org/1701668",
+      "sourceId": "1701668"
+    },
+    {
+      "id": "city|日本|堺市",
+      "lat": 34.58216,
+      "lng": 135.46653,
+      "precision": "city",
+      "source": "https://www.geonames.org/1853195",
+      "sourceId": "1853195"
+    },
+    {
+      "id": "city|印度尼西亚|查雅普拉",
+      "lat": -2.53371,
+      "lng": 140.71813,
+      "precision": "city",
+      "source": "https://www.geonames.org/2082600",
+      "sourceId": "2082600"
+    },
+    {
+      "id": "city|加拿大|圣约翰斯",
+      "lat": 47.56494,
+      "lng": -52.70931,
+      "precision": "city",
+      "source": "https://www.geonames.org/6324733",
+      "sourceId": "6324733"
+    },
+    {
+      "id": "city|越南|芹苴市",
+      "lat": 10.03711,
+      "lng": 105.78825,
+      "precision": "city",
+      "source": "https://www.geonames.org/1586203",
+      "sourceId": "1586203"
+    },
+    {
+      "id": "city|英国|莱斯特",
+      "lat": 52.6386,
+      "lng": -1.13169,
+      "precision": "city",
+      "source": "https://www.geonames.org/2644668",
+      "sourceId": "2644668"
+    },
+    {
+      "id": "city|英国|布拉德福德",
+      "lat": 53.79391,
+      "lng": -1.75206,
+      "precision": "city",
+      "source": "https://www.geonames.org/2654993",
+      "sourceId": "2654993"
+    },
+    {
+      "id": "city|英国|考文垂",
+      "lat": 52.40656,
+      "lng": -1.51217,
+      "precision": "city",
+      "source": "https://www.geonames.org/2652221",
+      "sourceId": "2652221"
+    },
+    {
+      "id": "city|美国|特伦顿",
+      "lat": 42.13949,
+      "lng": -83.17826,
+      "precision": "city",
+      "source": "https://www.geonames.org/5012521",
+      "sourceId": "5012521",
+      "matchNote": "同名地点按源表第 3841 行英文名及服务机场 Detroit Metropolitan Wayne County Airport 消歧，距机场 17 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|西班牙|阿利坎特",
+      "lat": 38.34517,
+      "lng": -0.48149,
+      "precision": "city",
+      "source": "https://www.geonames.org/2521978",
+      "sourceId": "2521978"
+    },
+    {
+      "id": "city|西班牙|毕尔巴鄂",
+      "lat": 43.26271,
+      "lng": -2.92528,
+      "precision": "city",
+      "source": "https://www.geonames.org/3128026",
+      "sourceId": "3128026"
+    },
+    {
+      "id": "city|英国|诺丁汉",
+      "lat": 52.9536,
+      "lng": -1.15047,
+      "precision": "city",
+      "source": "https://www.geonames.org/2641170",
+      "sourceId": "2641170"
+    },
+    {
+      "id": "city|美国|红木城",
+      "lat": 37.48522,
+      "lng": -122.23635,
+      "precision": "city",
+      "source": "https://www.geonames.org/5386834",
+      "sourceId": "5386834"
+    },
+    {
+      "id": "city|印度|纳西克",
+      "lat": 19.99727,
+      "lng": 73.79096,
+      "precision": "city",
+      "source": "https://www.geonames.org/1261731",
+      "sourceId": "1261731"
+    },
+    {
+      "id": "city|澳大利亚|阿德莱德",
+      "lat": -34.92866,
+      "lng": 138.59863,
+      "precision": "city",
+      "source": "https://www.geonames.org/2078025",
+      "sourceId": "2078025"
+    },
+    {
+      "id": "city|印度|布莱尔港",
+      "lat": 11.66613,
+      "lng": 92.74635,
+      "precision": "city",
+      "source": "https://www.geonames.org/1259385",
+      "sourceId": "1259385"
+    },
+    {
+      "id": "city|越南|岘港",
+      "lat": 16.06778,
+      "lng": 108.22083,
+      "precision": "city",
+      "source": "https://www.geonames.org/1583992",
+      "sourceId": "1583992"
+    },
+    {
+      "id": "city|美国|沃思堡",
+      "lat": 32.72541,
+      "lng": -97.32085,
+      "precision": "city",
+      "source": "https://www.geonames.org/4691930",
+      "sourceId": "4691930"
+    },
+    {
+      "id": "city|波兰|什切青",
+      "lat": 53.42894,
+      "lng": 14.55302,
+      "precision": "city",
+      "source": "https://www.geonames.org/3083829",
+      "sourceId": "3083829"
+    },
+    {
+      "id": "city|印度尼西亚|安汶",
+      "lat": -3.69583,
+      "lng": 128.18333,
+      "precision": "city",
+      "source": "https://www.geonames.org/1651531",
+      "sourceId": "1651531"
+    },
+    {
+      "id": "city|英国|泰恩河畔纽卡斯尔",
+      "lat": 54.97328,
+      "lng": -1.61396,
+      "precision": "city",
+      "source": "https://www.geonames.org/2641673",
+      "sourceId": "2641673"
+    },
+    {
+      "id": "city|法国|蒙彼利埃",
+      "lat": 43.61093,
+      "lng": 3.87635,
+      "precision": "city",
+      "source": "https://www.geonames.org/2992166",
+      "sourceId": "2992166"
+    },
+    {
+      "id": "city|美国|拉辛",
+      "lat": 42.72613,
+      "lng": -87.78285,
+      "precision": "city",
+      "source": "https://www.geonames.org/5268249",
+      "sourceId": "5268249"
+    },
+    {
+      "id": "city|美国|肯顿",
+      "lat": 39.92595,
+      "lng": -75.11962,
+      "precision": "city",
+      "source": "https://www.geonames.org/4501018",
+      "sourceId": "4501018"
+    },
+    {
+      "id": "city|美国|加斯托尼亚",
+      "lat": 35.26208,
+      "lng": -81.1873,
+      "precision": "city",
+      "source": "https://www.geonames.org/4467732",
+      "sourceId": "4467732"
+    },
+    {
+      "id": "city|美国|麦尔兹堡",
+      "lat": 26.62168,
+      "lng": -81.84059,
+      "precision": "city",
+      "source": "https://www.geonames.org/4155995",
+      "sourceId": "4155995"
+    },
+    {
+      "id": "city|马来西亚|新山",
+      "lat": 1.4655,
+      "lng": 103.7578,
+      "precision": "city",
+      "source": "https://www.geonames.org/1732752",
+      "sourceId": "1732752"
+    },
+    {
+      "id": "city|比利时|布鲁塞尔",
+      "lat": 50.85045,
+      "lng": 4.34878,
+      "precision": "city",
+      "source": "https://www.geonames.org/2800866",
+      "sourceId": "2800866"
+    },
+    {
+      "id": "city|墨西哥|韦拉克鲁斯",
+      "lat": 19.18095,
+      "lng": -96.1429,
+      "precision": "city",
+      "source": "https://www.geonames.org/3514783",
+      "sourceId": "3514783"
+    },
+    {
+      "id": "city|墨西哥|托纳拉",
+      "lat": 16.09007,
+      "lng": -93.7546,
+      "precision": "city",
+      "source": "https://www.geonames.org/3816721",
+      "sourceId": "3816721",
+      "matchNote": "同名地点按源表第 16777 行英文名及服务机场 Angel Albino Corzo International Airport 消歧，距机场 94 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|英国|德比",
+      "lat": 52.92277,
+      "lng": -1.47663,
+      "precision": "city",
+      "source": "https://www.geonames.org/2651347",
+      "sourceId": "2651347"
+    },
+    {
+      "id": "city|英国|伍尔弗汉普顿",
+      "lat": 52.58547,
+      "lng": -2.12296,
+      "precision": "city",
+      "source": "https://www.geonames.org/2633691",
+      "sourceId": "2633691"
+    },
+    {
+      "id": "city|美国|威尔明顿",
+      "lat": 34.23556,
+      "lng": -77.94604,
+      "precision": "city",
+      "source": "https://www.geonames.org/4499379",
+      "sourceId": "4499379",
+      "matchNote": "同名地点按源表第 3535 行英文名及服务机场 Wilmington International Airport 消歧，距机场 6 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|美国|基西米",
+      "lat": 28.30468,
+      "lng": -81.41667,
+      "precision": "city",
+      "source": "https://www.geonames.org/4160983",
+      "sourceId": "4160983"
+    },
+    {
+      "id": "city|马来西亚|怡保",
+      "lat": 4.5841,
+      "lng": 101.0829,
+      "precision": "city",
+      "source": "https://www.geonames.org/1734634",
+      "sourceId": "1734634"
+    },
+    {
+      "id": "city|丹麦|哥本哈根",
+      "lat": 55.67594,
+      "lng": 12.56553,
+      "precision": "city",
+      "source": "https://www.geonames.org/2618425",
+      "sourceId": "2618425"
+    },
+    {
+      "id": "city|日本|川口市",
+      "lat": 35.80521,
+      "lng": 139.71072,
+      "precision": "city",
+      "source": "https://www.geonames.org/1859730",
+      "sourceId": "1859730"
+    },
+    {
+      "id": "city|日本|鹿儿岛市",
+      "lat": 31.56667,
+      "lng": 130.55,
+      "precision": "city",
+      "source": "https://www.geonames.org/1860827",
+      "sourceId": "1860827"
+    },
+    {
+      "id": "city|墨西哥|马萨特兰",
+      "lat": 23.22163,
+      "lng": -106.41885,
+      "precision": "city",
+      "source": "https://www.geonames.org/3996322",
+      "sourceId": "3996322"
+    },
+    {
+      "id": "city|波兰|卢布林",
+      "lat": 51.25058,
+      "lng": 22.57009,
+      "precision": "city",
+      "source": "https://www.geonames.org/765876",
+      "sourceId": "765876"
+    },
+    {
+      "id": "city|美国|罗克维尔",
+      "lat": 39.084,
+      "lng": -77.15276,
+      "precision": "city",
+      "source": "https://www.geonames.org/4367175",
+      "sourceId": "4367175"
+    },
+    {
+      "id": "city|美国|埃利科特城",
+      "lat": 39.26733,
+      "lng": -76.79831,
+      "precision": "city",
+      "source": "https://www.geonames.org/4354265",
+      "sourceId": "4354265"
+    },
+    {
+      "id": "city|美国|斯克内克塔迪",
+      "lat": 42.81424,
+      "lng": -73.93957,
+      "precision": "city",
+      "source": "https://www.geonames.org/5136454",
+      "sourceId": "5136454"
+    },
+    {
+      "id": "city|美国|康瑟尔布拉夫斯",
+      "lat": 41.26194,
+      "lng": -95.86083,
+      "precision": "city",
+      "source": "https://www.geonames.org/4852832",
+      "sourceId": "4852832"
+    },
+    {
+      "id": "city|俄罗斯|萨马拉",
+      "lat": 53.20767,
+      "lng": 50.13553,
+      "precision": "city",
+      "source": "https://www.geonames.org/499099",
+      "sourceId": "499099"
+    },
+    {
+      "id": "city|德国|明斯特",
+      "lat": 51.96236,
+      "lng": 7.62571,
+      "precision": "city",
+      "source": "https://www.geonames.org/2867543",
+      "sourceId": "2867543"
+    },
+    {
+      "id": "city|波兰|卡托维兹",
+      "lat": 50.2597,
+      "lng": 19.02173,
+      "precision": "city",
+      "source": "https://www.geonames.org/3096472",
+      "sourceId": "3096472"
+    },
+    {
+      "id": "city|印度尼西亚|班达亚齐",
+      "lat": 5.54167,
+      "lng": 95.33333,
+      "precision": "city",
+      "source": "https://www.geonames.org/1215502",
+      "sourceId": "1215502"
+    },
+    {
+      "id": "city|英国|奥尔德姆",
+      "lat": 53.54051,
+      "lng": -2.1183,
+      "precision": "city",
+      "source": "https://www.geonames.org/2641022",
+      "sourceId": "2641022"
+    },
+    {
+      "id": "city|英国|卢顿",
+      "lat": 51.87967,
+      "lng": -0.41748,
+      "precision": "city",
+      "source": "https://www.geonames.org/2643339",
+      "sourceId": "2643339"
+    },
+    {
+      "id": "city|美国|伍德兰",
+      "lat": 38.67852,
+      "lng": -121.7733,
+      "precision": "city",
+      "source": "https://www.geonames.org/5410430",
+      "sourceId": "5410430"
+    },
+    {
+      "id": "city|美国|桑福德",
+      "lat": 43.43925,
+      "lng": -70.77422,
+      "precision": "city",
+      "source": "https://www.geonames.org/4977762",
+      "sourceId": "4977762",
+      "matchNote": "同名地点按源表第 9759 行英文名及服务机场 Portland International Jetport 消歧，距机场 44 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|葡萄牙|里斯本",
+      "lat": 38.72509,
+      "lng": -9.1498,
+      "precision": "city",
+      "source": "https://www.geonames.org/2267057",
+      "sourceId": "2267057"
+    },
+    {
+      "id": "city|美国|卡森城",
+      "lat": 39.1638,
+      "lng": -119.7674,
+      "precision": "city",
+      "source": "https://www.geonames.org/5501344",
+      "sourceId": "5501344"
+    },
+    {
+      "id": "city|日本|松户市",
+      "lat": 35.77995,
+      "lng": 139.90144,
+      "precision": "city",
+      "source": "https://www.geonames.org/1857553",
+      "sourceId": "1857553"
+    },
+    {
+      "id": "city|日本|仓敷市",
+      "lat": 34.58333,
+      "lng": 133.76667,
+      "precision": "city",
+      "source": "https://www.geonames.org/1858311",
+      "sourceId": "1858311"
+    },
+    {
+      "id": "city|南非|开普敦",
+      "lat": -33.92584,
+      "lng": 18.42322,
+      "precision": "city",
+      "source": "https://www.geonames.org/3369157",
+      "sourceId": "3369157"
+    },
+    {
+      "id": "city|美国|陶森",
+      "lat": 39.4015,
+      "lng": -76.60191,
+      "precision": "city",
+      "source": "https://www.geonames.org/4371582",
+      "sourceId": "4371582"
+    },
+    {
+      "id": "city|美国|萨拉索塔",
+      "lat": 27.33643,
+      "lng": -82.53065,
+      "precision": "city",
+      "source": "https://www.geonames.org/4172131",
+      "sourceId": "4172131"
+    },
+    {
+      "id": "city|美国|布雷登顿",
+      "lat": 27.49893,
+      "lng": -82.57482,
+      "precision": "city",
+      "source": "https://www.geonames.org/4148708",
+      "sourceId": "4148708"
+    },
+    {
+      "id": "city|美国|伊利里亚",
+      "lat": 41.36838,
+      "lng": -82.10765,
+      "precision": "city",
+      "source": "https://www.geonames.org/5153207",
+      "sourceId": "5153207"
+    },
+    {
+      "id": "city|美国|彭萨科拉",
+      "lat": 30.42131,
+      "lng": -87.21691,
+      "precision": "city",
+      "source": "https://www.geonames.org/4168228",
+      "sourceId": "4168228"
+    },
+    {
+      "id": "city|美国|惠顿",
+      "lat": 41.86614,
+      "lng": -88.10701,
+      "precision": "city",
+      "source": "https://www.geonames.org/4916288",
+      "sourceId": "4916288"
+    },
+    {
+      "id": "city|墨西哥|库埃纳瓦卡",
+      "lat": 18.9261,
+      "lng": -99.23075,
+      "precision": "city",
+      "source": "https://www.geonames.org/3529947",
+      "sourceId": "3529947"
+    },
+    {
+      "id": "city|美国|奥林匹亚",
+      "lat": 47.04491,
+      "lng": -122.90169,
+      "precision": "city",
+      "source": "https://www.geonames.org/5805687",
+      "sourceId": "5805687"
+    },
+    {
+      "id": "city|巴西|萨尔瓦多",
+      "lat": -12.97563,
+      "lng": -38.49096,
+      "precision": "city",
+      "source": "https://www.geonames.org/3450554",
+      "sourceId": "3450554"
+    },
+    {
+      "id": "city|英国|达德利",
+      "lat": 52.5,
+      "lng": -2.08333,
+      "precision": "city",
+      "source": "https://www.geonames.org/2650839",
+      "sourceId": "2650839"
+    },
+    {
+      "id": "city|英国|阿伯丁",
+      "lat": 57.14369,
+      "lng": -2.09814,
+      "precision": "city",
+      "source": "https://www.geonames.org/2657832",
+      "sourceId": "2657832"
+    },
+    {
+      "id": "city|意大利|威尼斯",
+      "lat": 45.43713,
+      "lng": 12.33265,
+      "precision": "city",
+      "source": "https://www.geonames.org/3164603",
+      "sourceId": "3164603"
+    },
+    {
+      "id": "city|美国|特洛伊",
+      "lat": 42.60559,
+      "lng": -83.14993,
+      "precision": "city",
+      "source": "https://www.geonames.org/5012639",
+      "sourceId": "5012639",
+      "matchNote": "同名地点按源表第 6226 行英文名及服务机场 Detroit Metropolitan Wayne County Airport 消歧，距机场 47 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|罗马尼亚|布加勒斯特",
+      "lat": 44.43225,
+      "lng": 26.10626,
+      "precision": "city",
+      "source": "https://www.geonames.org/683506",
+      "sourceId": "683506"
+    },
+    {
+      "id": "city|印度|古尔冈",
+      "lat": 28.4601,
+      "lng": 77.02635,
+      "precision": "city",
+      "source": "https://www.geonames.org/1270642",
+      "sourceId": "1270642"
+    },
+    {
+      "id": "city|印度|帕纳吉",
+      "lat": 15.49574,
+      "lng": 73.82624,
+      "precision": "city",
+      "source": "https://www.geonames.org/1260607",
+      "sourceId": "1260607"
+    },
+    {
+      "id": "city|日本|枚方市",
+      "lat": 34.81352,
+      "lng": 135.64914,
+      "precision": "city",
+      "source": "https://www.geonames.org/1862540",
+      "sourceId": "1862540"
+    },
+    {
+      "id": "city|日本|岐阜市",
+      "lat": 35.42291,
+      "lng": 136.76039,
+      "precision": "city",
+      "source": "https://www.geonames.org/1863641",
+      "sourceId": "1863641"
+    },
+    {
+      "id": "city|英国|维甘",
+      "lat": 53.54296,
+      "lng": -2.63706,
+      "precision": "city",
+      "source": "https://www.geonames.org/2633948",
+      "sourceId": "2633948"
+    },
+    {
+      "id": "city|英国|沃灵顿",
+      "lat": 53.39254,
+      "lng": -2.58024,
+      "precision": "city",
+      "source": "https://www.geonames.org/2634739",
+      "sourceId": "2634739"
+    },
+    {
+      "id": "city|英国|沃尔索尔",
+      "lat": 52.58528,
+      "lng": -1.98396,
+      "precision": "city",
+      "source": "https://www.geonames.org/2634853",
+      "sourceId": "2634853"
+    },
+    {
+      "id": "city|法国|克莱蒙费朗",
+      "lat": 45.77969,
+      "lng": 3.08682,
+      "precision": "city",
+      "source": "https://www.geonames.org/3024635",
+      "sourceId": "3024635"
+    },
+    {
+      "id": "city|美国|杰斐逊维尔",
+      "lat": 38.27757,
+      "lng": -85.73718,
+      "precision": "city",
+      "source": "https://www.geonames.org/4259671",
+      "sourceId": "4259671"
+    },
+    {
+      "id": "city|美国|哈肯萨克",
+      "lat": 40.88593,
+      "lng": -74.04347,
+      "precision": "city",
+      "source": "https://www.geonames.org/5098706",
+      "sourceId": "5098706"
+    },
+    {
+      "id": "city|马来西亚|亚庇",
+      "lat": 5.9749,
+      "lng": 116.0724,
+      "precision": "city",
+      "source": "https://www.geonames.org/1733432",
+      "sourceId": "1733432"
+    },
+    {
+      "id": "city|泰国|乌隆他尼",
+      "lat": 17.41567,
+      "lng": 102.78589,
+      "precision": "city",
+      "source": "https://www.geonames.org/1605239",
+      "sourceId": "1605239"
+    },
+    {
+      "id": "city|泰国|清迈",
+      "lat": 18.79038,
+      "lng": 98.98468,
+      "precision": "city",
+      "source": "https://www.geonames.org/1153671",
+      "sourceId": "1153671"
+    },
+    {
+      "id": "city|巴西|福塔雷萨",
+      "lat": -3.71722,
+      "lng": -38.54306,
+      "precision": "city",
+      "source": "https://www.geonames.org/3399415",
+      "sourceId": "3399415"
+    },
+    {
+      "id": "city|巴西|马瑙斯",
+      "lat": -3.10194,
+      "lng": -60.025,
+      "precision": "city",
+      "source": "https://www.geonames.org/3663517",
+      "sourceId": "3663517"
+    },
+    {
+      "id": "city|日本|吹田市",
+      "lat": 34.76143,
+      "lng": 135.51567,
+      "precision": "city",
+      "source": "https://www.geonames.org/1851483",
+      "sourceId": "1851483"
+    },
+    {
+      "id": "city|英国|桑德兰",
+      "lat": 54.90465,
+      "lng": -1.38222,
+      "precision": "city",
+      "source": "https://www.geonames.org/2636531",
+      "sourceId": "2636531"
+    },
+    {
+      "id": "city|美国|马纳萨斯",
+      "lat": 38.75095,
+      "lng": -77.47527,
+      "precision": "city",
+      "source": "https://www.geonames.org/4771401",
+      "sourceId": "4771401"
+    },
+    {
+      "id": "city|土耳其|大数",
+      "lat": 36.91766,
+      "lng": 34.89277,
+      "precision": "city",
+      "source": "https://www.geonames.org/299817",
+      "sourceId": "299817"
+    },
+    {
+      "id": "city|墨西哥|帕丘卡",
+      "lat": 20.11697,
+      "lng": -98.73329,
+      "precision": "city",
+      "source": "https://www.geonames.org/3522210",
+      "sourceId": "3522210"
+    },
+    {
+      "id": "city|哥伦比亚|波哥大",
+      "lat": 4.60971,
+      "lng": -74.08175,
+      "precision": "city",
+      "source": "https://www.geonames.org/3688689",
+      "sourceId": "3688689"
+    },
+    {
+      "id": "city|日本|奈良市",
+      "lat": 34.68505,
+      "lng": 135.80485,
+      "precision": "city",
+      "source": "https://www.geonames.org/1855612",
+      "sourceId": "1855612"
+    },
+    {
+      "id": "city|日本|大津市",
+      "lat": 35,
+      "lng": 135.86667,
+      "precision": "city",
+      "source": "https://www.geonames.org/1853574",
+      "sourceId": "1853574"
+    },
+    {
+      "id": "city|日本|中野区",
+      "lat": 35.70449,
+      "lng": 139.66946,
+      "precision": "city",
+      "source": "https://www.geonames.org/8715035",
+      "sourceId": "8715035"
+    },
+    {
+      "id": "city|波兰|热舒夫",
+      "lat": 50.04132,
+      "lng": 21.99901,
+      "precision": "city",
+      "source": "https://www.geonames.org/759734",
+      "sourceId": "759734"
+    },
+    {
+      "id": "city|德国|卡塞尔",
+      "lat": 51.31667,
+      "lng": 9.5,
+      "precision": "city",
+      "source": "https://www.geonames.org/2892518",
+      "sourceId": "2892518"
+    },
+    {
+      "id": "city|英国|哈德斯菲尔德",
+      "lat": 53.64904,
+      "lng": -1.78416,
+      "precision": "city",
+      "source": "https://www.geonames.org/2646458",
+      "sourceId": "2646458"
+    },
+    {
+      "id": "city|美国|布莱顿",
+      "lat": 39.98526,
+      "lng": -104.82053,
+      "precision": "city",
+      "source": "https://www.geonames.org/5414941",
+      "sourceId": "5414941"
+    },
+    {
+      "id": "city|马来西亚|古晋",
+      "lat": 1.55,
+      "lng": 110.33333,
+      "precision": "city",
+      "source": "https://www.geonames.org/1735634",
+      "sourceId": "1735634"
+    },
+    {
+      "id": "city|土耳其|阿克萨赖",
+      "lat": 38.37255,
+      "lng": 34.02537,
+      "precision": "city",
+      "source": "https://www.geonames.org/324496",
+      "sourceId": "324496"
+    },
+    {
+      "id": "city|泰国|罗勇市",
+      "lat": 12.68095,
+      "lng": 101.25798,
+      "precision": "city",
+      "source": "https://www.geonames.org/1607017",
+      "sourceId": "1607017"
+    },
+    {
+      "id": "city|巴西|库里奇巴",
+      "lat": -25.42778,
+      "lng": -49.27306,
+      "precision": "city",
+      "source": "https://www.geonames.org/3464975",
+      "sourceId": "3464975"
+    },
+    {
+      "id": "city|英国|博尔顿",
+      "lat": 53.58333,
+      "lng": -2.43333,
+      "precision": "city",
+      "source": "https://www.geonames.org/2655237",
+      "sourceId": "2655237"
+    },
+    {
+      "id": "city|英国|斯托克波特",
+      "lat": 53.40979,
+      "lng": -2.15761,
+      "precision": "city",
+      "source": "https://www.geonames.org/2636882",
+      "sourceId": "2636882"
+    },
+    {
+      "id": "city|美国|俄勒冈城",
+      "lat": 45.35734,
+      "lng": -122.60676,
+      "precision": "city",
+      "source": "https://www.geonames.org/5744253",
+      "sourceId": "5744253"
+    },
+    {
+      "id": "city|越南|芽庄市",
+      "lat": 12.24507,
+      "lng": 109.19432,
+      "precision": "city",
+      "source": "https://www.geonames.org/1572151",
+      "sourceId": "1572151"
+    },
+    {
+      "id": "city|马来西亚|芙蓉市",
+      "lat": 2.7297,
+      "lng": 101.9381,
+      "precision": "city",
+      "source": "https://www.geonames.org/1734810",
+      "sourceId": "1734810"
+    },
+    {
+      "id": "city|土耳其|阿德亚曼省",
+      "lat": 37.76441,
+      "lng": 38.27629,
+      "precision": "city",
+      "source": "https://www.geonames.org/325330",
+      "sourceId": "325330"
+    },
+    {
+      "id": "city|智利|圣地亚哥",
+      "lat": -33.45694,
+      "lng": -70.64827,
+      "precision": "city",
+      "source": "https://www.geonames.org/3871336",
+      "sourceId": "3871336"
+    },
+    {
+      "id": "city|日本|四日市市",
+      "lat": 34.96667,
+      "lng": 136.61667,
+      "precision": "city",
+      "source": "https://www.geonames.org/1848373",
+      "sourceId": "1848373",
+      "matchNote": "同名地点按源表第 484 行英文名及服务机场 Chubu Centrair International Airport 消歧，距机场 21 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|日本|明石市",
+      "lat": 34.65524,
+      "lng": 135.00687,
+      "precision": "city",
+      "source": "https://www.geonames.org/1847966",
+      "sourceId": "1847966"
+    },
+    {
+      "id": "city|日本|久留米市",
+      "lat": 33.31667,
+      "lng": 130.51667,
+      "precision": "city",
+      "source": "https://www.geonames.org/1858088",
+      "sourceId": "1858088"
+    },
+    {
+      "id": "city|日本|茨木市",
+      "lat": 34.81641,
+      "lng": 135.56828,
+      "precision": "city",
+      "source": "https://www.geonames.org/1862033",
+      "sourceId": "1862033"
+    },
+    {
+      "id": "city|沙特阿拉伯|艾卜哈",
+      "lat": 18.21639,
+      "lng": 42.50528,
+      "precision": "city",
+      "source": "https://www.geonames.org/110690",
+      "sourceId": "110690"
+    },
+    {
+      "id": "city|德国|达姆施塔特",
+      "lat": 49.87167,
+      "lng": 8.65027,
+      "precision": "city",
+      "source": "https://www.geonames.org/2938913",
+      "sourceId": "2938913"
+    },
+    {
+      "id": "city|英国|索尔福德",
+      "lat": 53.48771,
+      "lng": -2.29042,
+      "precision": "city",
+      "source": "https://www.geonames.org/2638671",
+      "sourceId": "2638671"
+    },
+    {
+      "id": "city|英国|索利赫尔",
+      "lat": 52.41426,
+      "lng": -1.78094,
+      "precision": "city",
+      "source": "https://www.geonames.org/2637546",
+      "sourceId": "2637546"
+    },
+    {
+      "id": "city|奥地利|格拉茨",
+      "lat": 47.06733,
+      "lng": 15.44197,
+      "precision": "city",
+      "source": "https://www.geonames.org/2778067",
+      "sourceId": "2778067"
+    },
+    {
+      "id": "city|土耳其|盖布泽",
+      "lat": 40.80276,
+      "lng": 29.43068,
+      "precision": "city",
+      "source": "https://www.geonames.org/747014",
+      "sourceId": "747014"
+    },
+    {
+      "id": "city|巴西|累西腓",
+      "lat": -8.05389,
+      "lng": -34.88111,
+      "precision": "city",
+      "source": "https://www.geonames.org/3390760",
+      "sourceId": "3390760"
+    },
+    {
+      "id": "city|俄罗斯|海参崴",
+      "lat": 43.10562,
+      "lng": 131.87353,
+      "precision": "city",
+      "source": "https://www.geonames.org/2013348",
+      "sourceId": "2013348"
+    },
+    {
+      "id": "city|日本|市原市",
+      "lat": 35.51667,
+      "lng": 140.08333,
+      "precision": "city",
+      "source": "https://www.geonames.org/2112664",
+      "sourceId": "2112664"
+    },
+    {
+      "id": "city|日本|函馆市",
+      "lat": 41.77583,
+      "lng": 140.73667,
+      "precision": "city",
+      "source": "https://www.geonames.org/2130188",
+      "sourceId": "2130188"
+    },
+    {
+      "id": "city|荷兰|格罗宁根",
+      "lat": 53.21917,
+      "lng": 6.56667,
+      "precision": "city",
+      "source": "https://www.geonames.org/2755251",
+      "sourceId": "2755251"
+    },
+    {
+      "id": "city|美国|德兰",
+      "lat": 29.02832,
+      "lng": -81.30312,
+      "precision": "city",
+      "source": "https://www.geonames.org/4152890",
+      "sourceId": "4152890"
+    },
+    {
+      "id": "city|巴西|戈亚尼亚",
+      "lat": -16.67861,
+      "lng": -49.25389,
+      "precision": "city",
+      "source": "https://www.geonames.org/3462377",
+      "sourceId": "3462377"
+    },
+    {
+      "id": "city|巴西|贝伦",
+      "lat": -1.45583,
+      "lng": -48.50444,
+      "precision": "city",
+      "source": "https://www.geonames.org/3405870",
+      "sourceId": "3405870",
+      "matchNote": "同名地点按源表第 508 行英文名及服务机场 Val de Cans/Júlio Cezar Ribeiro International Airport 消歧，距机场 9 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|巴西|阿雷格里港",
+      "lat": -30.03283,
+      "lng": -51.23019,
+      "precision": "city",
+      "source": "https://www.geonames.org/3452925",
+      "sourceId": "3452925"
+    },
+    {
+      "id": "city|印度|科泽科德",
+      "lat": 11.24802,
+      "lng": 75.7804,
+      "precision": "city",
+      "source": "https://www.geonames.org/1265873",
+      "sourceId": "1265873"
+    },
+    {
+      "id": "city|日本|筑波市",
+      "lat": 36.08333,
+      "lng": 140.11667,
+      "precision": "city",
+      "source": "https://www.geonames.org/2110681",
+      "sourceId": "2110681"
+    },
+    {
+      "id": "city|英国|切尔姆斯福德",
+      "lat": 51.73575,
+      "lng": 0.46958,
+      "precision": "city",
+      "source": "https://www.geonames.org/2653266",
+      "sourceId": "2653266"
+    },
+    {
+      "id": "city|英国|韦克菲尔德",
+      "lat": 53.68331,
+      "lng": -1.49768,
+      "precision": "city",
+      "source": "https://www.geonames.org/2634910",
+      "sourceId": "2634910"
+    },
+    {
+      "id": "city|泰国|普吉市",
+      "lat": 7.89059,
+      "lng": 98.3981,
+      "precision": "city",
+      "source": "https://www.geonames.org/1151254",
+      "sourceId": "1151254"
+    },
+    {
+      "id": "city|泰国|清莱",
+      "lat": 19.90858,
+      "lng": 99.8325,
+      "precision": "city",
+      "source": "https://www.geonames.org/1153669",
+      "sourceId": "1153669"
+    },
+    {
+      "id": "city|日本|宝塚市",
+      "lat": 34.79936,
+      "lng": 135.35697,
+      "precision": "city",
+      "source": "https://www.geonames.org/1851012",
+      "sourceId": "1851012"
+    },
+    {
+      "id": "city|英国|巴斯",
+      "lat": 51.3751,
+      "lng": -2.36172,
+      "precision": "city",
+      "source": "https://www.geonames.org/2656173",
+      "sourceId": "2656173"
+    },
+    {
+      "id": "city|摩洛哥|拉巴特",
+      "lat": 34.01325,
+      "lng": -6.83255,
+      "precision": "city",
+      "source": "https://www.geonames.org/2538475",
+      "sourceId": "2538475"
+    },
+    {
+      "id": "city|法国|楠泰尔",
+      "lat": 48.89198,
+      "lng": 2.20675,
+      "precision": "city",
+      "source": "https://www.geonames.org/2990970",
+      "sourceId": "2990970"
+    },
+    {
+      "id": "city|法国|克雷泰伊",
+      "lat": 48.79266,
+      "lng": 2.46569,
+      "precision": "city",
+      "source": "https://www.geonames.org/3022530",
+      "sourceId": "3022530"
+    },
+    {
+      "id": "city|美国|戴德姆",
+      "lat": 42.24177,
+      "lng": -71.16616,
+      "precision": "city",
+      "source": "https://www.geonames.org/4934664",
+      "sourceId": "4934664"
+    },
+    {
+      "id": "city|秘鲁|利马",
+      "lat": -12.04318,
+      "lng": -77.02824,
+      "precision": "city",
+      "source": "https://www.geonames.org/3936456",
+      "sourceId": "3936456"
+    },
+    {
+      "id": "city|韩国|大田广域市",
+      "lat": 36.34913,
+      "lng": 127.38493,
+      "precision": "city",
+      "source": "https://www.geonames.org/1835235",
+      "sourceId": "1835235"
+    },
+    {
+      "id": "city|韩国|光州广域市",
+      "lat": 35.15472,
+      "lng": 126.91556,
+      "precision": "city",
+      "source": "https://www.geonames.org/1841811",
+      "sourceId": "1841811"
+    },
+    {
+      "id": "city|德国|法兰克福",
+      "lat": 50.11552,
+      "lng": 8.68417,
+      "precision": "city",
+      "source": "https://www.geonames.org/2925533",
+      "sourceId": "2925533"
+    },
+    {
+      "id": "city|英国|切斯特",
+      "lat": 53.1905,
+      "lng": -2.89189,
+      "precision": "city",
+      "source": "https://www.geonames.org/2653228",
+      "sourceId": "2653228"
+    },
+    {
+      "id": "city|南非|比勒陀利亚",
+      "lat": -25.74486,
+      "lng": 28.18783,
+      "precision": "city",
+      "source": "https://www.geonames.org/964137",
+      "sourceId": "964137"
+    },
+    {
+      "id": "city|越南|土龙木市社",
+      "lat": 10.9804,
+      "lng": 106.6519,
+      "precision": "city",
+      "source": "https://www.geonames.org/1565022",
+      "sourceId": "1565022"
+    },
+    {
+      "id": "city|美国|林肯",
+      "lat": 38.89156,
+      "lng": -121.29301,
+      "precision": "city",
+      "source": "https://www.geonames.org/5366375",
+      "sourceId": "5366375",
+      "matchNote": "同名地点按源表第 7545 行英文名及服务机场 Sacramento International Airport 消歧，距机场 34 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|奥地利|林茨",
+      "lat": 48.30639,
+      "lng": 14.28611,
+      "precision": "city",
+      "source": "https://www.geonames.org/2772400",
+      "sourceId": "2772400"
+    },
+    {
+      "id": "city|土耳其|伊兹密特",
+      "lat": 40.76499,
+      "lng": 29.92928,
+      "precision": "city",
+      "source": "https://www.geonames.org/745028",
+      "sourceId": "745028"
+    },
+    {
+      "id": "city|土耳其|克勒克卡莱",
+      "lat": 39.84528,
+      "lng": 33.50639,
+      "precision": "city",
+      "source": "https://www.geonames.org/307654",
+      "sourceId": "307654"
+    },
+    {
+      "id": "city|美国|费尔法克斯",
+      "lat": 38.84622,
+      "lng": -77.30637,
+      "precision": "city",
+      "source": "https://www.geonames.org/4758023",
+      "sourceId": "4758023"
+    },
+    {
+      "id": "city|美国|法明顿",
+      "lat": 40.9805,
+      "lng": -111.88744,
+      "precision": "city",
+      "source": "https://www.geonames.org/5774662",
+      "sourceId": "5774662"
+    },
+    {
+      "id": "city|美国|霍普维尔",
+      "lat": 37.30432,
+      "lng": -77.2872,
+      "precision": "city",
+      "source": "https://www.geonames.org/4764826",
+      "sourceId": "4764826"
+    },
+    {
+      "id": "city|韩国|水原市",
+      "lat": 37.29111,
+      "lng": 127.00889,
+      "precision": "city",
+      "source": "https://www.geonames.org/1835553",
+      "sourceId": "1835553"
+    },
+    {
+      "id": "city|德国|埃森",
+      "lat": 51.45657,
+      "lng": 7.01228,
+      "precision": "city",
+      "source": "https://www.geonames.org/2928810",
+      "sourceId": "2928810"
+    },
+    {
+      "id": "city|德国|多特蒙德",
+      "lat": 51.51494,
+      "lng": 7.466,
+      "precision": "city",
+      "source": "https://www.geonames.org/2935517",
+      "sourceId": "2935517"
+    },
+    {
+      "id": "city|俄罗斯|马格尼托哥尔斯克",
+      "lat": 53.39808,
+      "lng": 59.0066,
+      "precision": "city",
+      "source": "https://www.geonames.org/532288",
+      "sourceId": "532288"
+    },
+    {
+      "id": "city|日本|八千代市",
+      "lat": 35.73531,
+      "lng": 140.12445,
+      "precision": "city",
+      "source": "https://www.geonames.org/6822182",
+      "sourceId": "6822182"
+    },
+    {
+      "id": "city|日本|伊丹市",
+      "lat": 34.78427,
+      "lng": 135.40126,
+      "precision": "city",
+      "source": "https://www.geonames.org/1861310",
+      "sourceId": "1861310"
+    },
+    {
+      "id": "city|日本|铃鹿市",
+      "lat": 34.88333,
+      "lng": 136.58333,
+      "precision": "city",
+      "source": "https://www.geonames.org/1851348",
+      "sourceId": "1851348"
+    },
+    {
+      "id": "city|日本|安城市",
+      "lat": 34.95828,
+      "lng": 137.08054,
+      "precision": "city",
+      "source": "https://www.geonames.org/1865294",
+      "sourceId": "1865294"
+    },
+    {
+      "id": "city|英国|南希尔兹",
+      "lat": 54.99859,
+      "lng": -1.4323,
+      "precision": "city",
+      "source": "https://www.geonames.org/2637329",
+      "sourceId": "2637329"
+    },
+    {
+      "id": "city|英国|哈利法克斯",
+      "lat": 53.71667,
+      "lng": -1.85,
+      "precision": "city",
+      "source": "https://www.geonames.org/2647632",
+      "sourceId": "2647632"
+    },
+    {
+      "id": "city|美国|麦迪逊",
+      "lat": 34.69926,
+      "lng": -86.74833,
+      "precision": "city",
+      "source": "https://www.geonames.org/4074267",
+      "sourceId": "4074267",
+      "matchNote": "同名地点按源表第 12756 行英文名及服务机场 Huntsville International Airport 消歧，距机场 7 km；仅导航推断",
+      "inferred": true
+    },
+    {
+      "id": "city|美国|托莱多",
+      "lat": 41.66394,
+      "lng": -83.55521,
+      "precision": "city",
+      "source": "https://www.geonames.org/5174035",
+      "sourceId": "5174035"
+    },
+    {
+      "id": "city|土耳其|屈塔希亚",
+      "lat": 39.42417,
+      "lng": 29.98333,
+      "precision": "city",
+      "source": "https://www.geonames.org/305268",
+      "sourceId": "305268"
+    },
+    {
+      "id": "city|美国|康威",
+      "lat": 33.836,
+      "lng": -79.04781,
+      "precision": "city",
+      "source": "https://www.geonames.org/4575461",
+      "sourceId": "4575461"
+    },
+    {
+      "id": "city|美国|洛克波特市",
+      "lat": 43.17061,
+      "lng": -78.69031,
+      "precision": "city",
+      "source": "https://www.geonames.org/5125011",
+      "sourceId": "5125011"
+    },
+    {
+      "id": "city|巴西|马塞约",
+      "lat": -9.66583,
+      "lng": -35.73528,
+      "precision": "city",
+      "source": "https://www.geonames.org/3395981",
+      "sourceId": "3395981"
+    },
+    {
+      "id": "city|意大利|维罗纳",
+      "lat": 45.43854,
+      "lng": 10.9938,
+      "precision": "city",
+      "source": "https://www.geonames.org/3164527",
+      "sourceId": "3164527"
+    },
+    {
+      "id": "city|日本|苫小牧市",
+      "lat": 42.63694,
+      "lng": 141.60333,
+      "precision": "city",
+      "source": "https://www.geonames.org/2127733",
+      "sourceId": "2127733"
+    },
+    {
+      "id": "city|日本|佐仓市",
+      "lat": 35.71667,
+      "lng": 140.23333,
+      "precision": "city",
+      "source": "https://www.geonames.org/2111220",
+      "sourceId": "2111220"
+    },
+    {
+      "id": "city|日本|宇部市",
+      "lat": 33.94306,
+      "lng": 131.25111,
+      "precision": "city",
+      "source": "https://www.geonames.org/1849498",
+      "sourceId": "1849498"
+    },
+    {
+      "id": "city|荷兰|哈勒姆",
+      "lat": 52.38084,
+      "lng": 4.63683,
+      "precision": "city",
+      "source": "https://www.geonames.org/2755003",
+      "sourceId": "2755003"
+    },
+    {
+      "id": "city|沙特阿拉伯|塞卡凯",
+      "lat": 29.96974,
+      "lng": 40.20641,
+      "precision": "city",
+      "source": "https://www.geonames.org/102527",
+      "sourceId": "102527"
+    },
+    {
+      "id": "city|英国|盖茨黑德",
+      "lat": 54.96209,
+      "lng": -1.60168,
+      "precision": "city",
+      "source": "https://www.geonames.org/2648773",
+      "sourceId": "2648773"
+    },
+    {
+      "id": "city|英国|利斯本",
+      "lat": 54.52337,
+      "lng": -6.03527,
+      "precision": "city",
+      "source": "https://www.geonames.org/2644411",
+      "sourceId": "2644411"
+    },
+    {
+      "id": "city|英国|佩斯利",
+      "lat": 55.83173,
+      "lng": -4.43254,
+      "precision": "city",
+      "source": "https://www.geonames.org/2640677",
+      "sourceId": "2640677"
+    },
+    {
+      "id": "city|英国|布拉克内尔",
+      "lat": 51.41363,
+      "lng": -0.75054,
+      "precision": "city",
+      "source": "https://www.geonames.org/2655009",
+      "sourceId": "2655009"
+    },
+    {
+      "id": "city|土耳其|艾登",
+      "lat": 37.84501,
+      "lng": 27.83963,
+      "precision": "city",
+      "source": "https://www.geonames.org/322830",
+      "sourceId": "322830"
+    },
+    {
+      "id": "city|阿拉伯联合酋长国|富吉拉",
+      "lat": 25.11641,
+      "lng": 56.34141,
+      "precision": "city",
+      "source": "https://www.geonames.org/292878",
+      "sourceId": "292878"
+    },
+    {
+      "id": "city|哈萨克斯坦|阿斯塔纳",
+      "lat": 51.1801,
+      "lng": 71.44598,
+      "precision": "city",
+      "source": "https://www.geonames.org/1526273",
+      "sourceId": "1526273"
+    },
+    {
+      "id": "city|韩国|蔚山",
+      "lat": 35.53722,
+      "lng": 129.31667,
+      "precision": "city",
+      "source": "https://www.geonames.org/1833747",
+      "sourceId": "1833747"
+    },
+    {
+      "id": "city|德国|纽伦堡",
+      "lat": 49.45421,
+      "lng": 11.07752,
+      "precision": "city",
+      "source": "https://www.geonames.org/2861650",
+      "sourceId": "2861650"
+    },
+    {
+      "id": "city|德国|莱比锡",
+      "lat": 51.33962,
+      "lng": 12.37129,
+      "precision": "city",
+      "source": "https://www.geonames.org/2879139",
+      "sourceId": "2879139"
+    },
+    {
+      "id": "city|德国|杜伊斯堡",
+      "lat": 51.43247,
+      "lng": 6.76516,
+      "precision": "city",
+      "source": "https://www.geonames.org/2934691",
+      "sourceId": "2934691"
+    },
+    {
+      "id": "city|日本|西尾市",
+      "lat": 34.86667,
+      "lng": 137.05,
+      "precision": "city",
+      "source": "https://www.geonames.org/1855189",
+      "sourceId": "1855189"
+    },
+    {
+      "id": "city|日本|弘前市",
+      "lat": 40.59306,
+      "lng": 140.4725,
+      "precision": "city",
+      "source": "https://www.geonames.org/2130057",
+      "sourceId": "2130057"
+    },
+    {
+      "id": "city|德国|图宾根",
+      "lat": 48.52266,
+      "lng": 9.05222,
+      "precision": "city",
+      "source": "https://www.geonames.org/2820860",
+      "sourceId": "2820860"
+    },
+    {
+      "id": "city|美国|巴吞鲁日",
+      "lat": 30.44332,
+      "lng": -91.18747,
+      "precision": "city",
+      "source": "https://www.geonames.org/4315588",
+      "sourceId": "4315588"
+    },
+    {
+      "id": "city|土耳其|克尔谢希尔",
+      "lat": 39.14583,
+      "lng": 34.16389,
+      "precision": "city",
+      "source": "https://www.geonames.org/307515",
+      "sourceId": "307515"
+    },
+    {
+      "id": "city|英国|梅登黑德",
+      "lat": 51.52279,
+      "lng": -0.71986,
+      "precision": "city",
+      "source": "https://www.geonames.org/2643186",
+      "sourceId": "2643186"
+    },
+    {
+      "id": "city|美国|莫里斯敦",
+      "lat": 40.79677,
+      "lng": -74.48154,
+      "precision": "city",
+      "source": "https://www.geonames.org/5101427",
+      "sourceId": "5101427"
+    },
+    {
+      "id": "city|美国|格雷特纳",
+      "lat": 29.91465,
+      "lng": -90.05396,
+      "precision": "city",
+      "source": "https://www.geonames.org/4326575",
+      "sourceId": "4326575"
+    },
+    {
+      "id": "city|美国|科洛尼尔海茨",
+      "lat": 37.26804,
+      "lng": -77.40726,
+      "precision": "city",
+      "source": "https://www.geonames.org/4753671",
+      "sourceId": "4753671"
+    },
+    {
+      "id": "city|巴西|圣路易斯",
+      "lat": -2.52972,
+      "lng": -44.30278,
+      "precision": "city",
+      "source": "https://www.geonames.org/3388368",
+      "sourceId": "3388368"
+    }
+  ]
+}

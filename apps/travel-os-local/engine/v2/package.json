@@ -1,0 +1,6 @@
+{
+  "name": "ly-publish-engine-v2", "version": "2.0.0-p0", "private": true,
+  "type": "module", "engines": { "node": ">=24.0.0" },
+  "scripts": { "test": "cd ../.. && node --test engine/v2/tests/engine.test.mjs", "stress": "cd ../.. && node engine/v2/tests/stress.mjs", "cli": "cd ../.. && node engine/v2/cli.mjs" },
+  "dependencies": { "playwright": "1.62.1" }
+}

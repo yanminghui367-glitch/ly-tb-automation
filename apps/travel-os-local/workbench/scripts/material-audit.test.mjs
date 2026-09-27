@@ -1,0 +1,30 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtemp,writeFile,readFile,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join,resolve,dirname} from 'node:path';
+import {TravelOsApi} from '../travel-os-api.mjs';
+import {destinationKey} from '../source-store.mjs';
+
+test('rescan persists diagnostics only, rejects foreign shops and caller paths, and marks old reports stale',async t=>{
+ const dir=await mkdtemp(join(tmpdir(),'material-audit-test-'));
+ const book=join(dir,'test.xlsx');await writeFile(book,'unreadable XLSX fixture');
+ const settings={assets:dir,pool:book,heat:book,sheet:'test'};
+ const task={shopId:'test',listing:{type:'city',country:'测试国',city:'测试城'},assets:{main:[],secondary:[],details:[]}};
+ const products=[{key:destinationKey(task),shopId:'test',destination:'测试城',country:'测试国',city:'测试城',issues:['缺少图片：测试城.png'],counts:{main:0,secondary:0,details:0},source:{importId:'fixture'}}];
+ const source={active:null,store:{batch:()=>({tasks:[task]})}},batch={active:null};
+ const p={source,batch,settings:async()=>settings};
+ const api=new TravelOsApi({runtime:dir,product:async()=>p,shops:async()=>[{id:'test'}]});
+ api.catalog=async()=>({products,shops:[{id:'test'}]});
+ t.after(async()=>{api.store.close();assert.equal(dirname(resolve(dir)),resolve(tmpdir()));await rm(dir,{recursive:true,force:true});});
+ const call=async(method,body)=>{let result;await api.handle({method},{},new URL('/api/os/material-audit?shopId=test','http://localhost'),{body:async()=>body,json:(_,status,data)=>result={status,data}});return result;};
+ assert.equal((await call('GET')).data,null);
+ await assert.rejects(call('POST',{shopId:'test',assets:'C:/'}),/仅接受店铺标识/);
+ await assert.rejects(call('POST',{shopId:'other'}),/店铺不存在/);
+ source.active='busy';await assert.rejects(call('POST',{shopId:'test'}),/执行中/);source.active=null;
+ const original=JSON.stringify(task),report=(await call('POST',{shopId:'test'})).data;
+ assert.equal(report.total,1);assert(report.warnings.length);assert.equal(report.stale,false);
+ assert.equal(JSON.stringify(task),original);assert.equal(await readFile(book,'utf8'),'unreadable XLSX fixture');
+ assert.equal((await call('GET')).data.at,report.at);
+ settings.sheet='changed';assert.equal((await call('GET')).data.stale,true);
+});

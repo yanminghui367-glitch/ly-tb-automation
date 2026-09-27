@@ -1,0 +1,2 @@
+# Preserve original bytes, especially the ten SHA-256-locked kernel files.
+* -text

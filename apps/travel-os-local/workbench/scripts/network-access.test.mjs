@@ -1,0 +1,11 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {networkAccess} from '../network-access.mjs';
+const interfaces={lan:[{family:'IPv4',address:'192.168.1.3',netmask:'255.255.255.0',internal:false}]};
+const policy=networkAccess({port:4318,address:'192.168.1.3',interfaces});
+const request=(ip,host='192.168.1.3:4318')=>({socket:{remoteAddress:ip},headers:{host}});
+test('default remains loopback',()=>assert.equal(networkAccess({port:4318}).bind,'127.0.0.1'));
+test('LAN policy permits local and same subnet',()=>{for(const ip of ['127.0.0.1','::1','192.168.1.25','::ffff:192.168.1.25'])assert(policy.allowed(request(ip)));});
+test('LAN policy rejects other subnets and host spoofing',()=>{for(const ip of ['192.168.2.25','8.8.8.8','172.18.0.2'])assert(!policy.allowed(request(ip)));assert(!policy.allowed(request('192.168.1.25','attacker.example:4318')));});
+test('origin allowlist is exact',()=>{assert(policy.originAllowed('http://192.168.1.3:4318'));assert(policy.originAllowed('http://127.0.0.1:4318'));assert(!policy.originAllowed('http://attacker.example'));assert(!policy.originAllowed('http://192.168.1.3:4318.attacker.example'));});
+test('only local private addresses can enable LAN',()=>{for(const address of ['0.0.0.0','8.8.8.8','192.168.1.99'])assert.throws(()=>networkAccess({port:4318,address,interfaces}));});

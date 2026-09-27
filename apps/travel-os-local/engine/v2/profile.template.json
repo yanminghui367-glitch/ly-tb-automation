@@ -1,0 +1,21 @@
+{
+  "environment": "TAOBAO",
+  "version": "",
+  "reviewed": false,
+  "evidence": "",
+  "shop": { "id": "", "name": "", "port": 0, "profileDir": "" },
+  "draftUrl": "",
+  "identity": { "selector": "", "expected": "" },
+  "fields": [
+    { "id": "category", "source": "business.category_path", "action": "manual", "selector": "", "reviewed": false, "verify": { "selector": "", "kind": "text" } },
+    { "id": "title", "source": "listing.title", "action": "fill", "selector": "", "reviewed": false, "verify": { "selector": "", "kind": "value" } },
+    { "id": "price", "source": "business.price_cny", "action": "fill", "selector": "", "reviewed": false, "verify": { "selector": "", "kind": "value" } },
+    { "id": "inventory", "source": "business.inventory", "action": "fill", "selector": "", "reviewed": false, "verify": { "selector": "", "kind": "value" } },
+    { "id": "main", "source": "assets.main", "action": "upload", "selector": "", "reviewed": false, "verify": { "selector": "", "kind": "uploadedNames" } },
+    { "id": "secondary", "source": "assets.secondary", "action": "upload", "selector": "", "reviewed": false, "verify": { "selector": "", "kind": "uploadedNames" } },
+    { "id": "details", "source": "assets.details", "action": "upload", "selector": "", "reviewed": false, "verify": { "selector": "", "kind": "uploadedNames" } }
+  ],
+  "formErrors": "",
+  "submit": { "selector": "" },
+  "result": { "success": "", "itemId": "", "itemLink": "", "title": "" }
+}

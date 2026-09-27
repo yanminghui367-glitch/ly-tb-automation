@@ -1,0 +1,16 @@
+{
+  "description": "已验证单品、5条、20条的只读冻结内核；产品层不得改写",
+  "baselineCommit": "25a47febfe08f8af6bfade20198d787354b76bff",
+  "files": {
+    "workbench/taobao-publisher.mjs": "67e21e64d39b20ee25cfcb4b22a1928731982b834f8a5e783c2482459a1e0bea",
+    "workbench/source-workflow.mjs": "9e05d1baed754afbee2cf5508d4af8557abb55e57ad0294539ce85bd41a91d3c",
+    "workbench/source-store.mjs": "bb8d716be69bd66caa449096b4d5e71604164224e4857a807b41f9f677058428",
+    "engine/v2/adapter.py": "086d59dee6c6c832231d7a7ada467aaba4b7dc883ba013a7ab6ac6bb10837cff",
+    "engine/v2/heat_queue_adapter.py": "eb092402a227c4f9258faa3af1b5c2ee609645d06d0c8f55105b4d35e0a89096",
+    "engine/v2/pool_adapter.py": "994ecb511e62fd550c64dc2b95016326934b7141730a90f1c8b69e7b7a5dff68",
+    "workbench/batch-workflow.mjs": "894a2393eb069013e0e5638464e272f867d40dfad9ddadfabacdad338ee04bb8",
+    "workbench/batch-store.mjs": "7e1d476fcfc33fb9c4d42b53f3ead0a0beb4c714aa10d08bb3cf2b9dbf26d71b",
+    "workbench/session-guard.mjs": "4d15ae4a780521f6f5b72dbb8675ead264d8ca27b99e151e6b506480e2320fba",
+    "workbench/browser-environment.mjs": "c59bd33aefcbd7eb777383bb1f91820d998cdff7d224f262278467b0f2c7f385"
+  }
+}

@@ -1,0 +1,24 @@
+/* Regression safeguard: a long queue must render when scrolled and in print/screenshot views. */
+.identity-details{margin-top:14px;border-top:1px solid var(--border,#263348);padding-top:14px;min-width:0}
+.identity-details summary{cursor:pointer;font-size:14px;line-height:1.6}
+.identity-form{display:grid;gap:9px;margin-top:12px;min-width:0}
+.identity-form>input{width:100%;min-width:0;min-height:42px;padding:9px 12px;border:1px solid #304155;border-radius:8px;background:#0b1420;color:#e4edf7;font:inherit;box-sizing:border-box}
+.identity-form>input:focus-visible{outline:2px solid #78a8ff;outline-offset:2px}
+.identity-form .field-help{margin:0;overflow-wrap:anywhere}
+.identity-review{display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.6}
+.identity-review input{width:16px;height:16px;flex:0 0 16px;margin-top:3px}
+.identity-form button{justify-self:start}
+#sessionChecks,#sessionDetail{overflow-wrap:anywhere}
+.table-wrap{content-visibility:visible;contain-intrinsic-size:auto}
+
+@media(max-width:760px){
+  html,body{overflow-x:hidden}
+  .app-shell,.main-content,.hero,.stats,.batch-brief,.workflow-panel,.control-grid,.queue-panel,.run-log{width:100%;max-width:100%;min-width:0}
+  .top-actions{display:none}
+  .nav-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;overflow:visible}
+  .nav-item{min-width:0;min-height:40px;gap:6px;padding:0 8px;font-size:12px;white-space:nowrap}
+  .nav-item>svg{width:16px;height:16px;flex-basis:16px}
+  .stats{grid-template-columns:minmax(0,1fr);gap:10px}
+  .stats article{min-width:0}
+  .queue-tools,.queue-filters,.search-box{max-width:100%;min-width:0}
+}

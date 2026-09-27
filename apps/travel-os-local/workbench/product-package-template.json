@@ -1,0 +1,50 @@
+{
+  "package_version": 2,
+  "status": "NEEDS_REVIEW",
+  "source": { "workbook": "待人工填写来源文件", "sheet": "待人工填写工作表", "row": null },
+  "listing": {
+    "destination": "",
+    "location_type": "country",
+    "country": "",
+    "city": null,
+    "destination_code": "",
+    "title_versions": ["", ""],
+    "selected_title_index": null,
+    "title": "",
+    "title_units": null
+  },
+  "assets": { "main_image": "", "secondary_images": ["", "", "", ""], "detail_images": [] },
+  "release_profile": {
+    "shop_name": "",
+    "category_path": "",
+    "price_cny": null,
+    "inventory": null,
+    "delivery_method": "",
+    "freight_template": "",
+    "ship_within_hours": null,
+    "ship_from": ""
+  },
+  "review_evidence": {
+    "category_and_attributes": "",
+    "supply_and_qualification": "",
+    "price_refund_fulfillment": "",
+    "destination_assets": "",
+    "dry_run_mapping": ""
+  },
+  "automation_mapping": {
+    "platform": "taobao",
+    "version": "",
+    "verified_evidence": "",
+    "draft_url": "",
+    "fields": [
+      { "id": "category", "source": "profile.category_path", "locator": { "strategy": "label", "value": "" }, "interaction": "manual", "reviewed": false },
+      { "id": "title", "source": "listing.title", "locator": { "strategy": "label", "value": "" }, "interaction": "fill", "reviewed": false },
+      { "id": "price", "source": "profile.price_cny", "locator": { "strategy": "label", "value": "" }, "interaction": "fill", "reviewed": false },
+      { "id": "main_images", "source": "assets.main_image", "locator": { "strategy": "css", "value": "" }, "interaction": "upload", "reviewed": false },
+      { "id": "secondary_images", "source": "assets.secondary_images", "locator": { "strategy": "css", "value": "" }, "interaction": "upload", "reviewed": false },
+      { "id": "detail_images", "source": "assets.detail_images", "locator": { "strategy": "css", "value": "" }, "interaction": "upload", "reviewed": false }
+    ]
+  },
+  "checks": [],
+  "result": { "state": "not_started", "item_id": null, "item_url": null }
+}

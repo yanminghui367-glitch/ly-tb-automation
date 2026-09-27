@@ -1,0 +1,67 @@
+/* Shared local font: SIL OFL, see assets/fonts/NotoSansSC-NOTICE.txt. */
+@font-face{font-family:'Travel Sans';src:url('assets/fonts/noto-sans-sc-variable.woff2') format('woff2');font-style:normal;font-weight:100 900;font-display:swap}
+:root{--font-ui:'Travel Sans','Noto Sans SC','Microsoft YaHei UI','Microsoft YaHei',sans-serif;--font-number:'Segoe UI',var(--font-ui);font-family:var(--font-ui);font-synthesis:none;text-rendering:optimizeLegibility}
+body,button,input,select,textarea{font-family:var(--font-ui)}
+button,input,select,textarea{letter-spacing:0}
+
+/* Landing page: expressive heading, calmer supporting information. */
+.landing{font-weight:400;line-height:1.65}
+.landing .brand{font-size:23px;font-weight:600;letter-spacing:.01em}
+.landing .brand b{font-family:var(--font-number);font-weight:500;letter-spacing:.01em}
+.landing .brand small{font-size:11px;font-weight:400;letter-spacing:.12em;color:#bdd0e3}
+.landing .hero h1{font-family:var(--font-ui);font-size:clamp(36px,3.7vw,64px);font-weight:850;line-height:1.18;letter-spacing:-.025em;font-style:oblique 8deg;font-synthesis:style}
+.landing .intro{font-size:17px;line-height:1.8;font-weight:400;letter-spacing:.025em;color:#cadceb}
+.landing .home-navbar :is(a,button){font-size:14px;font-weight:500;letter-spacing:.01em}
+.landing .nav-dropdown strong{font-size:14px;font-weight:600}.landing .nav-dropdown span{font-size:12px;font-weight:400;line-height:1.75}
+.landing .city-name{font-size:48px;font-weight:650;letter-spacing:-.02em;line-height:1.2}
+.landing .country{font-size:15px;line-height:1.7;letter-spacing:.025em;color:#d2e0ee}
+.landing .city-title{font-size:14px;font-weight:400;line-height:1.85;color:#c3d4e5}
+.landing .search-box input{font-size:16px;letter-spacing:.025em}
+.landing .quick-row,.landing .quick-cities button{font-size:12px;letter-spacing:.01em}
+.landing .primary-actions .primary{font-size:19px;font-weight:650;letter-spacing:.035em}
+.landing .pill{font-size:12px;font-weight:500}
+.landing .journey p{font-size:12px;line-height:1.7}.landing .journey>div{font-size:11px;letter-spacing:0}
+.landing footer{font-size:11px;letter-spacing:.025em}
+
+/* White workspace: dark headings; blue identifies actions, not every line. */
+.os-shell{font-size:14px;line-height:1.65;color:#243449;font-weight:400}
+.os-shell .page-heading h1{font-size:30px;line-height:1.35;font-weight:650;letter-spacing:-.025em;color:#18283e}
+.os-shell .page-heading p{font-size:14px;line-height:1.75;color:#617086;font-weight:400}
+.os-shell h2{font-size:20px;font-weight:600;line-height:1.45;letter-spacing:-.015em;color:#203149}
+.os-shell h3{font-size:16px;font-weight:600;line-height:1.5;color:#203149}
+.os-shell .sidebar .nav-item{font-size:14px;font-weight:450;letter-spacing:.015em}
+.os-shell .sidebar .nav-item[aria-current=page]{font-weight:600;color:#1d4ed8}
+.os-shell .sidebar .os-brand{font-size:16px;font-weight:550;letter-spacing:0}
+.os-shell .os-brand b{font-family:var(--font-number);font-weight:500}
+.os-shell .topbar{font-size:12px;color:#617086}
+.os-shell :is(button,.button){font-size:13px;font-weight:500;line-height:1.55}
+.os-shell :is(input,select,textarea){font-size:14px;line-height:1.6}
+.os-shell :is(small,.form-note,.inspector-row span){font-size:12px;line-height:1.65;color:#617086}
+.os-shell .current-title{font-size:15px;line-height:1.85;color:#33465e;font-weight:400}
+.os-shell table{font-size:13px;line-height:1.7}
+.os-shell th{font-size:12px;font-weight:550;letter-spacing:.025em;color:#52647a}
+.os-shell td strong{font-size:14px;font-weight:550}
+.os-shell .badge{font-size:12px;font-weight:450;line-height:1.65}
+.os-shell :is(.row-number,.progress-number strong,.task-outcomes strong,.material-counts strong,.product-shop-row strong,.destination-facts strong,.overview-status strong){font-family:var(--font-number);font-variant-numeric:tabular-nums lining-nums;font-weight:500;letter-spacing:-.035em;color:#274d83}
+.os-shell .current-product-grid h3{font-size:23px;font-weight:600;line-height:1.5}
+.os-shell .destination-body h2{font-size:30px;font-weight:650;letter-spacing:-.02em}
+.os-shell .app-footer{font-size:11px;color:#617086}
+dialog{font-family:var(--font-ui);line-height:1.7}dialog h2{font-size:22px;font-weight:600}dialog :is(input,select,textarea){font-size:14px}
+/* Existing operational routes share the same family and legible table rhythm. */
+body:has(.workspace){font-family:var(--font-ui);font-size:14px;line-height:1.65}
+.workspace :is(h1,h2,h3){font-family:var(--font-ui);font-weight:600}.workspace h1{font-size:28px}
+.workspace table{font-size:13px;line-height:1.65}
+@media(max-width:1250px){.landing .hero h1{font-size:clamp(30px,3.25vw,43px)}.landing .city-name{font-size:38px}.landing .intro{font-size:15px}.landing .city-title{font-size:13px}}
+@media(min-width:951px) and (max-height:840px){.landing .hero h1{font-size:clamp(34px,3.3vw,56px)}.landing .intro{font-size:15px;line-height:1.65}}
+@media(max-width:950px){.landing .hero h1{font-size:clamp(30px,5.3vw,46px)}.landing .intro{font-size:16px}}
+@media(max-width:620px){
+ .os-shell .page-heading h1{font-size:25px}.os-shell .page-heading p{font-size:13px}
+ .os-shell h2{font-size:18px}.os-shell .current-product-grid h3{font-size:21px}
+ .os-shell :is(input,select,textarea),dialog :is(input,select,textarea){font-size:16px}
+ .landing .hero h1{font-size:clamp(27px,7.2vw,38px);white-space:normal;letter-spacing:-.03em;line-height:1.4}
+ .landing .brand{font-size:18px}.landing .brand small{font-size:9px;letter-spacing:.015em}
+ .landing .intro{font-size:14px;letter-spacing:.02em;line-height:1.85}
+ .landing .home-navbar :is(a,button){font-size:12px}.landing .nav-dropdown strong{font-size:14px}
+ .landing .city-name{font-size:34px}.landing .search-box input{font-size:16px;letter-spacing:0}
+ .landing .primary-actions .primary{font-size:18px}
+}

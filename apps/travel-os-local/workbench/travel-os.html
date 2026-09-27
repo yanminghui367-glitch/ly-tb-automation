@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#ffffff"><title>星途 Travel OS</title><link rel="icon" href="favicon.svg?v=travel-os-star-transparent-20260924" type="image/svg+xml"><link rel="stylesheet" href="travel-os.css?v=20260925-records1"><script type="module" src="travel-os.js?v=20260925-overview2"></script><link rel="stylesheet" href="typography.css?v=20260925-type1"><link rel="stylesheet" href="overview.css?v=20260925-reference2"><link rel="stylesheet" href="tasks.css?v=20260925-tasks"></head>
+<body><a class="skip" href="#workspace">跳到工作区</a>
+<div class="os-shell">
+ <aside class="sidebar" id="workspaceSidebar" aria-label="工作台侧栏"><div class="sidebar-heading"><a class="os-brand" href="/" aria-label="返回首页"><img class="brand-star" src="favicon.svg" alt=""><span>星途 <b>Travel OS</b></span></a><button id="sidebarToggle" class="sidebar-toggle" type="button" aria-controls="navigation" aria-expanded="true" aria-label="折叠侧栏"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16m7-12-4 4 4 4"/></svg><span>折叠侧栏</span></button></div><nav id="navigation" aria-label="主导航"></nav><div class="sidebar-bottom"><span class="local-indicator">本地运行 · 数据保存在本机</span><p id="sidebarStatus">服务连接中</p><a href="/travel-home.html">沉浸地球</a> · <a href="/index.html#home">原版操作台</a></div></aside>
+ <div class="main-shell"><header class="topbar"><div id="breadcrumb">工作空间 / 总览</div><form id="topSearchForm" class="top-search" role="search"><img src="assets/travel-os/icons/magnifying-glass.svg" alt=""><input id="topSearch" aria-label="全局搜索国家或城市" placeholder="搜索国家或城市" autocomplete="off"><button type="submit" aria-label="搜索">搜索</button></form><div class="status-group"><span id="connectionState" role="status">正在连接</span><button id="checkBrowser">检查执行浏览器</button></div></header>
+ <div id="connectionNotice" class="notice danger" hidden role="alert"><span id="connectionNoticeText">连接中断 · 尚未读取到数据，请重新连接。执行与修改操作已禁用。</span><button id="reconnect">重新连接</button></div><div id="testBanner" class="notice" hidden>隔离测试模式 · 不连接真实店铺，不发布商品</div>
+ <main id="workspace" tabindex="-1">
+  <section id="page-overview" class="page overview-page">
+   <div class="overview-heading"><div><h1>总览</h1><p>掌握业务全局，轻松管理全球旅游产品与执行任务。</p></div><span class="overview-scope">全部店铺</span></div>
+   <div class="overview-dashboard">
+    <div id="overviewMetrics" class="overview-metrics" aria-label="全部店铺数据摘要"><div class="ov-loading" role="status">正在读取产品与执行状态…</div></div>
+    <div class="overview-primary-grid">
+     <section class="overview-card overview-today"><div class="overview-section-head"><h2>今日工作概览</h2><time id="overviewDate"></time></div><div id="overviewToday"></div></section>
+     <section class="overview-card overview-execution"><div class="overview-section-head"><h2><span class="ov-heading-icon" data-ov-icon="storefront"></span>店铺与执行</h2><a class="ov-small-link" href="#shops">进入店铺管理 <span aria-hidden="true">›</span></a></div><div id="overviewShop"></div></section>
+    </div>
+    <div class="overview-secondary-grid">
+     <section class="overview-card overview-workflow"><div class="overview-section-head"><h2><span class="ov-heading-icon" data-ov-icon="stack"></span>产品工作流</h2></div><div class="overview-shortcuts">
+      <a href="#products"><span class="ov-shortcut-icon" data-ov-icon="cube"></span><span><strong>产品与素材</strong><small>管理产品与素材</small></span><b aria-hidden="true">›</b></a>
+      <a href="#destinations"><span class="ov-shortcut-icon green" data-ov-icon="map-pin"></span><span><strong>目的地中心</strong><small>查看全球目的地</small></span><b aria-hidden="true">›</b></a>
+      <a href="#quotes"><span class="ov-shortcut-icon purple" data-ov-icon="file-text"></span><span><strong>报价管理</strong><small>维护成本与售价</small></span><b aria-hidden="true">›</b></a>
+      <a href="#tasks"><span class="ov-shortcut-icon orange" data-ov-icon="list-bullets"></span><span><strong>任务队列</strong><small>查看执行队列</small></span><b aria-hidden="true">›</b></a>
+     </div></section>
+     <section class="overview-card overview-map-card"><div class="overview-section-head"><h2><span class="ov-heading-icon" data-ov-icon="globe"></span>全球目的地</h2><a href="#destinations" aria-label="查看全部目的地">›</a></div><div class="overview-world" role="group" aria-label="按地区浏览已导入目的地；地图为地区目录示意"><div id="overviewRegions"></div></div><div id="overviewCoverage" class="overview-coverage"></div><p class="ov-map-note">已导入资料范围 · 非实际服务覆盖</p></section>
+     <section class="overview-card overview-records"><div class="overview-section-head"><h2><span class="ov-heading-icon" data-ov-icon="clock"></span>最近执行记录</h2><button data-action="overview-records" class="ov-text-button">查看全部</button></div><div id="overviewActivity"></div></section>
+    </div>
+    <details hidden id="overviewSelection" class="overview-selection"><summary>所选目的地 · <span id="overviewSelectionName">查看详情</span></summary><aside id="destinationPanel" class="destination-panel" aria-live="polite"></aside></details>
+   </div>
+   <form id="destinationSearch" class="destination-search" role="search"><img src="assets/travel-os/icons/magnifying-glass.svg" alt=""><label class="sr-only" for="citySearch">搜索国家或城市</label><input id="citySearch" type="search" placeholder="搜索国家或城市，例如东京" autocomplete="off" maxlength="120"><button type="submit">定位目的地</button><div id="searchResults" class="search-results" hidden></div></form>
+  </section>
+  <section id="page-tasks" class="page" hidden></section><section id="page-shops" class="page" hidden></section><section id="page-products" class="page" hidden></section><section id="page-destinations" class="page" hidden></section><section id="page-quotes" class="page" hidden></section><section id="page-records" class="page" hidden></section><section id="page-settings" class="page" hidden></section>
+ </main><footer class="app-footer"><span>星途 Travel OS · 让每次执行有据可查</span><span id="updatedAt">等待读取本地数据</span></footer></div>
+</div><div id="toast" class="toast" role="status" hidden></div><dialog id="editor"><div class="dialog-heading"><h2 id="editorTitle"></h2><button id="closeEditor" aria-label="关闭对话框"><img src="assets/travel-os/icons/x.svg" alt=""></button></div><div id="editorBody"></div><p id="editorError" class="error" role="alert"></p></dialog><noscript>请启用 JavaScript。<a href="/index.html">打开原操作台</a></noscript></body></html>

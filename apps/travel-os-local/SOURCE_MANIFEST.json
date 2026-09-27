@@ -1,0 +1,687 @@
+{
+  "source": "local working copy; reviewed effective-code snapshot",
+  "sourceCommit": "c90bb13; includes later uncommitted product changes",
+  "date": "2026-09-27",
+  "files": [
+    {
+      "path": "docs/PHOSPHOR_QUOTES_LICENSE.txt",
+      "bytes": 1071,
+      "sha256": "b5b1f1da112d18ea2147decfd48ddc1bf2b5aeb6c265381579340e95b15a2bb2"
+    },
+    {
+      "path": "engine/v2/adapter.py",
+      "bytes": 8703,
+      "sha256": "086d59dee6c6c832231d7a7ada467aaba4b7dc883ba013a7ab6ac6bb10837cff"
+    },
+    {
+      "path": "engine/v2/batch.mjs",
+      "bytes": 2299,
+      "sha256": "0724cc69dae1affa1304faaa7263436bc49306e5570913f203b8232c27490c10"
+    },
+    {
+      "path": "engine/v2/cli.mjs",
+      "bytes": 5798,
+      "sha256": "9236cde3d5d57b5ab6659aa9ba34da3005306a6f3f3dcc9a19b1c35d37d6e026"
+    },
+    {
+      "path": "engine/v2/contract.mjs",
+      "bytes": 6402,
+      "sha256": "3dc224c5de4c20863b6b40c73587fa752e8b9329a1f77470e9d03a9933bd407a"
+    },
+    {
+      "path": "engine/v2/heat_queue_adapter.py",
+      "bytes": 5186,
+      "sha256": "eb092402a227c4f9258faa3af1b5c2ee609645d06d0c8f55105b4d35e0a89096"
+    },
+    {
+      "path": "engine/v2/package.json",
+      "bytes": 364,
+      "sha256": "d4ff3dbd0bdc10aacef53b200cf5c42d0bc6f266334576bbe845367b2d1c7a7b"
+    },
+    {
+      "path": "engine/v2/page.mjs",
+      "bytes": 9188,
+      "sha256": "7523a0a8152d2612f977ccbf0483360c55cfd6a23fa5d40da13bbc700af09336"
+    },
+    {
+      "path": "engine/v2/pool_adapter.py",
+      "bytes": 7797,
+      "sha256": "994ecb511e62fd550c64dc2b95016326934b7141730a90f1c8b69e7b7a5dff68"
+    },
+    {
+      "path": "engine/v2/profile.template.json",
+      "bytes": 1477,
+      "sha256": "5c22564fcc8fd20ca0bdb8ad5523dfb17261a81fdbb48365df93fcfa1de3aa34"
+    },
+    {
+      "path": "engine/v2/README.md",
+      "bytes": 6123,
+      "sha256": "0cb2e933a94e18b9a3823db6040f16e97d0bdb76c99eaac01cbbcfa1cb8e7cdd"
+    },
+    {
+      "path": "engine/v2/release.template.json",
+      "bytes": 320,
+      "sha256": "726e88f28fa784060a2cf3e67fc4da62b4998ced8d9e84e112a898f2d402eb04"
+    },
+    {
+      "path": "engine/v2/runner.mjs",
+      "bytes": 4835,
+      "sha256": "e89912c0f21a0e3ed219759ce36671498166c66eaf988b5a16b63671b35921e0"
+    },
+    {
+      "path": "engine/v2/store.mjs",
+      "bytes": 7153,
+      "sha256": "783c6a7e151930f675e6ac1afeb93ba44a15bdac2e59effe1a256689afb149d6"
+    },
+    {
+      "path": "engine/v2/test_heat_queue_adapter.py",
+      "bytes": 3209,
+      "sha256": "4adfd6a37f61725df620514a290eee46f86a67fc9f9b95468dd2ece6a693fe9f"
+    },
+    {
+      "path": "engine/v2/test_pool_adapter.py",
+      "bytes": 3429,
+      "sha256": "39e644132953782dfc0407ee4db9d41daf11de6f9d0ce9d6c0c94b3ab3c4b5cb"
+    },
+    {
+      "path": "engine/v2/tests/adapter_test.py",
+      "bytes": 2982,
+      "sha256": "2e1dabaef3e286ded43b0c184d1ad6e41163708c7bc1fc021e8c4ca7caf792ec"
+    },
+    {
+      "path": "engine/v2/tests/engine.test.mjs",
+      "bytes": 12270,
+      "sha256": "c133fc3a3243df2dd739299186d99c9fde29c8405fab927f722709a4b3374d62"
+    },
+    {
+      "path": "engine/v2/tests/fixture.mjs",
+      "bytes": 4937,
+      "sha256": "08c0e83be733514df94a1962631e76063e8fbd9d8687fc1922c240333ef5e56e"
+    },
+    {
+      "path": "engine/v2/tests/stress.mjs",
+      "bytes": 2179,
+      "sha256": "3a78c097b47937588dedd9b92b8d221a143847e12c70856e57086549d930e07d"
+    },
+    {
+      "path": "tools/rescan_materials.py",
+      "bytes": 8506,
+      "sha256": "002716a97f0e582028526761169d6a0ec92a37d4e875e8cc43052a4c572ac8c6"
+    },
+    {
+      "path": "tools/start-workbench.mjs",
+      "bytes": 3630,
+      "sha256": "cea40615b509346cff27c2bfd4312210ee3065ea8a93d2ef80feb293656c9b8d"
+    },
+    {
+      "path": "tools/test_rescan_materials.py",
+      "bytes": 3480,
+      "sha256": "748ffc66baf40260b104763dab1ce1a90901ffab0ed09722d3b18c3473dc6482"
+    },
+    {
+      "path": "workbench/app.js",
+      "bytes": 71846,
+      "sha256": "1088ac98ec93d4162d54cc21c6ffbf43b5f8bc029c7a74faa70650d8ec266769"
+    },
+    {
+      "path": "workbench/assets/fonts/noto-sans-sc-variable.woff2",
+      "bytes": 7783400,
+      "sha256": "031db1340ebe38fffc3d054f70a2d717f9aa9af4f840cadf1923ed9f11157175"
+    },
+    {
+      "path": "workbench/assets/fonts/NotoSansSC-NOTICE.txt",
+      "bytes": 442,
+      "sha256": "4cc0c694c1cffc0e18102e00ff1c86f202ca6e0143556053388ccd8235353a3f"
+    },
+    {
+      "path": "workbench/assets/fonts/OFL.txt",
+      "bytes": 4301,
+      "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2"
+    },
+    {
+      "path": "workbench/assets/travel-os/ASSET_SOURCE.md",
+      "bytes": 1915,
+      "sha256": "f4f4efa547557e69a654511bff3b125339c1bd827a98682389313ea6ac821b6d"
+    },
+    {
+      "path": "workbench/assets/travel-os/brand-reference.png",
+      "bytes": 2774073,
+      "sha256": "54368560f45659a7e83e86634c486b37a0ab6617768fc3bbb8915fe82db538b6"
+    },
+    {
+      "path": "workbench/assets/travel-os/earth-bump.jpg",
+      "bytes": 413118,
+      "sha256": "078ce6b67ad45594bda48e5c98a60b68375174a8142f613ca4fd6041c8439341"
+    },
+    {
+      "path": "workbench/assets/travel-os/earth-clouds.png",
+      "bytes": 5033486,
+      "sha256": "35c46d8b29651a99e482401f33ed752bf4625837435fb3a89bb0032f72b88a3a"
+    },
+    {
+      "path": "workbench/assets/travel-os/earth-day.jpg",
+      "bytes": 1461877,
+      "sha256": "228deba2e4b600146bdcb6cfa359b8ead6aacc2b1c13550a29cd82824cfa1c01"
+    },
+    {
+      "path": "workbench/assets/travel-os/earth-lights-2016.jpg",
+      "bytes": 365655,
+      "sha256": "4d2158f59123dadf0696a1cf8909c45018a1de8d0daab40da04122a5aa7f27c6"
+    },
+    {
+      "path": "workbench/assets/travel-os/earth-night.jpg",
+      "bytes": 715000,
+      "sha256": "355ab23dd1323315b393d7b91dd2d7ee223a1cbaaba2b48dc72ba90d371ced24"
+    },
+    {
+      "path": "workbench/assets/travel-os/earth-scene.png",
+      "bytes": 2193040,
+      "sha256": "75daa72fd1fe496610aaa1a40484ad18f7114be46a9717887ee5cee2348e4a4c"
+    },
+    {
+      "path": "workbench/assets/travel-os/icons/arrow-clockwise.svg",
+      "bytes": 296,
+      "sha256": "4a78a777b692cb74826e3071ae7049cc0d3927e68a7b8272e7251b1760cd771f"
+    },
+    {
+      "path": "workbench/assets/travel-os/icons/arrow-right.svg",
+      "bytes": 245,
+      "sha256": "e45bc4a12592b8723110db42c6deffdf177e4fe7704cf50324963fa0a59b2d74"
+    },
+    {
+      "path": "workbench/assets/travel-os/icons/arrow-square-out.svg",
+      "bytes": 347,
+      "sha256": "8610e8f5c7d4952ae1ada34ef56fa7cbab1780bc85f25a5c9482b74144790fc8"
+    },
+    {
+      "path": "workbench/assets/travel-os/icons/check-circle.svg",
+      "bytes": 339,
+      "sha256": "e02a080c3d1a758de5c5fd41abd913dec4cffbc70fe1e9637dbf7ce35f377055"
+    },
+    {
+      "path": "workbench/assets/travel-os/icons/compass.svg",
+      "bytes": 402,
+      "sha256": "00c7e42415f795fcea90bd9dc0b2c8266b4e9601d2937cb122cd03b7e9e9e198"
+    },
+    {
+      "path": "workbench/assets/travel-os/icons/globe-hemisphere-east.svg",
+      "bytes": 833,
+      "sha256": "af8a4d5c4bb688f564a952c921ddc2655db353b248a9ed34f385c7cb62f8f41d"
+    },
+    {
+      "path": "workbench/assets/travel-os/icons/images.svg",
+      "bytes": 501,
+      "sha256": "7e8e0035864a6cc3e0ea1e0441d073b582001b74c374939fd8ece6ff55101a2b"
+    },
+    {
+      "path": "workbench/assets/travel-os/icons/LICENSE",
+      "bytes": 1071,
+      "sha256": "b5b1f1da112d18ea2147decfd48ddc1bf2b5aeb6c265381579340e95b15a2bb2"
+    },
+    {
+      "path": "workbench/assets/travel-os/icons/list-checks.svg",
+      "bytes": 567,
+      "sha256": "b2d11fc95de627d6abe9feeced5f7e0cdce3ccdf8d9f9d2334d596b8b5cc5cc4"
+    },
+    {
+      "path": "workbench/assets/travel-os/icons/magnifying-glass.svg",
+      "bytes": 243,
+      "sha256": "f9fa2561978a9a3291e8ae0ebfcb651104f5069fade8f84871627bca68889cde"
+    },
+    {
+      "path": "workbench/assets/travel-os/icons/map-pin.svg",
+      "bytes": 459,
+      "sha256": "523f024fa467fc285d95c1db4ed6c32b640513c79780d14310bebf342b6f94fb"
+    },
+    {
+      "path": "workbench/assets/travel-os/icons/minus.svg",
+      "bytes": 163,
+      "sha256": "5a068d1cfd707fde5ddb0ce0623958123b6a5afba98401318983aeb0fdad6382"
+    },
+    {
+      "path": "workbench/assets/travel-os/icons/plus.svg",
+      "bytes": 212,
+      "sha256": "d688feb9dd2e41c1721d6906a05a2a42e18cd774762fe706d72b2bdfd91cddc4"
+    },
+    {
+      "path": "workbench/assets/travel-os/icons/upload-simple.svg",
+      "bytes": 324,
+      "sha256": "d2b22b75affd718a4a24d71ee71586b277cf48ddb7d52b7d7d0a85b47f8b12d1"
+    },
+    {
+      "path": "workbench/assets/travel-os/icons/warning-circle.svg",
+      "bytes": 294,
+      "sha256": "e48a90760a68659fd3f06dd9187e471aead4877c72e915339071b2c7f7bd714c"
+    },
+    {
+      "path": "workbench/assets/travel-os/icons/x.svg",
+      "bytes": 284,
+      "sha256": "7397b15e1fa66eaf6ff9b59fe91d483cb5c3bcf75b2fe052097ab6f0593b513a"
+    },
+    {
+      "path": "workbench/assets/travel-os/overview-australia.png",
+      "bytes": 2191068,
+      "sha256": "a50c7b9d9e14bd6f5575d6ecc4c21b333fd863b228b1efb21629f112524068d0"
+    },
+    {
+      "path": "workbench/assets/travel-os/overview-santorini.png",
+      "bytes": 1986603,
+      "sha256": "f7cd6d669b6364b81d23c59c8fb5a2b45ba1a8efb4a3f060ed9a8e089abba438"
+    },
+    {
+      "path": "workbench/assets/travel-os/overview-thailand.png",
+      "bytes": 2858208,
+      "sha256": "cf4b45259eeeecce5a280f5818bf43bfb344552008d022867a854e6acbbc57d0"
+    },
+    {
+      "path": "workbench/assets/travel-os/README.md",
+      "bytes": 4931,
+      "sha256": "3d4d68e22db1de997f8eedc3f22125b5ae39637ce4139e4748219ee01cb317e1"
+    },
+    {
+      "path": "workbench/assets/travel-os/space-backdrop.png",
+      "bytes": 1956259,
+      "sha256": "f0138382edff5e1ac311125c90ec7d27127499fac3a9f98dd567c89b69f943a1"
+    },
+    {
+      "path": "workbench/assets/travel-os/space-backdrop.source.md",
+      "bytes": 2144,
+      "sha256": "1bedc699695c76016493de671c58f100a5658721858e09fe1da588ad8306e0f9"
+    },
+    {
+      "path": "workbench/assets/travel-os/THREE-GLOBE-LICENSE.txt",
+      "bytes": 1072,
+      "sha256": "c633a0da18abe4208665d9faf574f38084bbe38ce5bf743e9ecc06e50b941b59"
+    },
+    {
+      "path": "workbench/assets/travel-os/tokyo-atmosphere.png",
+      "bytes": 2115594,
+      "sha256": "0688483e82315fc9a1fa5d71bc9345a80c25414471bb4d0f97c4f8fd8694172e"
+    },
+    {
+      "path": "workbench/assets/travel-os/tokyo-atmosphere.source.md",
+      "bytes": 1924,
+      "sha256": "026083eabd150af6360b39d8379e488818e1af003efb5681a72200068af37eec"
+    },
+    {
+      "path": "workbench/assets/travel-os/vendor/orbit-controls.js",
+      "bytes": 42739,
+      "sha256": "9afbd9ac5347d424ce9dbd80039afabe33226293353908b128be43c009eff821"
+    },
+    {
+      "path": "workbench/assets/travel-os/vendor/THREE-LICENSE.txt",
+      "bytes": 1081,
+      "sha256": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc"
+    },
+    {
+      "path": "workbench/assets/travel-os/vendor/three.core.js",
+      "bytes": 1518698,
+      "sha256": "ac1f5bc714509a5c8eb314ba46cf0ff5c8ed9be86d7e644c38027b6ca2ce8abd"
+    },
+    {
+      "path": "workbench/assets/travel-os/vendor/three.module.js",
+      "bytes": 662772,
+      "sha256": "9052042d676cb0fdc1ddfefe193053f34b7ac0513a616fdac4535d49987812ea"
+    },
+    {
+      "path": "workbench/assets/travel-os/workspace-backdrop.png",
+      "bytes": 1301469,
+      "sha256": "8e7e4ac3df2677a73baa331d324835206186957790336e088fc02cae1d15b52e"
+    },
+    {
+      "path": "workbench/batch-store.mjs",
+      "bytes": 7940,
+      "sha256": "7e1d476fcfc33fb9c4d42b53f3ead0a0beb4c714aa10d08bb3cf2b9dbf26d71b"
+    },
+    {
+      "path": "workbench/batch-workflow.css",
+      "bytes": 2351,
+      "sha256": "1ef342000a49ab1c1015cbffc6bffc406490f5bee7f511ab04cb0137e4e75052"
+    },
+    {
+      "path": "workbench/batch-workflow.js",
+      "bytes": 6049,
+      "sha256": "4f944118bfafb3bf4d4b42bfcb3f9ddca5c673ff0581234e1bc0da44dfa96ce7"
+    },
+    {
+      "path": "workbench/batch-workflow.mjs",
+      "bytes": 7793,
+      "sha256": "894a2393eb069013e0e5638464e272f867d40dfad9ddadfabacdad338ee04bb8"
+    },
+    {
+      "path": "workbench/browser-environment.mjs",
+      "bytes": 8289,
+      "sha256": "c59bd33aefcbd7eb777383bb1f91820d998cdff7d224f262278467b0f2c7f385"
+    },
+    {
+      "path": "workbench/console.css",
+      "bytes": 24008,
+      "sha256": "93a0550cc292f503e553fdacc465ab322a874982801f1e96f5d523e23e9146df"
+    },
+    {
+      "path": "workbench/data/globe-coordinates.json",
+      "bytes": 146538,
+      "sha256": "1a21657e7c049d256b7644a487536dce897329ab5480cd080cee32c819f3b450"
+    },
+    {
+      "path": "workbench/data/README.md",
+      "bytes": 2479,
+      "sha256": "2b7d71654f5bec0e1982ff7118eaa7c2daf21e9bccdd01d7f711926dabd7ff7f"
+    },
+    {
+      "path": "workbench/destination-catalog.mjs",
+      "bytes": 5057,
+      "sha256": "38ec3ea666f0c36711c65cbf9378c87f77fd30cb0e83643eb03eacd1f4a29143"
+    },
+    {
+      "path": "workbench/favicon.svg",
+      "bytes": 18517,
+      "sha256": "b5a84475f7351b553c8ccaab1c1d1ed61d2f237944a3df393e52b9d3f7e0ad0a"
+    },
+    {
+      "path": "workbench/globe-catalog.mjs",
+      "bytes": 865,
+      "sha256": "9910911b302adefd3cb9d88534ba546197db5f8ceb2297ead43f321c01447373"
+    },
+    {
+      "path": "workbench/globe-layout.js",
+      "bytes": 696,
+      "sha256": "a4619b25707778edd21cec967a4a81019fead5fa8c00879ca71a1c82502740bb"
+    },
+    {
+      "path": "workbench/index.html",
+      "bytes": 6190,
+      "sha256": "8b7092c71f8cff4d5eed91f821d8e15486cdff05f1a36642108864755e9b5a80"
+    },
+    {
+      "path": "workbench/kernel-integrity.mjs",
+      "bytes": 726,
+      "sha256": "617e86bd53069f3c1c6fa0aa786a954cde73393bf542031854c19a3e3675b219"
+    },
+    {
+      "path": "workbench/kernel-lock.json",
+      "bytes": 1230,
+      "sha256": "92f6a212726bb92f859963ccb96773721d48f3a0d39998fdda0875dfd679cb1f"
+    },
+    {
+      "path": "workbench/legacy.html",
+      "bytes": 38121,
+      "sha256": "16ce2a4f6003fea799b2ff4cdeb4bed18c2175a590ac44865c2e542d3b117cad"
+    },
+    {
+      "path": "workbench/material-audit.mjs",
+      "bytes": 2285,
+      "sha256": "2d50f1d269bcf3cfa436a3e25c077268c6672a431a14520a0e61763c906c721c"
+    },
+    {
+      "path": "workbench/material-library.mjs",
+      "bytes": 2662,
+      "sha256": "78b5e3da9f29560892099aafea0b244b61fedffdbd97e797097df3b335902739"
+    },
+    {
+      "path": "workbench/network-access.mjs",
+      "bytes": 1188,
+      "sha256": "44a1e054a9557e4de7a0d065ab9359dbf0e518d138bd52a23897dc6f7913726f"
+    },
+    {
+      "path": "workbench/overview.css",
+      "bytes": 113801,
+      "sha256": "3ee5ad95dd4fa7a047e3c128e98e3d92cdcf56efa9ae7d1442d143eb7f8c87d5"
+    },
+    {
+      "path": "workbench/package-lock.json",
+      "bytes": 2464,
+      "sha256": "11327a6fa970e6bb92d4a72a9c0f09ffec735d030dd1cdb3354d7861a6d0624c"
+    },
+    {
+      "path": "workbench/package.json",
+      "bytes": 1954,
+      "sha256": "5c46b883952be44756811846e4187fd649d65a1d381f8237492ea96c972cf7ba"
+    },
+    {
+      "path": "workbench/premium.css",
+      "bytes": 5174,
+      "sha256": "e78c331044e77b82ab9a8718485cc3e9fb9bc4b0c669c52d313a9eac615284c0"
+    },
+    {
+      "path": "workbench/product-api.mjs",
+      "bytes": 23706,
+      "sha256": "c435d9aef5a2732f82141325a37fa3cc714e7c89cd4656ee0e11b507da8d5ff8"
+    },
+    {
+      "path": "workbench/product-package-template.json",
+      "bytes": 2080,
+      "sha256": "10a513bdc4c8e8f783d4f4fe7a221f72c54c34b282b2c167796fe5441a32d9b1"
+    },
+    {
+      "path": "workbench/product-state.mjs",
+      "bytes": 5335,
+      "sha256": "c1525ce338ec7d8ec388259361d35fbda93f04c1671f1cb93252f346b065b513"
+    },
+    {
+      "path": "workbench/product.css",
+      "bytes": 15175,
+      "sha256": "f546dfeb0239da9e0148e4fc62e90beabaa3ab59bf76f9ab398923c329611d96"
+    },
+    {
+      "path": "workbench/product.js",
+      "bytes": 40216,
+      "sha256": "8eda05a29ec579d7f8f5a2fff83ca289461b565f6f31fd905b856b7d483873fb"
+    },
+    {
+      "path": "workbench/README.md",
+      "bytes": 2515,
+      "sha256": "8ada562176478631c29161253e8028d2faab0baca8e92233c0003758f998c0ae"
+    },
+    {
+      "path": "workbench/scripts/batch-workflow.test.mjs",
+      "bytes": 7062,
+      "sha256": "17879f8470198fe48591a0d2e0cf33fe47519aa5d8736f85f935697785c6e2e5"
+    },
+    {
+      "path": "workbench/scripts/browser-environment.test.mjs",
+      "bytes": 5964,
+      "sha256": "a94ac8e8c57e5cb3688f923627ba6490aae22be8ca4bda8136248130123fb76a"
+    },
+    {
+      "path": "workbench/scripts/destination-catalog.test.mjs",
+      "bytes": 4926,
+      "sha256": "1e6016a9a79bdc58167b24385ba2ecfdfb8790fddfe3491f44b3e22fc39cb373"
+    },
+    {
+      "path": "workbench/scripts/engine-mapping.test.mjs",
+      "bytes": 6899,
+      "sha256": "6a8030458cd173b6f04ef02c484fa4dcb642382e174c28a6ff58571f9dcad339"
+    },
+    {
+      "path": "workbench/scripts/globe.test.mjs",
+      "bytes": 2390,
+      "sha256": "6a774608e1cad1db3715f746409680483ffb16b9e608caffa36ba03e172f735c"
+    },
+    {
+      "path": "workbench/scripts/material-audit.test.mjs",
+      "bytes": 2389,
+      "sha256": "7c919b510742dfd2e0ad1f012c8fdc00811dae78b4e285149d0d6936c3bae063"
+    },
+    {
+      "path": "workbench/scripts/material-library.test.mjs",
+      "bytes": 1729,
+      "sha256": "bb6362bade229f5571a0de70a3fb7f4403bae77d78c6d31472581ca571e2038d"
+    },
+    {
+      "path": "workbench/scripts/network-access.test.mjs",
+      "bytes": 1354,
+      "sha256": "a39dc5d2fe83a8b2b43ba6dfa8d17cb419ca0da4bd715277eeb837f3dc644ffd"
+    },
+    {
+      "path": "workbench/scripts/overview-view.test.mjs",
+      "bytes": 5090,
+      "sha256": "1a687b35dba852006ec3b77100a999eebf8342a66f115e6f7c4366f3e14fa225"
+    },
+    {
+      "path": "workbench/scripts/product-api.test.mjs",
+      "bytes": 14807,
+      "sha256": "1f7aa527c73ab9b4df0da66d2e3c3423f285dab12b7c05c2bdf2e386cf1dbb68"
+    },
+    {
+      "path": "workbench/scripts/product-state.test.mjs",
+      "bytes": 2068,
+      "sha256": "a5c4e742f4e5c382a1d0d6beb039490b88c7037f1d70262b8d0722b8d75a501f"
+    },
+    {
+      "path": "workbench/scripts/records-view.test.mjs",
+      "bytes": 3527,
+      "sha256": "dc72a5f62533fa60d8b7bcac2c2bcae0fbb41737fe13802c7c9344cbff9e98af"
+    },
+    {
+      "path": "workbench/scripts/session-guard.test.mjs",
+      "bytes": 11371,
+      "sha256": "0aa340449017f8516e8dd24290bf22e9d593fabf2dbc60dc9ad9d1554af10370"
+    },
+    {
+      "path": "workbench/scripts/source-workflow.test.mjs",
+      "bytes": 4667,
+      "sha256": "5335f25241964f59beeab06ffe12ae9e5208eec3f4c1f4905099747dd2668233"
+    },
+    {
+      "path": "workbench/scripts/static-files.test.mjs",
+      "bytes": 9424,
+      "sha256": "9774a067aa889b03384320f79c86c3bf8fc1a11cd0b421b7f20fd00d1d87fc29"
+    },
+    {
+      "path": "workbench/scripts/task-view-model.test.mjs",
+      "bytes": 3996,
+      "sha256": "e667930387f07dd31dd334a92313a18c739707906d4dd75abd678271689744c3"
+    },
+    {
+      "path": "workbench/scripts/travel-os.test.mjs",
+      "bytes": 8516,
+      "sha256": "10134a4fd979f2bb79c17c61d9ea4d9b34285115e444168bd7ae45ab3aefd1a4"
+    },
+    {
+      "path": "workbench/server.mjs",
+      "bytes": 87065,
+      "sha256": "6d50a82bbdcac7b1905cb929be2e9978feaa65a7988967963707e0c3a28953df"
+    },
+    {
+      "path": "workbench/session-guard.mjs",
+      "bytes": 10531,
+      "sha256": "4d15ae4a780521f6f5b72dbb8675ead264d8ca27b99e151e6b506480e2320fba"
+    },
+    {
+      "path": "workbench/source-store.mjs",
+      "bytes": 5481,
+      "sha256": "bb8d716be69bd66caa449096b4d5e71604164224e4857a807b41f9f677058428"
+    },
+    {
+      "path": "workbench/source-workflow.css",
+      "bytes": 2812,
+      "sha256": "53eae68836328ac118e1e222a08c69215b4ca84f6e0a5b8c307daf87ab08159a"
+    },
+    {
+      "path": "workbench/source-workflow.js",
+      "bytes": 9305,
+      "sha256": "5dce52fe712de5fab7c4e21416555a5f994580f877f936ef4b28d8458a316b01"
+    },
+    {
+      "path": "workbench/source-workflow.mjs",
+      "bytes": 11995,
+      "sha256": "9e05d1baed754afbee2cf5508d4af8557abb55e57ad0294539ce85bd41a91d3c"
+    },
+    {
+      "path": "workbench/static-files.mjs",
+      "bytes": 5424,
+      "sha256": "ef3b233c6bf34ffe9c9737394f8e24cc0b65dd806f2fc79f30cfa7031474e7b0"
+    },
+    {
+      "path": "workbench/styles.css",
+      "bytes": 16978,
+      "sha256": "4e11abde3524c10098f025646805b82f63209a7801c8aa1813a5e962d11c972c"
+    },
+    {
+      "path": "workbench/taobao-publisher.mjs",
+      "bytes": 19317,
+      "sha256": "67e21e64d39b20ee25cfcb4b22a1928731982b834f8a5e783c2482459a1e0bea"
+    },
+    {
+      "path": "workbench/task-view-model.mjs",
+      "bytes": 3633,
+      "sha256": "2f121b80f90d5ce93d19bc36f20116ed0d259188db38f5e05054a5d78ecaaa0f"
+    },
+    {
+      "path": "workbench/tasks.css",
+      "bytes": 12341,
+      "sha256": "8adfdc7dfdef7920098b617c3c31ba816c581e9dd98cad945f5bbc5bd690f0a3"
+    },
+    {
+      "path": "workbench/travel-globe-ui.css",
+      "bytes": 6321,
+      "sha256": "764aabd3b0ef5937e540cd1ea363fc3bfdf9e16a15cfba2e48e1e3e2b1e2cfa2"
+    },
+    {
+      "path": "workbench/travel-globe.js",
+      "bytes": 31810,
+      "sha256": "dbb1a4f7b9282b3ba7f9b0a6354abd20be0b822f73230ce9f720623a50f89ee8"
+    },
+    {
+      "path": "workbench/travel-home.css",
+      "bytes": 55765,
+      "sha256": "c27c477c2e868148e4d4945e9e5c18a317a4053b585745e3b78746bced803b5f"
+    },
+    {
+      "path": "workbench/travel-home.html",
+      "bytes": 8714,
+      "sha256": "067885a5fd4d59a21ce790453d19db263de06665a5b4c8011da2f41960c8b1ff"
+    },
+    {
+      "path": "workbench/travel-home.js",
+      "bytes": 18117,
+      "sha256": "406ab88bac05c09d5b3b7dde7efdc5b53466597292c976becad5ee19c26c4582"
+    },
+    {
+      "path": "workbench/travel-os-api.mjs",
+      "bytes": 10366,
+      "sha256": "c8b33268e55aed8839583d288776743eb789b2ba7f0d34fdd305debfd7d21bd3"
+    },
+    {
+      "path": "workbench/travel-os-store.mjs",
+      "bytes": 5672,
+      "sha256": "bf4094cf36c662f5d37420a9f6a3af2e6905ba9667b525e315f866c984ed45c2"
+    },
+    {
+      "path": "workbench/travel-os.css",
+      "bytes": 119138,
+      "sha256": "697915106d83a374ffa50ba4204f48773f11456b12420c6f2144dc8cb2e5b034"
+    },
+    {
+      "path": "workbench/travel-os.html",
+      "bytes": 7334,
+      "sha256": "c6a7386624dd63118d9f6ffc46d32a204edca4312f3a6fcbf40599e4c942fed6"
+    },
+    {
+      "path": "workbench/travel-os.js",
+      "bytes": 156771,
+      "sha256": "aafce14a7362d29dfbd752cef2b5bb738a89d76adda44cebfd1d1432aecbf6d4"
+    },
+    {
+      "path": "workbench/typography.css",
+      "bytes": 5816,
+      "sha256": "9752027f4980d4a52152db87a3a95cb7ec857571dfe0345b6706947b307a092b"
+    },
+    {
+      "path": "workbench/ui-polish.css",
+      "bytes": 1643,
+      "sha256": "548feca0d3d7c74b53e362166ab67fd7d4f54288cb3ebe4da6adeed7952bae53"
+    },
+    {
+      "path": "启动上架工作台.vbs",
+      "bytes": 285,
+      "sha256": "5fc0df4550617d5ce1d2ef07cf53c3e31374e728c055f8ce6091f59af73798bb"
+    },
+    {
+      "path": "打开旅行上架工作台.cmd",
+      "bytes": 89,
+      "sha256": "f223a43cf19171852983f7a88a1e96a36a16e7d7606a3742c515aa69d4b8413a"
+    }
+  ]
+}

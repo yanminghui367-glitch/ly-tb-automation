@@ -1,0 +1,22 @@
+**/.runtime/
+/browser-profile/
+**/.playwright-cli/
+**/node_modules/
+/output/
+/outputs/
+/workbench/output/
+/third_party/
+**/__pycache__/
+*.pyc
+*.sqlite*
+*.db
+*.log
+**/.env
+**/.env.*
+!**/.env.example
+*.pem
+*.key
+# This is public geographic reference data, not the parent's runtime data/ folder.
+!/workbench/data/
+!/workbench/data/README.md
+!/workbench/data/globe-coordinates.json

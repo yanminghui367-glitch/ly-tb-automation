@@ -1,0 +1,30 @@
+{
+  "name": "travel-listing-workbench",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node --check server.mjs && node --check app.js && node --check static-files.mjs && node --check session-guard.mjs && node --check browser-environment.mjs && node --check source-workflow.mjs && node --check source-workflow.js && node --check source-store.mjs && node --check taobao-publisher.mjs && node --check batch-store.mjs && node --check batch-workflow.mjs && node --check batch-workflow.js && node --check product-api.mjs && node --check product.js && node --check kernel-integrity.mjs && node --check ../tools/start-workbench.mjs && node --check product-state.mjs && node --check destination-catalog.mjs && node --check travel-home.js && node --check travel-globe.js && node --check globe-layout.js && node --check globe-catalog.mjs && node --check travel-os-api.mjs && node --check travel-os-store.mjs && node --check travel-os.js",
+    "test:engine": "node --test scripts/engine-mapping.test.mjs",
+    "test:static": "node --test scripts/static-files.test.mjs",
+    "test:session": "node --test scripts/session-guard.test.mjs",
+    "test:browser": "node --test scripts/browser-environment.test.mjs",
+    "test:source": "node --test scripts/source-workflow.test.mjs",
+    "test:batch": "node --test scripts/batch-workflow.test.mjs",
+    "test:product": "node --test scripts/product-api.test.mjs",
+    "test": "node --test scripts/*.test.mjs",
+    "qa:product": "node scripts/product-ui-qa.mjs",
+    "qa:contract": "node scripts/product-contract-ui.mjs",
+    "qa:travel-home": "node scripts/travel-home-ui.mjs",
+    "qa:globe": "node scripts/globe-premium-ui.mjs",
+    "qa:travel-os": "node scripts/travel-os-ui-qa.mjs"
+  },
+  "dependencies": {
+    "playwright": "1.62.1",
+    "three": "0.186.0"
+  },
+  "devDependencies": {
+    "opencc-js": "1.4.2"
+  }
+}
