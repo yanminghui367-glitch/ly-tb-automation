@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "createdAt": "2026-10-01T06:12:53.835Z",
+  "createdAt": "2026-10-01T06:15:13.768Z",
   "files": [
     {
       "path": ".gitattributes",
@@ -679,8 +679,8 @@
     },
     {
       "path": "tools/install-workbench.ps1",
-      "bytes": 1699,
-      "sha256": "658cfba5bdfe3eb10484d05c188aa4f9348a4261e3ae4175e449fd34e7bb52d6"
+      "bytes": 1720,
+      "sha256": "782fe18b5332f2e518e1eb07fee47a3a27f7faef374a91ab0e4ddb7d75ca530b"
     },
     {
       "path": "tools/keep-workbench-running.vbs",

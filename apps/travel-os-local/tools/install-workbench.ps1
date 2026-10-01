@@ -12,7 +12,7 @@ try {
     if (-not ($chromePaths | Where-Object { Test-Path -LiteralPath $_ })) { throw '请先安装 Google Chrome。' }
     foreach ($part in @('workbench','engine/v2')) {
         Write-Host "安装锁定依赖：$part"
-        & $npmCommand.Source ci --prefix (Join-Path $appRoot $part) --ignore-scripts
+        & $npmCommand.Source ci --prefix (Join-Path $appRoot $part) --ignore-scripts --no-audit --no-fund
         if ($LASTEXITCODE -ne 0) { throw "$part 依赖安装失败，请检查网络后重试。" }
     }
     & $npmCommand.Source run check --prefix (Join-Path $appRoot 'workbench')
