@@ -1,0 +1,36 @@
+// Separate headless browser; all write APIs blocked. Does not connect to the execution Chrome.
+import {chromium,expect} from 'playwright/test';
+import assert from 'node:assert/strict';
+import {writeFile,mkdir} from 'node:fs/promises';
+const base='http://127.0.0.1:4318',out='../output/globe-20260923/';await mkdir(out,{recursive:true});
+const before=await fetch(base+'/api/v1/state').then(r=>r.json());assert.equal(before.active,null);assert.equal(before.settings.executionEnabled,false);
+const catalog=await fetch(base+'/api/v1/globe').then(r=>r.json());assert.equal(catalog.total,700);assert.equal(catalog.mapped,699);assert.equal(catalog.unlocated,1);
+const browser=await chromium.launch({channel:'chrome',headless:true}),checks=[],errors=[],writes=[];
+try{
+ const page=await browser.newPage({viewport:{width:1672,height:941}});
+ page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+ await page.route('**/api/**',r=>{if(r.request().method()!=='GET'){writes.push(r.request().url());return r.abort();}return r.continue();});
+ await page.goto(base);await expect(page.locator('#interactiveGlobe')).toHaveAttribute('data-state','ready');await expect(page.locator('.city-name')).toHaveText('东京');await expect(page.locator('#mapCoverage')).toHaveText('699 / 700 已定位');
+ const globe=page.locator('#interactiveGlobe');await expect(globe).toHaveAttribute('data-camera',/.+/);await page.locator('#rotateGlobe').click();
+ const camera=await globe.getAttribute('data-camera'),canvas=page.locator('#interactiveGlobe canvas'),rect=await canvas.boundingBox();
+ await page.mouse.move(rect.x+rect.width*.5,rect.y+rect.height*.4);await page.mouse.down();await page.mouse.move(rect.x+rect.width*.7,rect.y+rect.height*.55,{steps:12});await page.mouse.up();
+ await expect(globe).not.toHaveAttribute('data-camera',camera);checks.push('drag rotates genuine WebGL sphere');
+ const d=+(await globe.getAttribute('data-distance'));await page.getByRole('button',{name:'放大地球',exact:true}).click();await expect.poll(async()=>+(await globe.getAttribute('data-distance'))).toBeLessThan(d);checks.push('zoom changes camera and clusters');
+ const d2=+(await globe.getAttribute('data-distance'));await page.mouse.move(rect.x+rect.width*.5,rect.y+rect.height*.35);await page.mouse.wheel(0,-200);await expect.poll(async()=>+(await globe.getAttribute('data-distance'))).toBeLessThan(d2);checks.push('wheel zoom');
+ await canvas.focus();const cam=await globe.getAttribute('data-camera');await page.keyboard.press('ArrowRight');await expect(globe).not.toHaveAttribute('data-camera',cam);checks.push('keyboard rotation');
+ await page.locator('#unlocatedPlaces').click();await expect(page.locator('#mapPanel')).toContainText('堪萨斯城');await expect(page.locator('#mapPanel')).toContainText('位置待确认');await page.locator('.map-close').click();checks.push('user-confirmed unresolved city retained without invented coordinate');
+ await page.locator('#allMapPlaces').click();await expect(page.locator('.map-list-item')).toHaveCount(700);await page.locator('.map-list-item').filter({hasText:'东京 · 日本'}).click();await expect(page.locator('.city-name')).toHaveText('东京');checks.push('all 700 destinations available and select links to original details');
+ await page.locator('#quickCities button').filter({hasText:'巴黎'}).click();await expect(page.locator('.city-name')).toHaveText('巴黎');await expect(page.locator('#globeStatus')).toContainText('巴黎');checks.push('city card and sphere synchronize');
+ await page.locator('#resetGlobe').click();await expect.poll(async()=>+(await globe.getAttribute('data-distance'))).toBeGreaterThan(3);
+ const clustered=page.locator('.globe-point.cluster').first();await clustered.click();await expect(page.locator('#mapPanel')).toBeVisible();assert(await page.locator('.map-list-item').count()>1);await page.locator('.map-close').click();checks.push('cluster click reveals members');
+ await page.locator('#quickCities button').filter({hasText:'东京'}).click();await page.locator('#resetGlobe').click();await expect.poll(async()=>+(await globe.getAttribute('data-distance'))).toBeGreaterThan(3);await page.evaluate(()=>Promise.all([...document.images].map(i=>i.decode().catch(()=>{}))));
+ await page.screenshot({path:out+'desktop.png'});
+ await page.reload();await expect(page.locator('#interactiveGlobe')).toHaveAttribute('data-state','ready');await expect(page.locator('.city-name')).toHaveText('东京');checks.push('refresh restores selected item without task execution');
+ for(const [width,height]of [[1440,900],[1024,900],[768,1024],[390,844],[360,780]]){await page.setViewportSize({width,height});await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:out+`width-${width}.png`,fullPage:width<1000});checks.push('layout '+width);}
+ await page.setViewportSize({width:390,height:844});await page.evaluate(()=>scrollTo(0,0));const touch=await page.context().newCDPSession(page);await touch.send('Emulation.setTouchEmulationEnabled',{enabled:true});
+ const priorScale=+(await globe.getAttribute('data-distance'));await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:140,y:275,id:0},{x:230,y:275,id:1}]});await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:90,y:275,id:0},{x:280,y:275,id:1}]});await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await expect.poll(async()=>+(await globe.getAttribute('data-distance'))).toBeLessThan(priorScale);checks.push('two-finger touch pinch changes globe scale');await touch.detach();
+ await page.emulateMedia({reducedMotion:'reduce'});await page.reload();await expect(page.locator('#interactiveGlobe')).toHaveAttribute('data-state','ready');await expect(page.locator('#rotateGlobe')).toHaveAttribute('aria-pressed','false');checks.push('reduced motion disables automatic rotation');
+ const fallback=await browser.newPage({viewport:{width:1440,height:900}});await fallback.addInitScript(()=>{const orig=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(kind,...args){if(/webgl/.test(kind))return null;return orig.call(this,kind,...args);};});await fallback.goto(base);await expect(fallback.locator('#interactiveGlobe')).toHaveAttribute('data-state','unavailable');await fallback.locator('#allMapPlaces').click();await expect(fallback.locator('.map-list-item')).toHaveCount(700);await fallback.screenshot({path:out+'webgl-fallback.png'});await fallback.close();checks.push('WebGL unavailable exposes destination list and search');
+ const after=await fetch(base+'/api/v1/state').then(r=>r.json());assert.deepEqual(after.records.map(x=>x.itemId).sort(),before.records.map(x=>x.itemId).sort());assert.equal(after.active,null);assert.equal(after.settings.executionEnabled,false);assert.equal(after.kernel.ok,true);assert.deepEqual(errors,[]);assert.deepEqual(writes,[]);
+ const report={at:new Date().toISOString(),checks,passed:checks.length,errors,writes,total:catalog.total,mapped:catalog.mapped,unlocated:catalog.unlocated,newRealPublications:0,kernel:after.kernel};await writeFile(out+'ui-qa.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
+}finally{await browser.close();}

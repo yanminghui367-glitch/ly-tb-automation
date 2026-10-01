@@ -1,0 +1,328 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-23T20:22:24+08:00",
+  "title": "Design System: 星途 Travel OS 工作台",
+  "extensions": {
+    "colorMeta": {
+      "gold": {
+        "role": "primary",
+        "displayName": "香槟金",
+        "tonalRamp": [
+          "oklch(15.00% 0.0728 81.79)",
+          "oklch(26.43% 0.0728 81.79)",
+          "oklch(37.86% 0.0728 81.79)",
+          "oklch(49.29% 0.0728 81.79)",
+          "oklch(60.71% 0.0728 81.79)",
+          "oklch(72.14% 0.0728 81.79)",
+          "oklch(83.57% 0.0728 81.79)",
+          "oklch(95.00% 0.0728 81.79)"
+        ]
+      },
+      "cyan": {
+        "role": "secondary",
+        "displayName": "浅青链接",
+        "tonalRamp": [
+          "oklch(15.00% 0.0889 226.06)",
+          "oklch(26.43% 0.0889 226.06)",
+          "oklch(37.86% 0.0889 226.06)",
+          "oklch(49.29% 0.0889 226.06)",
+          "oklch(60.71% 0.0889 226.06)",
+          "oklch(72.14% 0.0889 226.06)",
+          "oklch(83.57% 0.0889 226.06)",
+          "oklch(95.00% 0.0889 226.06)"
+        ]
+      },
+      "bad": {
+        "role": "error",
+        "displayName": "错误暖红",
+        "tonalRamp": [
+          "oklch(15.00% 0.0883 23.38)",
+          "oklch(26.43% 0.0883 23.38)",
+          "oklch(37.86% 0.0883 23.38)",
+          "oklch(49.29% 0.0883 23.38)",
+          "oklch(60.71% 0.0883 23.38)",
+          "oklch(72.14% 0.0883 23.38)",
+          "oklch(83.57% 0.0883 23.38)",
+          "oklch(95.00% 0.0883 23.38)"
+        ]
+      },
+      "navy": {
+        "role": "neutral",
+        "displayName": "深海军蓝",
+        "tonalRamp": [
+          "oklch(15.00% 0.0327 249.45)",
+          "oklch(26.43% 0.0327 249.45)",
+          "oklch(37.86% 0.0327 249.45)",
+          "oklch(49.29% 0.0327 249.45)",
+          "oklch(60.71% 0.0327 249.45)",
+          "oklch(72.14% 0.0327 249.45)",
+          "oklch(83.57% 0.0327 249.45)",
+          "oklch(95.00% 0.0327 249.45)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "深层面板",
+        "tonalRamp": [
+          "oklch(15.00% 0.0429 248.91)",
+          "oklch(26.43% 0.0429 248.91)",
+          "oklch(37.86% 0.0429 248.91)",
+          "oklch(49.29% 0.0429 248.91)",
+          "oklch(60.71% 0.0429 248.91)",
+          "oklch(72.14% 0.0429 248.91)",
+          "oklch(83.57% 0.0429 248.91)",
+          "oklch(95.00% 0.0429 248.91)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "星光白",
+        "tonalRamp": [
+          "oklch(15.00% 0.0069 247.90)",
+          "oklch(26.43% 0.0069 247.90)",
+          "oklch(37.86% 0.0069 247.90)",
+          "oklch(49.29% 0.0069 247.90)",
+          "oklch(60.71% 0.0069 247.90)",
+          "oklch(72.14% 0.0069 247.90)",
+          "oklch(83.57% 0.0069 247.90)",
+          "oklch(95.00% 0.0069 247.90)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "说明蓝灰",
+        "tonalRamp": [
+          "oklch(15.00% 0.0314 238.95)",
+          "oklch(26.43% 0.0314 238.95)",
+          "oklch(37.86% 0.0314 238.95)",
+          "oklch(49.29% 0.0314 238.95)",
+          "oklch(60.71% 0.0314 238.95)",
+          "oklch(72.14% 0.0314 238.95)",
+          "oklch(83.57% 0.0314 238.95)",
+          "oklch(95.00% 0.0314 238.95)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "透明边界",
+        "tonalRamp": [
+          "oklch(15.00% 0.0534 242.32)",
+          "oklch(26.43% 0.0534 242.32)",
+          "oklch(37.86% 0.0534 242.32)",
+          "oklch(49.29% 0.0534 242.32)",
+          "oklch(60.71% 0.0534 242.32)",
+          "oklch(72.14% 0.0534 242.32)",
+          "oklch(83.57% 0.0534 242.32)",
+          "oklch(95.00% 0.0534 242.32)"
+        ]
+      },
+      "button": {
+        "role": "neutral",
+        "displayName": "次按钮底色",
+        "tonalRamp": [
+          "oklch(15.00% 0.0457 245.37)",
+          "oklch(26.43% 0.0457 245.37)",
+          "oklch(37.86% 0.0457 245.37)",
+          "oklch(49.29% 0.0457 245.37)",
+          "oklch(60.71% 0.0457 245.37)",
+          "oklch(72.14% 0.0457 245.37)",
+          "oklch(83.57% 0.0457 245.37)",
+          "oklch(95.00% 0.0457 245.37)"
+        ]
+      },
+      "button-hover": {
+        "role": "neutral",
+        "displayName": "次按钮悬停",
+        "tonalRamp": [
+          "oklch(15.00% 0.0509 241.70)",
+          "oklch(26.43% 0.0509 241.70)",
+          "oklch(37.86% 0.0509 241.70)",
+          "oklch(49.29% 0.0509 241.70)",
+          "oklch(60.71% 0.0509 241.70)",
+          "oklch(72.14% 0.0509 241.70)",
+          "oklch(83.57% 0.0509 241.70)",
+          "oklch(95.00% 0.0509 241.70)"
+        ]
+      },
+      "input": {
+        "role": "neutral",
+        "displayName": "输入底色",
+        "tonalRamp": [
+          "oklch(15.00% 0.0376 247.24)",
+          "oklch(26.43% 0.0376 247.24)",
+          "oklch(37.86% 0.0376 247.24)",
+          "oklch(49.29% 0.0376 247.24)",
+          "oklch(60.71% 0.0376 247.24)",
+          "oklch(72.14% 0.0376 247.24)",
+          "oklch(83.57% 0.0376 247.24)",
+          "oklch(95.00% 0.0376 247.24)"
+        ]
+      },
+      "primary-ink": {
+        "role": "neutral",
+        "displayName": "主按钮深字",
+        "tonalRamp": [
+          "oklch(15.00% 0.0395 245.71)",
+          "oklch(26.43% 0.0395 245.71)",
+          "oklch(37.86% 0.0395 245.71)",
+          "oklch(49.29% 0.0395 245.71)",
+          "oklch(60.71% 0.0395 245.71)",
+          "oklch(72.14% 0.0395 245.71)",
+          "oklch(83.57% 0.0395 245.71)",
+          "oklch(95.00% 0.0395 245.71)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "页面标题",
+        "purpose": "工作台 h1；850px 及以下缩至 24px。"
+      },
+      "title": {
+        "displayName": "区块标题",
+        "purpose": "普通 h2；目的地与任务组件可采用实际局部字号。"
+      },
+      "body": {
+        "displayName": "正文",
+        "purpose": "操作区默认文字。"
+      },
+      "label": {
+        "displayName": "辅助标签",
+        "purpose": "控件、表格与说明标签。"
+      }
+    },
+    "shadows": [
+      {
+        "name": "search-results",
+        "value": "0 20px 45px #0006",
+        "purpose": "搜索建议浮层。"
+      },
+      {
+        "name": "toast",
+        "value": "0 16px 40px #0006",
+        "purpose": "结果通知。"
+      },
+      {
+        "name": "dialog",
+        "value": "0 30px 80px #0007",
+        "purpose": "原生编辑与核对对话框。"
+      }
+    ],
+    "motion": [
+      {
+        "name": "reduced-motion",
+        "value": "none",
+        "purpose": "prefers-reduced-motion: reduce 下，共享地球 stage 与工具按钮 transition 为 none!important；工作台普通控件没有新增过渡。"
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "wide-min",
+        "value": "1600px"
+      },
+      {
+        "name": "compact-max",
+        "value": "1200px"
+      },
+      {
+        "name": "top-navigation-max",
+        "value": "850px"
+      },
+      {
+        "name": "stacked-max",
+        "value": "620px"
+      },
+      {
+        "name": "shared-globe-mobile-max",
+        "value": "550px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "主按钮",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "推进已核对的主要动作；示例按钮无执行绑定。",
+      "html": "<button class=\"ds-primary\">准备产品</button>",
+      "css": ".ds-primary{font-family:'Segoe UI','Microsoft YaHei',sans-serif;font-size:14px;line-height:1.6;min-height:38px;display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:8px 14px;border:1px solid #7992a349;border-radius:8px;color:var(--ink,#eff3f7);background:#142b3e;cursor:pointer;text-decoration:none;font-weight:500;background:var(--gold,#dfc391);color:#102333;border-color:transparent;font-weight:650}.ds-primary:hover{background:#eed5ad}.ds-primary:focus-visible{outline:2px solid var(--gold,#dfc391);outline-offset:3px}.ds-primary:disabled{cursor:not-allowed;opacity:.5}"
+    },
+    {
+      "name": "次按钮",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "检查、查看与次要操作。",
+      "html": "<button class=\"ds-secondary\">检查执行浏览器</button>",
+      "css": ".ds-secondary{font-family:'Segoe UI','Microsoft YaHei',sans-serif;font-size:14px;line-height:1.6;min-height:38px;display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:8px 14px;border:1px solid #7992a349;border-radius:8px;color:var(--ink,#eff3f7);background:#142b3e;cursor:pointer;text-decoration:none;font-weight:500}.ds-secondary:hover{background:#203d52;border-color:#a4bccf85}.ds-secondary:focus-visible{outline:2px solid var(--gold,#dfc391);outline-offset:3px}.ds-secondary:disabled{cursor:not-allowed;opacity:.5}"
+    },
+    {
+      "name": "有标签的输入框",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "标签、输入、错误信息相邻；不依靠 placeholder 代替标签。",
+      "html": "<label class=\"ds-field\">目的地<input class=\"ds-input\" placeholder=\"输入城市名称\"></label>",
+      "css": ".ds-field{font-family:'Segoe UI','Microsoft YaHei',sans-serif;font-size:14px;line-height:1.6;display:grid;gap:6px;color:var(--muted,#a9becd)}.ds-input{font-family:'Segoe UI','Microsoft YaHei',sans-serif;font-size:14px;line-height:1.6;width:100%;min-width:0;color:var(--ink,#eff3f7);background:#091a29;border:1px solid #7492a84f;border-radius:8px;padding:10px 12px;caret-color:var(--gold,#dfc391)}.ds-input::placeholder{color:#9cafbf}.ds-input:focus-visible{outline:2px solid var(--gold,#dfc391);outline-offset:3px}"
+    },
+    {
+      "name": "模块导航",
+      "kind": "nav",
+      "description": "当前模块由 aria-current 标识；小屏横向滚动。",
+      "html": "<nav class=\"ds-nav\" aria-label=\"示例导航\"><a class=\"ds-nav-item\" href=\"#overview\" aria-current=\"page\">总览</a><a class=\"ds-nav-item\" href=\"#tasks\">自动化任务</a></nav>",
+      "css": ".ds-nav{font-family:'Segoe UI','Microsoft YaHei',sans-serif;font-size:14px;line-height:1.6;display:grid;gap:7px}.ds-nav-item{display:flex;gap:13px;align-items:center;text-decoration:none;color:#aebfce;padding:11px 14px;border:1px solid transparent;border-radius:8px}.ds-nav-item[aria-current=page]{color:#f0d5a6;background:#1b2c38;border-color:#dfc39130}.ds-nav-item:hover{background:#112536;color:var(--ink,#eff3f7)}.ds-nav-item:focus-visible{outline:2px solid var(--gold,#dfc391);outline-offset:3px}@media(max-width:850px){.ds-nav{display:flex;overflow-x:auto;gap:4px;padding-bottom:4px}.ds-nav-item{white-space:nowrap;padding:9px 12px;font-size:12px}}"
+    },
+    {
+      "name": "状态徽标",
+      "kind": "chip",
+      "description": "只读状态以文字和颜色共同表达；此处为组件示例。",
+      "html": "<span class=\"ds-badge ds-good\">已核验上架</span> <span class=\"ds-badge ds-warn\">等待人工</span> <span class=\"ds-badge ds-bad\">待核验</span>",
+      "css": ".ds-badge{font-family:'Segoe UI','Microsoft YaHei',sans-serif;font-size:14px;line-height:1.6;display:inline-block;border:1px solid #90a8ba40;border-radius:5px;background:#1b3242;color:#ccdae5;font-size:11px;line-height:1.7;padding:2px 7px;white-space:nowrap}.ds-good{color:#a1ddc1;background:#153e35}.ds-warn{color:#f1d39e;background:#403829}.ds-bad{color:#ffc0b7;background:#432f35}@media(max-width:620px){.ds-badge{font-size:12px}}"
+    },
+    {
+      "name": "工作面板",
+      "kind": "card",
+      "description": "普通信息区域，采用细边界与底色分层。",
+      "html": "<section class=\"ds-panel\"><h2>执行设置</h2><p>检查当前执行条件。</p></section>",
+      "css": ".ds-panel{font-family:'Segoe UI','Microsoft YaHei',sans-serif;font-size:14px;line-height:1.6;border:1px solid var(--line,#7899b32b);border-radius:12px;background:#0d2132;padding:20px;color:var(--ink,#eff3f7)}.ds-panel h2{margin:0 0 16px;font-size:19px;font-weight:600}.ds-panel p{margin:0;color:var(--muted,#a9becd)}"
+    },
+    {
+      "name": "任务队列项",
+      "kind": "button",
+      "description": "选择任务以查看节点与日志；不代表开始执行。",
+      "html": "<button class=\"ds-queue ds-selected\"><strong>所选目的地</strong><small>等待执行</small></button>",
+      "css": ".ds-queue{font-family:'Segoe UI','Microsoft YaHei',sans-serif;font-size:14px;line-height:1.6;min-height:38px;display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:8px 14px;border:1px solid #7992a349;border-radius:8px;color:var(--ink,#eff3f7);background:#142b3e;cursor:pointer;text-decoration:none;font-weight:500;display:block;width:100%;text-align:left;border:1px solid transparent;background:transparent;margin-top:5px;padding:12px;border-radius:8px}.ds-queue:hover{background:#1b3547}.ds-queue.ds-selected{border-color:#c8af7549;background:#263740}.ds-queue:focus-visible{outline:2px solid var(--gold,#dfc391);outline-offset:3px}.ds-queue strong{display:block;font-size:13px;font-weight:500;overflow-wrap:anywhere;margin-bottom:7px}.ds-queue small{display:block;margin-top:8px;font-size:11px;color:var(--muted,#a9becd)}"
+    },
+    {
+      "name": "连接或业务提示",
+      "kind": "custom",
+      "description": "解释当前条件；需要人工介入的状态不只改变颜色。",
+      "html": "<div class=\"ds-notice\" role=\"status\">创建任务不会自动开始。</div>",
+      "css": ".ds-notice{font-family:'Segoe UI','Microsoft YaHei',sans-serif;font-size:14px;line-height:1.6;padding:12px 18px;background:#343126;border:1px solid #dfc39145;color:#f0d6ac;border-radius:8px;font-size:12px;line-height:1.7;margin-bottom:16px}.ds-notice.ds-danger{background:#362c32;color:#ffc1bb;border-color:#db8d8544}"
+    }
+  ],
+  "narrative": {
+    "northStar": "有据可查的目的地控制台",
+    "overview": "深海军蓝承载密集操作，香槟金强调当前选择与主要动作。地球提供空间定位，工作面板提供可核对的事实；字体、表格和状态提示保持克制、清晰。\n\n适用范围只有 `/travel-os.html` 的八模块。根路径 `/` 保持原星途地球首页，经“打开工作台”进入本界面；`/index.html` 保留原操作台。两者不继承本文件令牌，旧规则继续见 `.interface-design/system.md` 的对应日期章节。",
+    "keyCharacteristics": [
+      "深蓝工作面、香槟金主动作、浅青链接。",
+      "地球与目的地详情联动，操作区采用紧凑原生控件。",
+      "中文状态、真实证据和明确禁用原因优先于装饰指标。"
+    ],
+    "rules": [
+      {
+        "name": "The Surface Boundary Rule",
+        "body": "新工作台令牌不得覆盖原首页；原首页的星空蓝、航线青和城市夜灯金继续由 `travel-home.css` 管理。",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "Do 保留原地球首页与八模块工作台的路由、视觉边界。",
+      "Do 用实际状态、中文标签和证据入口解释每个操作结果。",
+      "Do 保留可见焦点、窄屏入口、局部横滚和断线提示。"
+    ],
+    "donts": [
+      "Don't 把新工作台的颜色或侧栏套到原首页或原操作台。",
+      "Don't 用进度百分比、模拟成功或无依据的经营指标装饰页面。",
+      "Don't 将资料预检、界面验收或准备单显示成正式发布成功。"
+    ]
+  }
+}

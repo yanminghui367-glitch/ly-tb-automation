@@ -2,6 +2,14 @@
 
 AI 淘宝境外旅游服务商品批量上架自动化系统。
 
+## 当前星途 Travel OS 完整版（2026-10-01）
+
+本机现有 UI、功能代码、字体、图片、Three.js、内核、测试和项目文档完整保存在 [`apps/travel-os-local/`](apps/travel-os-local/)。下载默认 `main` 分支后，双击根目录 **`安装星途工作台.cmd`**；有本地业务迁移包时，在首次启动前进入该目录，将业务 ZIP 拖到 **`恢复业务数据.cmd`**，再双击 **`启动上架工作台.vbs`**。
+
+安装要求 Windows、Node.js 24+、Python 3.10+ 和 Google Chrome；安装器按锁文件安装依赖并核对全部源文件/资源哈希。步骤、数据恢复与验证边界见 [跨电脑安装与迁移](apps/travel-os-local/docs/GITHUB_INSTALL_MIGRATION_20261001.md) 和 [本轮验证](apps/travel-os-local/docs/GITHUB_SYNC_VERIFICATION_20261001.md)。
+
+业务 Excel、商品图片、报价、上架历史通过本地包传输，不进入这个公开仓库；登录在新电脑重新完成。迁移保留历史防重键并默认关闭执行，两个副本不会自动同步。下方原系统和此前记录保留。
+
 ## 已验证的本地工作台代码（2026-09-27）
 
 - [实际有效成果总结](docs/TRAVEL_OS_EFFECTIVE_SUMMARY_20260927.md)：区分历史真实发布、本地测试、当前能力和未完成项。

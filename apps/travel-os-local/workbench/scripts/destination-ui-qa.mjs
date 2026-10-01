@@ -1,0 +1,86 @@
+// Read-only production UI verification. All write requests are blocked by this browser context.
+import {chromium} from 'playwright';
+import assert from 'node:assert/strict';
+import {mkdir,writeFile,readFile} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {verifyKernel} from '../kernel-integrity.mjs';
+const out=resolve(import.meta.dirname,'../../output/destination-ui-20260925');
+await mkdir(out,{recursive:true});
+const url='http://127.0.0.1:4318/travel-os.html#destinations';
+const before=await fetch('http://127.0.0.1:4318/api/os/state').then(r=>r.json());
+const browser=await chromium.launch({channel:'chrome',headless:true});
+const checks=[],errors=[],writes=[];
+const check=(value,label)=>{assert.ok(value,label);checks.push(label);};
+try{
+ const context=await browser.newContext({viewport:{width:1672,height:941},deviceScaleFactor:1});
+ await context.route('**/api/**',route=>{if(!['GET','HEAD'].includes(route.request().method())){writes.push(route.request().url());return route.abort();}return route.continue();});
+ await context.addInitScript(()=>localStorage.setItem('travel-os:sidebar-expanded','true'));
+ const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+ const root=page.locator('#page-destinations'),rows=root.locator('tbody tr');
+ const action=(name)=>root.locator(`[data-action="${name}"]`);
+ const reset=()=>action('directory-reset').first().click();
+ const capture=async name=>{await page.evaluate(()=>document.fonts.ready);await page.locator('#page-destinations img, #editor img').evaluateAll(imgs=>Promise.all(imgs.map(i=>{i.loading='eager';return i.decode().catch(()=>{});})));await page.screenshot({path:resolve(out,name+'.png'),fullPage:name!=='desktop'&&!name.includes('mobile-detail')});};
+ await page.goto(url);await rows.first().waitFor();await root.locator('.dc-map').waitFor();
+ check(await rows.count()===10,'默认每页 10 条');
+ check((await root.locator('.dc-total').innerText()).includes(String(new Set(before.products.map(d=>d.geoKey)).size)),'总数来自真实目的地去重');
+ check(await root.locator('.dc-details h2').innerText()==='东京','默认选中东京');
+ check(await root.locator('.dc-details .dc-no-photo').count()===1,'东京名称错配主图未展示');
+ await capture('desktop');
+ await page.locator('#destinationFilter').fill('东京');
+ check(await rows.count()===1,'搜索东京只保留匹配记录');
+ await page.locator('#destinationFilter').fill('不存在的目的地-qa');
+ check(await root.getByText('没有匹配的目的地',{exact:true}).isVisible(),'搜索无结果状态');
+ await capture('empty');await reset();
+ await page.locator('#directoryType').selectOption('country');
+ check((await rows.locator('td:nth-child(2)').allTextContents()).every(t=>t==='国家'),'国家类型筛选');
+ await action('directory-region').filter({hasText:'欧洲'}).click();
+ check((await rows.locator('.dc-destination small').allTextContents()).every(t=>t.includes('欧洲')),'洲与类型组合筛选');
+ await reset();await page.locator('#directoryState').selectOption('VERIFIED');
+ check((await rows.locator('.dc-state').allTextContents()).every(t=>t==='已上架'),'已上架状态来自真实记录');
+ await reset();const first=await rows.first().getAttribute('data-directory-row');
+ await root.getByRole('button',{name:'下一页',exact:true}).click();
+ check(await rows.first().getAttribute('data-directory-row')!==first,'分页切换记录');
+ const rowName=await rows.first().locator('strong').innerText();
+ check(await root.locator('.dc-details h2').innerText()===rowName,'翻页后详情选中可见记录');
+ await page.locator('#directorySize').selectOption('20');check(await rows.count()===20,'每页数量切换为 20');
+ await page.locator('#directorySize').selectOption('10');await reset();
+ await action('directory-view').filter({hasText:'卡片视图'}).click();check(await root.locator('.dc-card').count()===10,'卡片视图复用分页');
+ await root.locator('.dc-card').nth(1).click();check(await root.locator('.dc-details h2').innerText()===await root.locator('.dc-card').nth(1).locator('strong').innerText(),'卡片点击联动详情');
+ await capture('cards');await action('directory-view').filter({hasText:'列表视图'}).click();
+ await rows.first().locator('td:nth-child(2)').click();check(await root.locator('.dc-details h2').innerText()===await rows.first().locator('strong').innerText(),'点击行空白区域可选中');
+ await action('directory-more').first().click();await page.locator('#editor[open]').waitFor();
+ await page.locator('#editor [data-action=destination-products]').click();
+ check(await page.locator('#page-products').isVisible()&&!await page.locator('#editor').isVisible(),'更多菜单进入关联产品并关闭弹窗');
+ await page.goto(url);await rows.first().waitFor();
+ await root.locator('.dc-facts [data-action=destination-quotes]').click();check(await page.locator('#page-quotes').isVisible(),'详情统计进入对应报价');
+ await page.goto(url);await rows.first().waitFor();await root.locator('.dc-map').waitFor();
+ await action('locate').click();check(await page.locator('#page-overview').isVisible(),'地球定位入口可用');
+ await page.goto(url);await rows.first().waitFor();
+ for(const width of [1440,1250,1024,390]){
+  await page.setViewportSize({width,height:width===390?844:941});
+  if(width===390&&await page.locator('#sidebarToggle').getAttribute('aria-expanded')==='true')await page.locator('#sidebarToggle').click();
+  check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),width+'px 无页面横向溢出');
+  await capture('width-'+width);
+ }
+ await rows.nth(1).locator('.dc-destination').click();await page.locator('#editor[open] .dc-mobile-details').waitFor();
+ check(await page.locator('#editor .dc-details h2').innerText()===await rows.nth(1).locator('strong').innerText(),'手机详情抽屉显示所点击目的地');
+ await capture('mobile-detail');await page.keyboard.press('Escape');check(!await page.locator('#editor').isVisible(),'Escape 关闭详情抽屉');
+ await page.setViewportSize({width:1672,height:941});
+ await page.route('**/api/v1/globe',route=>route.fulfill({status:503,contentType:'application/json',body:'{"error":"QA simulated geographic outage"}'}));
+ await page.reload();await root.getByText('位置读取失败',{exact:true}).waitFor();check(await rows.count()===10,'地图失败不影响目录');
+ await page.unroute('**/api/v1/globe');await action('directory-retry').click();await root.locator('.dc-map').waitFor();checks.push('地图失败可重试恢复');
+ check(errors.length===0,'浏览器无未捕获异常');check(writes.length===0,'浏览器未触发写 API');
+ const after=await fetch('http://127.0.0.1:4318/api/os/state').then(r=>r.json());
+ check(JSON.stringify(before.products.map(d=>[d.key,d.state,d.itemId]))===JSON.stringify(after.products.map(d=>[d.key,d.state,d.itemId])),'商品与历史状态未改变');
+ check(!after.engine.active,'无执行任务启动');
+ const kernel=await verifyKernel();check(kernel.ok,'冻结内核校验通过');
+ // Genuine side-by-side board for visual review, with identical 1672 px captures.
+ const board=await context.newPage();await board.setViewportSize({width:3344,height:941});
+ const ref=await readFile(resolve(out,'reference.png')),actual=await readFile(resolve(out,'desktop.png'));
+ await board.setContent(`<style>body{margin:0;display:flex;background:#eef2f6}img{width:1672px;align-self:flex-start}</style><img src="data:image/png;base64,${ref.toString('base64')}"><img src="data:image/png;base64,${actual.toString('base64')}">`);
+ await board.screenshot({path:resolve(out,'comparison.png'),fullPage:true});
+ console.log(JSON.stringify({checks,errors,writes,kernel}));
+}finally{
+ await writeFile(resolve(out,'verification.json'),JSON.stringify({at:new Date().toISOString(),checks,errors,writes},null,2));
+ await browser.close();
+}

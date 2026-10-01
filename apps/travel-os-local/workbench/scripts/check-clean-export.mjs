@@ -20,12 +20,13 @@ await page.route('**/api/**',r=>{if(r.request().method()==='GET')return r.contin
 try {
  const health=await fetch(base+'/api/v1/health').then(r=>r.json());assert.equal(health.kernel.ok,true);checks.push('ten locked kernel files match after export');
  const state=await fetch(base+'/api/os/state').then(r=>r.json());assert.equal(state.products.length,0);assert.equal(state.attempts.length,0);assert.equal(state.engine.records.length,0);assert(!state.engine.active);checks.push('clean database has no products, execution history or active task');
- for(const path of ['/','/travel-os.html#overview','/travel-os.html#products','/travel-os.html#tasks','/travel-os.html#settings']){
+ for(const path of ['/','/travel-os.html#overview','/travel-os.html#tasks','/travel-os.html#shops','/travel-os.html#products','/travel-os.html#destinations','/travel-os.html#quotes','/travel-os.html#records','/travel-os.html#settings']){
   await page.goto(base+path);await page.evaluate(()=>document.fonts.ready);
   if(path.startsWith('/travel-os.html'))await page.waitForFunction(()=>document.getElementById('connectionState')?.textContent==='本地服务已连接');
   if(path.includes('overview')){await page.locator('.overview-metric').first().waitFor();assert.deepEqual(await page.locator('.ov-metric-copy strong').allTextContents(),['0','0','0','0']);await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:join(out,'clean-overview.png')});}
   assert.equal(await page.title(),'星途 Travel OS');checks.push('read-only route '+path);
  }
+ for(const path of ['/favicon.svg','/assets/fonts/noto-sans-sc-variable.woff2','/assets/travel-os/vendor/three.module.js','/assets/travel-os/earth-day.jpg','/assets/travel-os/workspace-backdrop.png','/assets/travel-os/overview-santorini.png','/assets/travel-os/overview-thailand.png','/assets/travel-os/overview-australia.png']){const r=await fetch(base+path);assert.equal(r.status,200,path);await r.arrayBuffer();}checks.push('font, logo, globe vendor/texture and overview images are available');
  assert.equal(errors.length,0);assert.equal(blockedWrites.length,0);assert(!existsSync(join(root,'browser-profile')));checks.push('no script errors, mutations or execution-browser profile created');
  await writeFile(join(out,'result.json'),JSON.stringify({checks,errors,blockedWrites,mode:'EMPTY_EXPORT_READ_ONLY'},null,2));console.log(JSON.stringify({passed:checks.length,errors,blockedWrites}));
 } finally {await browser.close();workbenchServer.closeAllConnections();workbenchServer.close();}

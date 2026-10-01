@@ -1,22 +1,23 @@
+# Local sessions, credentials and machine dependencies
 **/.runtime/
-/browser-profile/
 **/.playwright-cli/
 **/node_modules/
+**/.env
+**/.env.*
+!**/.env.example
+*.log
+*.pem
+*.key
+# Existing operational data and third-party archives stay local
 /output/
 /outputs/
 /workbench/output/
 /third_party/
-**/__pycache__/
+/LY_解压审查/
+__pycache__/
 *.pyc
-*.sqlite*
-*.db
-*.log
-**/.env
-**/.env.*
-!**/.env.example
-*.pem
-*.key
-# This is public geographic reference data, not the parent's runtime data/ folder.
-!/workbench/data/
-!/workbench/data/README.md
-!/workbench/data/globe-coordinates.json
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+
+/browser-profile/

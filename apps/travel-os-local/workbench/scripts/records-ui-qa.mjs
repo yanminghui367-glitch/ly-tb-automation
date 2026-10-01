@@ -1,0 +1,47 @@
+import {chromium} from 'playwright';
+import {mkdir,writeFile,readFile} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import assert from 'node:assert/strict';
+const out=resolve(import.meta.dirname,'../../output/records-ui-20260925');await mkdir(out,{recursive:true});
+const browser=await chromium.launch({channel:'chrome',headless:true});
+const checks=[],errors=[],writes=[];
+const check=(v,name)=>{assert.ok(v,name);checks.push(name);};
+try{
+ const page=await browser.newPage({viewport:{width:1672,height:941},deviceScaleFactor:1});
+ await page.addInitScript(()=>localStorage.setItem('travel-os:sidebar-expanded','true'));
+ await page.route('**/api/**',route=>{if(route.request().method()!=='GET'){writes.push(route.request().url());return route.abort();}return route.continue();});
+ page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:4318/travel-os.html#records');
+ await page.locator('#page-records tbody tr').first().waitFor();await page.evaluate(()=>document.fonts.ready);
+ await page.waitForFunction(()=>[...document.querySelectorAll('#page-records .records-product img')].every(i=>i.complete));
+ await page.screenshot({path:resolve(out,'desktop.png')});
+ const counts=await page.locator('.records-metric strong').allTextContents();check(counts[0]==='30'&&counts[1]==='30','live record counts 30 / 30');
+ check(await page.locator('#page-records tbody tr').count()===8,'eight rows per page');
+ check((await page.locator('#page-records tbody').innerText()).includes('出售中 · 非仓库'),'selling is not warehouse');
+ const initial=await page.locator('#page-records tbody tr').first().innerText();
+ await page.locator('#page-records [data-action=next-page]').click();check(await page.locator('#page-records tbody tr').first().innerText()!==initial,'pagination');
+ await page.locator('[data-action=record-sort]').click();check(await page.locator('#page-records th[aria-sort]').getAttribute('aria-sort')==='ascending','time sort');
+ await page.locator('#recordFilter').fill('无匹配记录-qa');check(await page.locator('#page-records tbody tr').count()===0,'empty search');check(await page.locator('[data-action=record-export]').isDisabled(),'empty export disabled');
+ await page.locator('.records-toolbar [data-action=record-reset]').click();
+ await page.locator('#recordWarehouse').selectOption('stored');check(await page.locator('#page-records tbody tr').count()===0,'warehouse filter');
+ await page.locator('.records-toolbar [data-action=record-reset]').click();
+ await page.locator('#recordResult').selectOption('FAILED');check(await page.locator('#page-records tbody tr').count()===0,'result filter');
+ await page.locator('.records-toolbar [data-action=record-reset]').click();
+ await page.locator('#recordException').selectOption('yes');check(await page.locator('#page-records tbody tr').count()===0,'exception filter');
+ await page.locator('.records-toolbar [data-action=record-reset]').click();
+ await page.locator('#recordFrom').fill('2099-01-01');check(await page.locator('.records-metric strong').first().innerText()==='0','date updates statistics');
+ await page.locator('.records-toolbar [data-action=record-reset]').click();
+ const title=await page.locator('.records-product strong').first().getAttribute('title');await page.locator('#recordFilter').fill(title);
+ const download=page.waitForEvent('download');await page.locator('[data-action=record-export]').click();const file=await download;await file.saveAs(resolve(out,'filtered.csv'));
+ const csv=await readFile(resolve(out,'filtered.csv'),'utf8');check(csv.includes(title)&&csv.includes('出售中 · 非仓库')&&csv.trim().split('\r\n').length===2,'filtered CSV contains only matching row');
+ await page.locator('.records-toolbar [data-action=record-reset]').click();
+ await page.locator('#page-records [data-action=record-detail]').first().click();await page.locator('#editor[open]').waitFor();check((await page.locator('#editor').innerText()).includes('商品 ID'),'existing evidence detail');check((await page.locator('#editor').innerText()).includes(title),'full product title in detail');await page.keyboard.press('Escape');
+ await page.locator('#page-records summary').first().click();await page.locator('[data-action=record-copy]').first().click();await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('已复制')||document.querySelector('#editor').open);check((await page.locator('#toast').innerText()).includes('已复制')||await page.locator('#editor').isVisible(),'copy ID supported or manual fallback');if(await page.locator('#editor').isVisible())await page.keyboard.press('Escape');
+ await page.locator('#page-records summary').first().click();
+ await page.locator('#toast').evaluate(el=>el.hidden=true);
+ for(const width of [1440,390]){await page.setViewportSize({width,height:width===390?844:941});check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${width} no document overflow`);check(await page.locator('[data-action=record-export]').evaluate(el=>{const b=el.getBoundingClientRect(),p=el.closest('.records-main').getBoundingClientRect();return b.right<=p.right&&b.left>=p.left}),`${width} export button not clipped`);await page.waitForFunction(()=>[...document.querySelectorAll('#page-records .records-product img')].every(i=>i.complete&&i.naturalWidth>0));await page.screenshot({path:resolve(out,width===390?'mobile.png':'desktop-1440.png'),fullPage:width===390});}
+ check(await page.locator('#recordShopSelect').isVisible(),'mobile shop selector');
+ await page.context().setOffline(true);await page.locator('#connectionNotice:visible').waitFor({timeout:22000});checks.push('offline notice');await page.context().setOffline(false);
+ check(errors.length===0,'no page errors');check(writes.length===0,'no business mutations');
+ console.log(JSON.stringify({checks,errors,writes}));
+}finally{await writeFile(resolve(out,'verification.json'),JSON.stringify({checks,errors,writes,at:new Date().toISOString()},null,2));await browser.close();}

@@ -1,2 +1,9 @@
-# Preserve original bytes, especially the ten SHA-256-locked kernel files.
+# Preserve original audit archive and raw evidence bytes in Git.
+/docs/history/PROJECT_STATUS_before_20260913.md -text
+/output/standardization-20260913/qa/* -text
+/output/static-resource-20260913/** -text
+/output/session-guard-20260913/** -text
+/output/n03-evidence-20260914/** -text
+/output/n03-workbook-20260915/** -text
+# Keep every source/resource byte identical on a new Windows checkout.
 * -text

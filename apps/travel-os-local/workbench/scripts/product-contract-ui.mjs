@@ -1,0 +1,32 @@
+// Isolated product-state demonstrations. All API requests are intercepted; no seller browser is used.
+import {chromium} from 'playwright';
+import assert from 'node:assert/strict';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
+const base='http://127.0.0.1:4318',out=fileURLToPath(new URL('../../output/interface-v1-20260921/',import.meta.url));await mkdir(out,{recursive:true});
+const saved=await fetch(base+'/api/v1/state').then(r=>r.json());assert.equal(saved.active,null);assert.equal(saved.settings.executionEnabled,false);
+const browser=await chromium.launch({channel:'chrome',headless:true}),checks=[],errors=[],requests=[];
+try{
+ const page=await browser.newPage({viewport:{width:1440,height:1000}});page.on('pageerror',e=>errors.push(e.message));
+ await page.addInitScript(()=>{window.EventSource=class{constructor(){window.qaStream=this;}addEventListener(name,fn){this[name]=fn;}close(){}};});
+ let state=structuredClone(saved);state.testMode=true;state.records=[];state.overview={published:0,totalBatches:1,waiting:0,failed:0};state.events=[];state.batch.total=1;state.batch.items=state.batch.items.slice(0,1);state.batch.items[0].result=null;state.batch.items[0].screenshot=null;state.batch.items[0].step='填写标题';state.batch.items[0].title='隔离测试任务';state.batch.items[0].runState='RUNNING';state.batch.elapsedMs=0;state.batch.consecutive=0;state.batch.max_consecutive=0;state.settings.executionEnabled=true;state.exceptions=[];state.browser={running:true,loggedIn:true,label:'已登录',loginState:'LOGGED_IN',checkedAt:new Date().toISOString()};
+ await page.route('**/api/**',async route=>{const op=new URL(route.request().url()).pathname.split('/').at(-1);requests.push(op);
+  if(op==='state')return route.fulfill({json:state});
+  if(op==='recovery-check')return route.fulfill({json:{ready:false,checks:[{name:'提交结果核验',ok:false,detail:'无商品 ID，先在平台人工核对；禁止重新发布'}]}});
+  throw Error('Unexpected API in isolated UI: '+op);
+ });
+ state.batch.state='RUNNING';state.batch.current=state.batch.items[0].id;state.batch.items[0].state='RUNNING';state.batch.items[0].destination='隔离示例商品';state.batch.counts.SUCCEEDED=0;state.batch.counts.RUNNING=1;state.batches=[{...state.batch}];state.active=state.batch.id;state.execution={state:'PAUSING',label:'正在暂停',saved:false,detail:'当前步骤尚未结束，正在等待断点保存。'};
+ await page.goto(base+'/index.html#monitor');await page.getByText('隔离测试模式：不连接店铺，不写入真实上架成功记录。',{exact:true}).waitFor();assert.match(await page.locator('#notice').innerText(),/不能确认安全暂停/);assert(await page.locator('#pauseButton').isDisabled());assert(await page.locator('#continueButton').isDisabled());await page.screenshot({path:out+'pausing-isolated.png',fullPage:true});checks.push('in-flight pause is not displayed as safely paused');
+ state.active=null;state.batch.state='PAUSED';state.batches[0].state='PAUSED';state.batch.items[0].state='WAITING_HUMAN';state.batch.items[0].runState='PAUSED';state.batch.counts.RUNNING=0;state.batch.counts.WAITING_HUMAN=1;state.execution={state:'PAUSED',label:'已暂停',saved:true,detail:'数据库已保存断点'};
+ await page.evaluate(s=>window.qaStream.state({data:JSON.stringify(s)}),state);await page.waitForFunction(()=>!document.querySelector('#continueButton').disabled);await page.reload();await page.locator('#continueButton').waitFor();assert.equal(requests.filter(x=>['start','continue'].includes(x)).length,0);checks.push('refresh restores saved pause without dispatching');
+ state.batch.items[0].runState='DRY_RUN_COMPLETE';await page.evaluate(s=>window.qaStream.state({data:JSON.stringify(s)}),state);assert(await page.locator('#continueButton').isDisabled());state.batch.items[0].runState='PAUSED';checks.push('dry-run completion cannot offer unsupported batch continuation');
+ state.browser={running:null,loggedIn:false,label:'待检查',loginState:'CHECK_REQUIRED',stale:true};await page.evaluate(s=>window.qaStream.state({data:JSON.stringify(s)}),state);assert.match(await page.locator('#browserStatus').innerText(),/待检查/);assert(await page.locator('#continueButton').isDisabled());checks.push('unknown browser cannot look ready or resume');
+ state.browser={running:true,loggedIn:true,label:'已登录',loginState:'LOGGED_IN'};state.execution={state:'VERIFY_REQUIRED',saved:true,label:'待核验',detail:'禁止直接重新发布'};
+ state.exceptions=[{id:'synthetic-run',batchId:state.batch.id,destination:'隔离测试商品',state:'RESULT_UNKNOWN',category:'待核验',unknown:true,reason:'无商品 ID',raw:'E_SYNTHETIC_UNKNOWN '+('长错误文本 '.repeat(100)),condition:'原结果需人工核对',next:'仅核验原商品'}];
+ await page.evaluate(s=>window.qaStream.state({data:JSON.stringify(s)}),state);await page.locator('[data-nav=exceptions]').click();await page.locator('[data-recover]').click();await page.locator('#confirmAction').click();await page.getByRole('heading',{name:'恢复条件未通过'}).waitFor();assert.equal(requests.filter(x=>x==='continue').length,0);await page.screenshot({path:out+'recovery-blocked-isolated.png',fullPage:true});checks.push('unknown result fails recovery precheck and never dispatches');
+ await page.getByRole('button',{name:'关闭详情'}).click();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await page.locator('.exceptions-table details summary').click();assert.match(await page.locator('.exceptions-table pre').innerText(),/E_SYNTHETIC_UNKNOWN/);checks.push('long original errors remain readable and bounded');
+ await page.evaluate(()=>{window.originalNow=Date.now;Date.now=()=>window.originalNow()+20000;});await page.locator('#connection:not([hidden])').waitFor({timeout:10000});assert.match(await page.locator('#browserStatus').innerText(),/待检查/);assert(await page.locator('[data-recover]').isDisabled());
+ await page.evaluate(s=>{Date.now=window.originalNow;window.qaStream.state({data:JSON.stringify(s)});},state);await page.waitForFunction(()=>document.querySelector('#connection').hidden);checks.push('silent stream timeout and reconnect restore truthful state');
+ await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await page.screenshot({path:out+'exception-long-mobile.png',fullPage:true});checks.push('narrow layout handles long error and recovery conditions');
+ assert.deepEqual(errors,[]);await writeFile(out+'contract-ui.json',JSON.stringify({checks,errors,realActions:0},null,2));console.log(JSON.stringify({checks:checks.length,errors}));
+}finally{await browser.close();}
