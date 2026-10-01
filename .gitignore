@@ -17,3 +17,9 @@ backups/
 outputs/
 work/
 
+# Travel OS business transfers and staging must never enter this public repository.
+**/.travelos-export-*/
+**/.travelos-restore-*/
+TravelOS-business-data-*.zip
+TravelOS-business-data-*.zip.report.json
+

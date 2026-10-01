@@ -24,3 +24,5 @@ __pycache__/
 # Restored business data and transfer archives stay on the operator's computer.
 /business-data/
 *.zip
+**/.travelos-export-*/
+**/.travelos-restore-*/

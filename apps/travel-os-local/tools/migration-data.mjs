@@ -84,7 +84,8 @@ export async function restoreData(root,archive){
  if(!existsSync(join(root,'workbench/kernel-lock.json')))throw Error('目标必须是已下载的 Travel OS 应用目录。');
  if((await lstat(root)).isSymbolicLink()||!(await verifyKernel(root,join(root,'workbench/kernel-lock.json'))).ok)throw Error('目标目录或冻结内核不正确。');
  if(existsSync(join(root,'browser-profile'))||existsSync(join(root,'business-data'))||existsSync(join(root,'.runtime/launcher'))||(existsSync(runtime)&&(await readdir(runtime)).length))throw Error('只允许恢复到首次启动前的全新目录，拒绝覆盖已有业务/浏览器数据。');
- const stage=await mkdtemp(join(dirname(root),'.travelos-restore-'));
+ await mkdir(join(root,'.runtime'),{recursive:true});
+ const stage=await mkdtemp(join(root,'.runtime','migration-import-'));
  execFileSync('python',[helper,'unpack',archive,stage],{stdio:'inherit',windowsHide:true});
  const m=await json(join(stage,'MIGRATION_MANIFEST.json'));if(m.schemaVersion!==1)throw Error('迁移包版本不受支持。');
  if(await sha(join(root,'workbench/kernel-lock.json'))!==m.kernelManifestSha256)throw Error('迁移包和目标程序的内核版本不同。');

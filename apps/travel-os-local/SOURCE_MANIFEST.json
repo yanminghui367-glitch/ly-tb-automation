@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "createdAt": "2026-10-01T06:18:55.953Z",
+  "createdAt": "2026-10-01T06:22:26.672Z",
   "files": [
     {
       "path": ".gitattributes",
@@ -9,8 +9,8 @@
     },
     {
       "path": ".gitignore",
-      "bytes": 467,
-      "sha256": "767c3b9e8bfaa8f338dbc38311506499f86aea9ffe92d1934d98fe5af93e6929"
+      "bytes": 514,
+      "sha256": "a752cfe79f7bb299453f709e4c9efa3f10422c7bfde8202bbc0c9b4881d3c8a9"
     },
     {
       "path": ".impeccable/design.json",
@@ -699,8 +699,8 @@
     },
     {
       "path": "tools/migration-data.mjs",
-      "bytes": 16987,
-      "sha256": "fb477ab2f235660ad865e933500e77fe5c63d94f6316a34a2c686f0d1edcb7aa"
+      "bytes": 17042,
+      "sha256": "023892431584cd38038c24b3ff5463f0f4aafc3b43ea8c1d319d50ed6db2e0ff"
     },
     {
       "path": "tools/migration-data.test.mjs",
