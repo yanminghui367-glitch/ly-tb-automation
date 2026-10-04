@@ -2,6 +2,8 @@ import { lstat, readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative, sep } from 'node:path';
 
 const publicFiles = new Map([
+  ['publishing-rules-ui.js', 'text/javascript; charset=utf-8'],
+  ['publishing-rules.css', 'text/css; charset=utf-8'],
   ['task-view-model.mjs', 'text/javascript; charset=utf-8'],
   ['tasks.css', 'text/css; charset=utf-8'],
   ['overview.css', 'text/css; charset=utf-8'],

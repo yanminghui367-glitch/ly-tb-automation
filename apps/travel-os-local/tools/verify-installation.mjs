@@ -15,7 +15,7 @@ for(const [part,names] of [['workbench',['playwright','three','opencc-js']],['en
  const require=createRequire(join(root,part,'package.json')),pkg=JSON.parse(await readFile(join(root,part,'package.json'),'utf8'));
  for(const name of names){require.resolve(name);const installed=JSON.parse(await readFile(join(root,part,'node_modules',name,'package.json'),'utf8'));if(installed.version!==(pkg.dependencies?.[name]||pkg.devDependencies?.[name]))throw Error('依赖版本不匹配：'+name);checks.push(part+': '+name+' '+installed.version);}
 }
-const kernel=await verifyKernel(root);if(!kernel.ok)throw Error('冻结内核校验失败：'+kernel.changed.join(', '));checks.push('冻结内核 10/10');
+const kernel=await verifyKernel(root);if(!kernel.ok)throw Error('冻结内核校验失败：'+kernel.changed.join(', '));checks.push(`冻结内核 ${kernel.files}/${kernel.files}`);
 const manifest=JSON.parse(await readFile(join(root,'SOURCE_MANIFEST.json'),'utf8'));let verified=0;
 for(const f of manifest.files){const path=resolve(root,f.path);if(!path.startsWith(root+(/^[A-Za-z]:/.test(root)?'\\':'/')))throw Error('清单路径越界');const bytes=await readFile(path);if(bytes.length!==f.bytes||createHash('sha256').update(bytes).digest('hex')!==f.sha256)throw Error('源码/资源与同步版本不同：'+f.path);verified++;}
 const result={at:new Date().toISOString(),checks,sourceFilesVerified:verified,kernel,executionStarted:false};

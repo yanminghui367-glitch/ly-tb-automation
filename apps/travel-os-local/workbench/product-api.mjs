@@ -8,10 +8,15 @@ import {assertTaskFiles} from './taobao-publisher.mjs';
 import {destinationCatalog,searchDestinations} from './destination-catalog.mjs';
 import {globeCatalog} from './globe-catalog.mjs';
 import {retryPlan} from './task-view-model.mjs';
+import {PublishingRules} from './publishing-rules.mjs';
+import {captureAttributes,ATTRIBUTE_FIELDS} from './publishing-attributes.mjs';
+import {visibleChallenge} from './browser-environment.mjs';
+import {newForm} from './taobao-publisher.mjs';
 
 export const executionRoute=path=>/^\/api\/batch\/(start|continue|retry)$/.test(path)||/^\/api\/source\/(start|resume)$/.test(path)||/^\/api\/tasks\/[^/]+\/(start|resume|acknowledge-manual|complete-dry-run)$/.test(path);
 const err=(message,statusCode=409)=>Object.assign(new Error(message),{statusCode});
 export function stepName(value='') {
+  if(value.startsWith('attribute-'))return '填写属性：'+(ATTRIBUTE_FIELDS[value.slice(10)]||'待确认');
   const names={'open-new-form':'打开新增商品页','title':'填写标题','guide-title':'填写导购标题','price':'填写价格','inventory':'填写库存','brand':'选择品牌','custom-service':'核验定制服务','listing-state':'设置上架方式','shipping-time':'设置发货时效','shipping-region':'设置发货范围','single-origin':'设置发货地','logistics':'设置物流','freight-template':'选择运费模板','ship-from':'核验发货地','procurement':'设置采购地','region-restriction':'设置区域限制','insert-details':'插入详情图','pre-submit-review':'提交前核验','submit-once':'提交商品','verify-platform-result':'后台核验结果'};
   if(/^main-image-\d+$/.test(value))return '主图 '+value.split('-').at(-1);
   if(/^select-detail-\d+$/.test(value))return '选择详情图 '+value.split('-').at(-1);
@@ -23,6 +28,37 @@ export class ProductApi {
     Object.assign(this,{batch,source,owner,shop,launch,runtime,integrity,checkFiles});
     this.settingsFile=join(runtime,'product-v1','settings.json');this.frozen=integrity();this.catalog=new Map();this.catalogCount=-1;this.streams=new Set();this.startedAt=new Date().toISOString();this.checkResult=null;
     source.store.db.exec('CREATE TABLE IF NOT EXISTS product_actions(id TEXT PRIMARY KEY, action TEXT NOT NULL, target TEXT NOT NULL, at TEXT NOT NULL, result TEXT NOT NULL)');
+    this.rules=new PublishingRules(source.store);this.capturing=false;
+  }
+  assertRulesIdle(){if(this.batch.active||this.source.active||this.capturing)throw err('任务执行或属性读取中，请等待结束');}
+  async preparePreview(id,limit=20){this.assertRulesIdle();return this.rules.prepare(this.preview(id,limit),this.shop.id);}
+  async createBatch(input){
+    this.assertRulesIdle();
+    if(input.draftId)return this.rules.create(input,this.shop.id,this.batch,()=>this.preview(input.importId,input.limit||20));
+    if(this.rules.preset(this.shop.id).enabled)throw err('随机规则已启用，请重新生成并确认随机预览');
+    return this.batch.create(input,this.shop);
+  }
+  async capturePublishingFields(){
+    this.assertRulesIdle();this.capturing=true;let page;
+    const dir=join(this.source.artifacts,'attribute-capture');
+    const guard=async()=>{
+      const s=await this.owner.status(this.shop);
+      if(s.loginState==='PAUSED_CAPTCHA'||page&&await visibleChallenge(page))throw Error('PAUSED_CAPTCHA：请在执行 Chrome 手动处理验证码，再重新读取');
+      if(!s.running||!s.loggedIn)throw Error('请先在执行 Chrome 登录目标店铺');
+      if(page){if(!newForm(page))throw Error('请保留新增商品发布页');const identity=page.locator('div.UserArea_shopName__3xGhm');if(await identity.count()!==1||(await identity.innerText()).trim()!==this.shop.name)throw Error('发布页店铺身份不匹配');}
+    };
+    try{
+      await guard();const context=this.owner.sessions.get(this.shop.id)?.context;
+      const pages=context?.pages().filter(newForm)||[];
+      if(pages.length!==1)throw Error('请在执行 Chrome 手动打开一个新增商品发布页，展开类目属性；保留唯一发布页后重试读取');
+      page=pages[0];await guard();const fields=await captureAttributes(page,guard);
+      const result=this.rules.capture(this.shop.id,fields);this.source.store.db.prepare('DELETE FROM publishing_captures WHERE id=?').run('checkpoint-'+this.shop.id);return result;
+    }catch(e){
+      await mkdir(dir,{recursive:true});const checkpoint={state:/CAPTCHA/.test(e.message)?'WAITING_HUMAN':'PAUSED',reason:redact(e.message),at:new Date().toISOString(),step:'读取属性候选',shopId:this.shop.id};
+      const screenshot=join(dir,'paused.png');if(page)await page.screenshot({path:screenshot,timeout:5000}).then(()=>checkpoint.screenshot=screenshot).catch(()=>{});
+      await writeFile(join(dir,'checkpoint.json'),JSON.stringify(checkpoint,null,2));
+      this.source.store.db.prepare('INSERT OR REPLACE INTO publishing_captures VALUES(?,?,?)').run('checkpoint-'+this.shop.id,this.shop.id,JSON.stringify(checkpoint));throw e;
+    }finally{this.capturing=false;}
   }
   async settings() {
     let saved={};try{saved=JSON.parse(await readFile(this.settingsFile,'utf8'));}catch(e){if(e.code!=='ENOENT')throw err('系统设置无法读取，保持暂停，请检查本机文件。');}
@@ -46,9 +82,11 @@ export class ProductApi {
     this.checkResult=null;return next;
   }
   async assertExecution() {
+    if(this.capturing)throw err('正在读取属性，请等待完成后再启动或恢复任务');
     if(!this.batch.active&&!this.source.active&&this.source.store.list().some(r=>['RUNNING','SUBMITTING'].includes(r.state)))throw err('任务状态待检查：请重启程序恢复持久状态，不能开始新执行');
     if(!(await this.settings()).executionEnabled)throw err('当前暂停新任务执行。需要开始时，请在系统设置中明确开启。');
     if(!(await this.integrity()).ok)throw err('上架内核发生变化，执行已阻止');
+    if(this.capturing)throw err('正在读取属性，请等待完成后再启动或恢复任务');
   }
   validationIssues(){
     const imported=this.source.store.batch();if(!imported||imported.sheet!=='境外城市热度')return [];
@@ -65,7 +103,7 @@ export class ProductApi {
       try{const entry=await stat(settings[key]),ok=directory?entry.isDirectory():entry.isFile()&&/\.xlsx$/i.test(settings[key]);checks.push({name,ok,detail:ok?'路径可用；内容需导入校验':'路径类型不正确'});}
       catch{checks.push({name,ok:false,detail:'路径不存在或当前无法访问'});}
     }
-    const kernel=await this.integrity();checks.push({name:'冻结内核',ok:kernel.ok,detail:kernel.ok?'10 个文件未变化':'内核文件变化，禁止执行'});
+    const kernel=await this.integrity();checks.push({name:'冻结内核',ok:kernel.ok,detail:kernel.ok?kernel.files+' 个冻结文件校验通过':'内核文件变化，禁止执行'});
     let raw;try{raw=await this.owner.status(this.shop);}catch{raw={loginState:'LOGIN_UNVERIFIED',reason:'执行浏览器检查失败，待人工确认'};}
     const browser=browserView(raw,Date.now(),true);checks.push({name:'执行浏览器与店铺',ok:browser.loggedIn,detail:browser.label+' · '+browser.reason});
     return this.checkResult={at:new Date().toISOString(),checks,browser,connection:{address:'127.0.0.1',port:this.shop.port||9222,ownership:'仅项目专用 Chrome；不接管访问工作台的浏览器'}};
@@ -138,7 +176,7 @@ export class ProductApi {
     const runId=batch?.items.find(x=>x.id===batch.current)?.runId||batch?.items.findLast(x=>x.runId)?.runId;
     const events=runId?store.events(runId).slice(-35).map(e=>this.event(e)):[];
     const settings=await this.settings(),frozen=await this.integrity();
-    return {version:'1.0.0',at:new Date().toISOString(),shop:{id:this.shop.id,name:this.shop.name},service:{state:'RUNNING',startedAt:this.startedAt},browser,execution:pauseView(flow,this.source,runs),currentTask:runs.find(r=>r.id===this.source.active)?.task.listing||null,configuration:this.checkResult,settings,kernel:frozen,active:flow.active||this.source.active,batch,batches,records,exceptions,events,overview:{published:records.filter(x=>x.verified).length,totalBatches:batches.length,waiting:exceptions.filter(x=>!x.retryable).length,failed:exceptions.filter(x=>x.retryable).length},latestImport:store.batch()?.id||null};
+    return {version:'1.0.0',at:new Date().toISOString(),shop:{id:this.shop.id,name:this.shop.name},service:{state:'RUNNING',startedAt:this.startedAt},browser,execution:pauseView(flow,this.source,runs),currentTask:runs.find(r=>r.id===this.source.active)?.task.listing||null,configuration:this.checkResult,publishingRules:{...this.rules.summary(this.shop.id),checkpoint:JSON.parse(store.db.prepare('SELECT payload FROM publishing_captures WHERE id=?').get('checkpoint-'+this.shop.id)?.payload||'null')},settings,kernel:frozen,active:flow.active||this.source.active,batch,batches,records,exceptions,events,overview:{published:records.filter(x=>x.verified).length,totalBatches:batches.length,waiting:exceptions.filter(x=>!x.retryable).length,failed:exceptions.filter(x=>x.retryable).length},latestImport:store.batch()?.id||null};
   }
   async handle(req,res,url,{body,json}) {
     const path=url.pathname;
@@ -155,6 +193,12 @@ export class ProductApi {
       if(action==='health'){json(res,200,{app:'ly-tb-workbench',version:'1.0.0',pid:process.pid,kernel:await this.frozen});return true;}
       if(action==='state'){json(res,200,await this.snapshot(url.searchParams.get('batch')));return true;}
       if(action==='preview'){json(res,200,this.preview(url.searchParams.get('import'),Number(url.searchParams.get('limit')||20)));return true;}
+      if(action==='publishing-rules'){
+        const preset=this.rules.preset(this.shop.id),checkpoint=this.source.store.db.prepare('SELECT payload FROM publishing_captures WHERE id=?').get('checkpoint-'+this.shop.id);
+        const capture=preset.captureId?this.source.store.db.prepare('SELECT payload FROM publishing_captures WHERE id=?').get(preset.captureId):null;json(res,200,{shop:{id:this.shop.id,name:this.shop.name},preset,fields:capture?JSON.parse(capture.payload).fields:[],checkpoint:checkpoint?JSON.parse(checkpoint.payload):null});return true;
+      }
+      if(action==='publishing-materials'){json(res,200,{items:(await this.rules.materials((await this.settings()).assets,this.shop.id)).map(({path,...a})=>a)});return true;}
+      if(action==='publishing-image'){const a=await this.rules.imageAsset(Object.fromEntries(url.searchParams),this.shop.id,(await this.settings()).assets);res.writeHead(200,{'content-type':a.type,'cache-control':'no-store','x-content-type-options':'nosniff'});res.end(a.bytes);return true;}
       if(action==='queue-task'){
         const item=this.batch.store.item(url.searchParams.get('id'));
         json(res,200,{id:item.id,state:item.state,task:item.task,batchId:item.batch,importId:this.batch.store.batch(item.batch).imported,checkpoint:{},reason:item.reason,events:[],issue:classify(item.reason,item.state),result:item.result});return true;
@@ -177,6 +221,7 @@ export class ProductApi {
     }
     if(req.method==='POST'){
       const input=await body(req);
+      if(this.capturing&&action!=='pause')throw err('正在读取属性，请等待完成');
       const controlled=['start','continue','retry','resume-single'].includes(action);
       if(controlled&&input.requestId){const previous=this.source.store.db.prepare('SELECT * FROM product_actions WHERE id=?').get(input.requestId);if(previous){if(previous.action!==action||previous.target!==input.id)throw err('请求编号不能用于其他操作');json(res,200,{...JSON.parse(previous.result),replayed:true});return true;}}
 
@@ -201,10 +246,13 @@ export class ProductApi {
       if(controlled)this.source.store.db.prepare('INSERT INTO product_actions VALUES(?,?,?,?,?)').run(input.requestId,action,input.id,new Date().toISOString(),JSON.stringify({accepted:true,id:input.id,awaitStatus:true}));
       let data;
       switch(action){
+        case 'publishing-preview':data=await this.preparePreview(input.importId,input.limit||20);break;
+        case 'publishing-capture':data=await this.capturePublishingFields();break;
+        case 'publishing-save':this.assertRulesIdle();data=await this.rules.save(this.shop.id,input,(await this.settings()).assets);break;
         case 'settings':data=await this.saveSettings(input);break;
         case 'import':{const imported=await this.batch.import({...await this.settings(),...input});data=this.preview(imported.importId,20);break;}
         case 'upload':data=await this.source.stage(input);break;
-        case 'create':data=this.batch.create(input,this.shop);break;
+        case 'create':data=await this.createBatch(input);break;
         case 'start':case 'continue':data=this.batch.start(input.id,this.shop);break;
         case 'retry':data=this.batch.retry(input.id,this.shop);break;
         case 'pause':data=this.pause();break;

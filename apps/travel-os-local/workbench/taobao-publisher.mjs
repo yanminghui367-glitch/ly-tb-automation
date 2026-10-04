@@ -6,7 +6,8 @@ import {createHash} from 'node:crypto';
 import {basename} from 'node:path';
 import assert from 'node:assert/strict';
 import {visibleChallenge} from './browser-environment.mjs';
-export const MAPPING_VERSION = 'taobao-custom-service-20260920';
+import {fillAttributes,verifyAttributes,validateSelections} from './publishing-attributes.mjs';
+export const MAPPING_VERSION = 'taobao-custom-service-20261004-random';
 export const selectors = {title:'#sell-field-title input',guide:'#sell-field-shopping_title input',price:'#sell-field-price input',stock:'#sell-field-batchInventory-card input',main:'#sell-field-mainImagesGroup',details:'#sell-field-descRepublicOfSell img.image-item'};
 const norm=u=>u.split('?')[0].split('.png')[0];
 export async function assertTaskFiles(task) {
@@ -15,7 +16,7 @@ export async function assertTaskFiles(task) {
  assert(/个性定制\/设计服务\/DIY.*其它定制.*其它商品定制/.test(b.category_path),'UNVERIFIED_CATEGORY');
  assert(b.custom_service && b.procurement==='中国内地（大陆）' && b.ship_from.replaceAll(' ','')==='北京/北京' && b.shipping_time==='24小时内发货' && b.ship_from_region==='大陆及港澳台' && b.region_restriction==='不设置商品维度区域限售模板','UNSUPPORTED_SOURCE_SETTINGS');
  assert(['立刻上架','立即上架','放入仓库'].includes(b.listing_time),'UNSUPPORTED_LISTING_STATE');
- assert.equal(task.assets.main.length,1);assert.equal(task.assets.secondary.length,4);assert.equal(task.assets.details.length,8);
+ assert.equal(task.assets.main.length,1);assert.equal(task.assets.secondary.length,4);assert(Number.isInteger(task.assets.details.length)&&task.assets.details.length>0&&task.assets.details.length<=50,'DETAIL_COUNT_INVALID');validateSelections(task);
 }
 export function newForm(page) { try { const u=new URL(page.url()); return u.origin==='https://item.upload.taobao.com' && u.pathname==='/sell/v2/publish.htm' && !['itemId','item_num_id','copyItem'].some(k=>u.searchParams.has(k)); } catch { return false; } }
 export async function fillTask({page:p, task,dir,target,step,guard}) {
@@ -94,11 +95,12 @@ export async function fillTask({page:p, task,dir,target,step,guard}) {
  await step('procurement',async()=>{if(!await p.locator('#sell-field-globalStock').isVisible())await p.locator('#base-card').getByText('展开',{exact:true}).click();await radio('#sell-field-globalStock',/^中国内地（大陆）$/);});
  await step('region-restriction',async()=>{const l=p.locator('#deliver-card label').filter({hasText:/^不设置商品维度区域限售模板$/}).locator('input');if(!await l.isVisible())await p.locator('#deliver-card').getByText('展开',{exact:true}).click();await expect(l).toBeChecked();});
  }
+ await fillAttributes(p,task,{guard,step});
  let detailReceipts=JSON.parse(await readFile(dir+'detail-receipts.json','utf8').catch(()=>'[]'));
  const detailImgs=p.locator('#sell-field-descRepublicOfSell img.image-item');
  const insertedDetails=await detailImgs.evaluateAll(es=>es.map(e=>e.src));
- assert(insertedDetails.length<=8,'TOO_MANY_DETAIL_IMAGES');
- if(insertedDetails.length<8){
+ assert(insertedDetails.length<=details.length,'TOO_MANY_DETAIL_IMAGES');
+ if(insertedDetails.length<details.length){
   if(!openDetailFrame)await step('open-details',async()=>{await p.locator('#sell-field-descRepublicOfSell').getByText('图片',{exact:true}).click();});
   let f=openDetailFrame;
   if(!f)for(const frame of p.frames())if(await frame.getByPlaceholder('搜索图片名称').isVisible().catch(()=>false))f=frame;
@@ -119,10 +121,10 @@ export async function fillTask({page:p, task,dir,target,step,guard}) {
    else{if(!await card.locator('input[type=checkbox]').isChecked())await card.locator('.PicList_pic_imgBox__c0HXw').click();await expect(card.locator('input[type=checkbox]')).toBeChecked();}
    detailReceipts[i]={order:i+1,source:a,url};await writeFile(dir+'detail-receipts.json',JSON.stringify(detailReceipts,null,2));
   });
-  await step('insert-details',async()=>{await f.getByRole('button',{name:/确定/}).click();await expect(detailImgs).toHaveCount(8);});
+  await step('insert-details',async()=>{await f.getByRole('button',{name:/确定/}).click();await expect(detailImgs).toHaveCount(details.length);});
  }
  await step('pre-submit-review',async()=>{
-  await expect(detailImgs).toHaveCount(8);const urls=await detailImgs.evaluateAll(es=>es.map(e=>e.src));assert(urls.every((u,i)=>norm(u)===norm(detailReceipts[i]?.url||'')),'DETAIL_ORDER');
+  await expect(detailImgs).toHaveCount(details.length);const urls=await detailImgs.evaluateAll(es=>es.map(e=>e.src));assert(urls.every((u,i)=>norm(u)===norm(detailReceipts[i]?.url||'')),'DETAIL_ORDER');
   await expect(p.locator('#sell-field-title input')).toHaveValue(task.listing.title);await expect(p.locator('#sell-field-price input')).toHaveValue(String(task.business.price_cny));await expect(p.locator('#sell-field-batchInventory-card input')).toHaveValue(String(task.business.inventory));
   await verifyForm(p,task,target,{main:receipts,details:detailReceipts});
   assert.equal(createHash('sha256').update(await readFile(task.source.workbook)).digest('hex'),task.source.sha256);
@@ -147,7 +149,8 @@ export async function verifyForm(p,task,target,receipts) {
  await expect(p.locator('#sell-field-tbExtractWay')).toContainText(task.business.freight_template);
  const main=await p.locator(`${selectors.main} img`).evaluateAll(es=>es.map(e=>e.src).filter(u=>u.includes('/2215038760087/')));
  const details=await p.locator(selectors.details).evaluateAll(es=>es.map(e=>e.src));
- assert.equal(main.length,5);assert.equal(details.length,8);
+ assert.equal(main.length,5);assert.equal(details.length,task.assets.details.length);
+  await verifyAttributes(p,task,async()=>{if(await visibleChallenge(p))throw Error('PAUSED_CAPTCHA');});
  assert(main.every((u,i)=>norm(u)===norm(receipts.main[i]?.url||'')),'MAIN_IMAGE_ORDER');
  assert(details.every((u,i)=>norm(u)===norm(receipts.details[i]?.url||'')),'DETAIL_IMAGE_ORDER');
 }

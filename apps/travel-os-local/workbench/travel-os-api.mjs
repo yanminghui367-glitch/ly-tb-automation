@@ -64,16 +64,24 @@ export class TravelOsApi {
  if(req.method==='GET'&&action==='selected-preview')return json(res,200,await this.selectedPreview(Object.fromEntries(url.searchParams)));
  if(req.method!=='POST')return json(res,404,{error:'未找到操作'});
  const input=await body(req),{products,shops}=await this.catalog(),shop=shops.find(s=>s.id===input.shopId&&!this.store.removed(s.id));let data;
- if(action==='quotes/add')data=this.store.addQuote(input,products.find(d=>d.key===input.productKey));
+ if(action==='selected-preview'){p.assertRulesIdle();const checked=await this.selectedPreview(input),prepared=await p.rules.prepare({...checked,tasks:[checked.task],limit:1},shop.id,'selected:'+input.productKey);data={...checked,task:prepared.tasks[0],selectionHash:prepared.selectionHash,draftId:prepared.draftId};}
+ else if(action==='quotes/add')data=this.store.addQuote(input,products.find(d=>d.key===input.productKey));
  else if(action==='quotes/archive')data=this.store.archiveQuote(input.id);
  else if(action==='preparations/create')data=this.store.prepare(input,products.find(d=>d.key===input.productKey),shop);
  else if(action==='preparations/cancel')data=this.store.cancelPreparation(input.id);
  else if(action==='selected-create'){
-  if(p.batch.active||p.source.active)throw problem('已有任务执行中，请先暂停');
+  p.assertRulesIdle();if(!shop)throw problem('店铺不存在',404);
+  if(input.draftId){
+   if(input.mode!=='DRY_RUN')throw problem('此入口仅支持提交前暂停，不执行正式发布');
+   const draft=p.rules.draft(input.draftId,shop.id);
+   data=await p.rules.create({...input,importId:draft.importId},shop.id,p.batch,async()=>({tasks:[(await this.selectedPreview(input)).task]}),'selected:'+input.productKey);
+  }else{
+   if(p.rules.preset(shop.id).enabled)throw problem('请先核对随机预览');
   const checked=await this.selectedPreview(input);
   if(input.mode!=='DRY_RUN')throw problem('所选目的地入口当前仅支持 DRY_RUN；正式发布继续使用已验证的批次入口');
   if(input.review?.reviewed!==true||input.review.selectionHash!==checked.selectionHash)throw problem('资料预览已变化，请重新核对');
   data=p.batch.store.create(checked.importId,[checked.task],checked.shop.id,'DRY_RUN',input.review);
+  }
   // The engine queue is authoritative. A crash before this link is repaired by the UI's original product key.
   for(const draft of this.store.preparations().filter(d=>d.productKey===input.productKey&&d.shopId===input.shopId&&d.state==='PREPARING'))this.store.db.prepare("UPDATE preparations SET state='QUEUED',payload=? WHERE id=?").run(JSON.stringify({...draft,batchId:data.id}),draft.id);
  }

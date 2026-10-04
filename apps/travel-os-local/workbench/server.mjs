@@ -691,7 +691,7 @@ export const workbenchServer = createServer(async (req, res) => {
         const input=await body(req);
         if(['start','continue','retry'].some(a=>url.pathname==='/api/batch/'+a)&&(await loadState()).tasks?.some(t=>t.state==='RUNNING'))return json(res,409,{error:'旧版任务正在运行，请先暂停'});
         if(url.pathname==='/api/batch/import')return json(res,200,await flow.import(input));
-        if(url.pathname==='/api/batch/create')return json(res,201,flow.create(input,shop));
+        if(url.pathname==='/api/batch/create')return json(res,201,await (await product()).createBatch(input));
         if(url.pathname==='/api/batch/start'||url.pathname==='/api/batch/continue')return json(res,202,flow.start(input.id,shop));
         if(url.pathname==='/api/batch/pause')return json(res,200,flow.pause());
         if(url.pathname==='/api/batch/retry')return json(res,202,flow.retry(input.id,shop));
@@ -711,6 +711,7 @@ export const workbenchServer = createServer(async (req, res) => {
         if(url.pathname==='/api/source/import')return json(res,200,await flow.import(input));
         if(url.pathname==='/api/source/upload')return json(res,200,await flow.stage(input));
         if(['/api/source/start','/api/source/resume'].includes(url.pathname) && (await loadState()).tasks?.some(t=>t.state==='RUNNING'))return json(res,409,{error:'旧版任务正在执行，请先暂停，避免两个任务同时操作浏览器'});
+        if(url.pathname==='/api/source/start'&&(await product()).rules.preset(shop.id).enabled)return json(res,409,{error:'本店已启用随机规则，请从工作台任务预览创建新任务'});
         if(url.pathname==='/api/source/start')return json(res,202,await flow.start(input,shop));
         if(url.pathname==='/api/source/resume')return json(res,202,await flow.resume(input,shop));
         if(url.pathname==='/api/source/pause')return json(res,200,flow.pause());
