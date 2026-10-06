@@ -1,0 +1,56 @@
+// Real Taobao navigation markup, synthetic options; never contacts a seller site.
+import assert from 'node:assert/strict';
+import {chromium} from 'playwright';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {ATTRIBUTE_FIELDS,NO_BRAND,captureAttributes,fillAttributes,verifyAttributes} from '../publishing-attributes.mjs';
+const out=resolve(import.meta.dirname,'../../output/playwright/attribute-navigation-20261004');
+await mkdir(out,{recursive:true});
+const browser=await chromium.launch({channel:'chrome',headless:true});
+const context=await browser.newContext();
+await context.route('**/*',route=>route.abort());
+const page=await context.newPage(),checks=[];
+const navigation='<div id="struct-nav"><ul role="listbox" class="next-menu next-nav sell-component-navigation-bar">'+['基础信息','销售信息','物流服务','图文描述'].map(text=>`<li role="option" class="next-menu-item next-nav-item sell-component-navigation-bar-nav-item">${text}</li>`).join('')+'</ul></div>';
+const fixture=()=>navigation+Object.entries(ATTRIBUTE_FIELDS).map(([key,label],i)=>`<section><label>${label}</label><div id="struct-p-${101+i}"><input readonly role="combobox" aria-controls="options-${i}" onclick="document.getElementById('options-${i}').hidden=false" onkeydown="if(event.key==='Escape')document.getElementById('options-${i}').hidden=true"><div role="listbox" id="options-${i}" hidden>${['a','b'].map(v=>`<div role="option" data-value="${v}" onclick="this.parentElement.parentElement.querySelector('input').value=this.textContent;this.parentElement.parentElement.querySelector('input').dataset.value=this.dataset.value;this.parentElement.hidden=true">${key} ${v}</div>`).join('')}</div></div></section>`).join('');
+try{
+ await page.setContent(fixture());
+ assert.equal(await page.locator('[role=option]:visible').count(),4);
+ const fields=await captureAttributes(page,async()=>{});
+ assert.equal(fields.length,5);assert(fields.every(f=>f.options.length===2));
+ assert(fields.every(f=>f.options.every(o=>!['基础信息','销售信息','物流服务','图文描述'].includes(o.text))));
+ checks.push('五项属性读取排除真实导航的四个 role=option 节点');
+ assert.deepEqual(await page.locator('input').evaluateAll(es=>es.map(e=>e.value)),['','','','','']);
+ checks.push('读取不改变任何属性值');
+ await page.setContent(fixture());
+ await page.locator('input').evaluateAll(es=>es.forEach(e=>{
+   e.setAttribute('aria-expanded','false');e.onkeydown=null;
+   e.onclick=()=>{const list=document.getElementById(e.getAttribute('aria-controls'));list.hidden=!list.hidden;e.setAttribute('aria-expanded',String(!list.hidden));};
+ }));
+ const toggled=await captureAttributes(page,async()=>{});
+ assert.equal(toggled.length,5);assert.equal(await page.locator('input[aria-expanded=true]').count(),0);
+ assert.deepEqual(await page.locator('input').evaluateAll(es=>es.map(e=>e.value)),['','','','','']);
+ checks.push('不响应Escape的真实型下拉使用自身触发器收起，五项连续只读');
+ await page.setContent(fixture());
+ const task={business:{brand:NO_BRAND},publishVariant:{version:1,attributes:fields.map(f=>({...f,...f.options[0]}))}};
+ await fillAttributes(page,task,{guard:async()=>{},step:async(_,fn)=>fn()});await verifyAttributes(page,task);
+ checks.push('带导航的五项属性按冻结选择填写并回读');
+ await page.setContent(fixture());await page.locator('#options-4').evaluate(e=>e.hidden=false);
+ await assert.rejects(captureAttributes(page,async()=>{}),/其他候选列表/);
+ checks.push('已有真实属性下拉仍拒绝混读');
+ await page.setContent(fixture());await page.locator('body').evaluate(e=>e.insertAdjacentHTML('beforeend','<div role="listbox"><div role="option">其他业务候选</div></div>'));
+ await assert.rejects(captureAttributes(page,async()=>{}),/其他候选列表/);
+ checks.push('非导航的独立列表仍阻止读取');
+ await page.setContent(fixture());await page.locator('#struct-p-101 input').evaluate(e=>e.onclick=()=>{document.querySelector('#options-0').hidden=false;document.querySelector('#options-1').hidden=false;});
+ await assert.rejects(captureAttributes(page,async()=>{}),/唯一识别/);
+ checks.push('多个同时弹出的属性列表仍拒绝');
+ await page.setContent(fixture());let calls=0;
+ await assert.rejects(captureAttributes(page,async()=>{if(++calls===4)throw Error('PAUSED_CAPTCHA');}),/PAUSED_CAPTCHA/);
+ assert.equal(await page.locator('#options-0').isVisible(),true);assert.equal(await page.locator('#options-1').isVisible(),false);
+ checks.push('验证暂停后保留当前弹层，不继续下一属性');
+ await page.setContent(fixture());const wrong=structuredClone(task);wrong.publishVariant.attributes[0].text='已失效值';
+ await assert.rejects(fillAttributes(page,wrong,{guard:async()=>{},step:async(_,fn)=>fn()}),/选项已失效/);
+ checks.push('候选失效不采用替代值');
+ await page.setContent(fixture());await page.screenshot({path:resolve(out,'isolated-navigation.png')});
+ await writeFile(resolve(out,'isolated-result.json'),JSON.stringify({checks,productionRequests:0,productionSubmissions:0},null,2));
+ console.log(JSON.stringify({checks,productionRequests:0,productionSubmissions:0},null,2));
+}finally{await context.close();await browser.close();}

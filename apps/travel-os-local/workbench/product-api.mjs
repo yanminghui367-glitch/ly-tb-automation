@@ -1,7 +1,7 @@
 import {readFile,writeFile,mkdir,rename,stat} from 'node:fs/promises';
 import {join,relative,isAbsolute,sep,basename} from 'node:path';
 import {batchDefaults} from './batch-workflow.mjs';
-import {destinationKey} from './source-store.mjs';
+import {destinationKey,digest} from './source-store.mjs';
 import {verifyKernel} from './kernel-integrity.mjs';
 import {redact,classify,browserView,pauseView} from './product-state.mjs';
 import {assertTaskFiles} from './taobao-publisher.mjs';
@@ -12,6 +12,8 @@ import {PublishingRules} from './publishing-rules.mjs';
 import {captureAttributes,ATTRIBUTE_FIELDS} from './publishing-attributes.mjs';
 import {visibleChallenge} from './browser-environment.mjs';
 import {newForm} from './taobao-publisher.mjs';
+import {ResultReconciliation} from './result-reconciliation.mjs';
+import {SetupFlow} from './setup-flow.mjs';
 
 export const executionRoute=path=>/^\/api\/batch\/(start|continue|retry)$/.test(path)||/^\/api\/source\/(start|resume)$/.test(path)||/^\/api\/tasks\/[^/]+\/(start|resume|acknowledge-manual|complete-dry-run)$/.test(path);
 const err=(message,statusCode=409)=>Object.assign(new Error(message),{statusCode});
@@ -28,12 +30,19 @@ export class ProductApi {
     Object.assign(this,{batch,source,owner,shop,launch,runtime,integrity,checkFiles});
     this.settingsFile=join(runtime,'product-v1','settings.json');this.frozen=integrity();this.catalog=new Map();this.catalogCount=-1;this.streams=new Set();this.startedAt=new Date().toISOString();this.checkResult=null;
     source.store.db.exec('CREATE TABLE IF NOT EXISTS product_actions(id TEXT PRIMARY KEY, action TEXT NOT NULL, target TEXT NOT NULL, at TEXT NOT NULL, result TEXT NOT NULL)');
-    this.rules=new PublishingRules(source.store);this.capturing=false;
+    this.rules=new PublishingRules(source.store);this.capturing=false;this.reconciling=false;this.reconciliation=new ResultReconciliation(this);this.setup=new SetupFlow(this);
   }
   assertRulesIdle(){if(this.batch.active||this.source.active||this.capturing)throw err('任务执行或属性读取中，请等待结束');}
-  async preparePreview(id,limit=20){this.assertRulesIdle();return this.rules.prepare(this.preview(id,limit),this.shop.id);}
+  assertImportRules(id){
+    const imported=this.source.store.batch(id),preset=this.rules.preset(this.shop.id);
+    if(imported?.format!=='travel-os-template-v1'||!preset.enabled)return;
+    const root=imported.assetRoot;
+    for(const a of [...preset.secondary.A,...preset.secondary.B,...preset.covers]){const r=relative(root,a.path);if(isAbsolute(r)||r==='..'||r.startsWith('..'+sep))throw err('新资料与发布随机规则不一致：规则仍引用旧资料，请在资料设置重新选择图片并确认。已有任务不变。');}
+  }
+  async preparePreview(id,limit=20){this.assertRulesIdle();this.assertImportRules(id);return this.rules.prepare(this.preview(id,limit),this.shop.id);}
   async createBatch(input){
     this.assertRulesIdle();
+    this.assertImportRules(input.importId);
     if(input.draftId)return this.rules.create(input,this.shop.id,this.batch,()=>this.preview(input.importId,input.limit||20));
     if(this.rules.preset(this.shop.id).enabled)throw err('随机规则已启用，请重新生成并确认随机预览');
     return this.batch.create(input,this.shop);
@@ -87,6 +96,19 @@ export class ProductApi {
     if(!(await this.settings()).executionEnabled)throw err('当前暂停新任务执行。需要开始时，请在系统设置中明确开启。');
     if(!(await this.integrity()).ok)throw err('上架内核发生变化，执行已阻止');
     if(this.capturing)throw err('正在读取属性，请等待完成后再启动或恢复任务');
+  }
+  executionScope(id){
+    const b=this.batch.store.batch(id);if(!b)return null;
+    const db=this.source.store.db;
+    // Persisted events invalidate confirmations even when a state changes back.
+    const revision=db.prepare('SELECT MAX(seq) n FROM batch_events WHERE batch=?').get(b.id).n;
+    const items=this.batch.store.items(b.id).map(x=>({id:x.id,position:x.position,task:digest(x.task),state:x.state,attempts:x.attempts,maxAttempts:x.max_attempts,runId:x.run_id,
+      run:x.run_id?this.source.store.run(x.run_id):null,revision:x.run_id?db.prepare('SELECT MAX(seq) n FROM events WHERE run=?').get(x.run_id).n:null}));
+    return digest({version:1,id:b.id,shop:b.shop,mode:b.mode,state:b.state,review:b.review,revision,items});
+  }
+  assertScope(input){
+    if(typeof input.scope!=='string'||!/^[a-f0-9]{64}$/.test(input.scope))throw err('缺少本次执行范围确认，请刷新工作台并重新核对');
+    if(input.scope!==this.executionScope(input.id))throw err('批次范围或状态已变化，请重新核对后确认');
   }
   validationIssues(){
     const imported=this.source.store.batch();if(!imported||imported.sheet!=='境外城市热度')return [];
@@ -156,13 +178,13 @@ export class ProductApi {
 
   event(e) {
     const names={CREATED:'创建任务',RUNNING:'开始执行',QUEUED:'等待执行',VERIFIED:'后台核验成功',PAUSED:'任务暂停',PAUSED_CAPTCHA:'等待人工验证',SUBMITTING:'准备提交',RESULT_UNKNOWN:'结果待核验',DRY_RUN_COMPLETE:'填写完成，未提交',STEP_INTENT:'开始步骤',STEP_VERIFIED:'步骤通过',STEP_PAUSED:'步骤暂停'};
-    return {seq:e.seq,at:e.at,label:e.payload.name?stepName(e.payload.name):names[e.kind]||'任务记录',kind:e.kind,raw:redact(e.payload.error||e.payload.reason||''),technical:{kind:e.kind,step:e.payload.name||null},reason:reasonText(e.payload.error||e.payload.reason||''),durationMs:e.payload.durationMs,screenshot:this.screenshot(e.payload.screenshot||e.payload.result?.screenshot)};
+    return {seq:e.seq,at:e.at,label:e.payload.name?stepName(e.payload.name):names[e.kind]||'任务记录',kind:e.kind,raw:redact(e.payload.error||e.payload.reason||''),technical:{kind:e.kind,step:e.payload.name||null},reason:reasonText(e.payload.error||e.payload.reason||''),durationMs:e.payload.durationMs,screenshot:this.screenshot(e.payload.screenshot||e.payload.result?.screenshot),screenshotError:reasonText(e.payload.screenshotError||'')};
   }
   async snapshot(id) {
     const flow=this.batch,store=this.source.store,runs=store.list(),records=this.records(runs);
     const selected=flow.store.view(id),batches=store.db.prepare('SELECT id,state,mode,at,finished FROM batches ORDER BY rowid DESC').all();
     if(id&&!selected)throw err('批次不存在',404);
-    const batch=selected?{...selected,reason:redact(selected.reason),confirmation:{at:selected.at,mode:selected.mode,count:selected.total,scope:'本批全部商品，按冻结顺序串行执行',reviewed:flow.store.batch(selected.id).review.reviewed===true},items:selected.items.map(x=>({...x,checkpoint:undefined,runState:x.runId?store.run(x.runId).state:null,step:stepName(x.checkpoint?.step),screenshot:this.screenshot(x.checkpoint?.screenshot),reason:reasonText(x.reason),issue:classify(x.reason,x.state),completeness:'已通过生成时校验',displayState:x.runId&&store.run(x.runId).state==='RESULT_UNKNOWN'?'RESULT_UNKNOWN':x.state}))}:null;
+    const batch=selected?{...selected,executionScope:this.executionScope(selected.id),reason:redact(selected.reason),confirmation:{at:selected.at,mode:selected.mode,count:selected.total,scope:'本批全部商品，按冻结顺序串行执行',reviewed:flow.store.batch(selected.id).review.reviewed===true},items:selected.items.map(x=>({...x,checkpoint:undefined,runState:x.runId?store.run(x.runId).state:null,step:stepName(x.checkpoint?.step),screenshot:this.screenshot(x.checkpoint?.screenshot),screenshotError:reasonText(x.checkpoint?.screenshotError||''),reason:reasonText(x.reason),issue:classify(x.reason,x.state),completeness:'已通过生成时校验',displayState:x.runId&&store.run(x.runId).state==='RESULT_UNKNOWN'?'RESULT_UNKNOWN':x.state}))}:null;
     const ownership=this.owner.sessions.get(this.shop.id);
     const browser=browserView(ownership?.last||await this.owner.status(this.shop),Date.now(),!ownership?.last);
     const exceptions=[];
@@ -182,6 +204,7 @@ export class ProductApi {
     const path=url.pathname;
     if(!path.startsWith('/api/v1/'))return false;
     const action=path.slice('/api/v1/'.length);
+    if(action.startsWith('setup/'))return this.setup.handle(req,res,url,{body,json});
     if(req.method==='GET') {
       if(action==='globe'){json(res,200,globeCatalog(destinationCatalog(this.source.store,this.shop.id)));return true;}
       if(action==='destinations'){
@@ -205,7 +228,7 @@ export class ProductApi {
       }
       if(action==='task'){
         const r=this.source.store.run(url.searchParams.get('id'));
-        json(res,200,{id:r.id,state:r.state,task:r.task,importId:r.batch,batchId:this.source.store.db.prepare('SELECT batch FROM batch_items WHERE run_id=?').get(r.id)?.batch||null,checkpoint:{step:stepName(r.checkpoint.step),pausedAt:r.checkpoint.pausedAt,itemId:r.checkpoint.itemId},issue:classify(r.reason,r.state),reason:reasonText(r.reason),events:this.source.store.events(r.id).map(e=>this.event(e)),screenshot:this.screenshot(r.checkpoint.screenshot),result:r.result?{...r.result,screenshot:this.screenshot(r.result.screenshot)}:null});return true;
+        json(res,200,{id:r.id,state:r.state,task:r.task,importId:r.batch,batchId:this.source.store.db.prepare('SELECT batch FROM batch_items WHERE run_id=?').get(r.id)?.batch||null,checkpoint:{step:stepName(r.checkpoint.step),pausedAt:r.checkpoint.pausedAt,itemId:r.checkpoint.itemId},issue:classify(r.reason,r.state),reason:reasonText(r.reason),events:this.source.store.events(r.id).map(e=>this.event(e)),screenshot:this.screenshot(r.result?.screenshot||r.checkpoint.screenshot),screenshotError:r.result?.screenshot?'':reasonText(r.checkpoint.screenshotError||''),result:r.result?{...r.result,screenshot:this.screenshot(r.result.screenshot)}:null});return true;
       }
       if(action==='records.csv'){
         const rows=this.records(this.source.store.list()),quote=v=>'"'+String(v??'').replace(/^[=+@-]/,"'$&").replaceAll('"','""')+'"';
@@ -236,6 +259,7 @@ export class ProductApi {
         if(!/^[a-f0-9-]{36}$/i.test(input.requestId||''))throw err('缺少有效操作编号，请刷新后重试',400);
         if(action!=='resume-single'){
           const current=this.batch.store.view(input.id);if(!current)throw err('批次不存在',404);
+          if(current.shop!==this.shop.id)throw err('批次不属于当前执行店铺');
           if(action==='start'&&current.state!=='READY')throw err('本批已开始或已结束；请从原任务继续，不能重复开始');
         }
         if(action!=='start'){
@@ -243,14 +267,20 @@ export class ProductApi {
           if(!checked.ready)throw err(checked.checks.filter(x=>x.ok!==true).map(x=>x.detail).join('；'));
         }
       }
-      if(controlled)this.source.store.db.prepare('INSERT INTO product_actions VALUES(?,?,?,?,?)').run(input.requestId,action,input.id,new Date().toISOString(),JSON.stringify({accepted:true,id:input.id,awaitStatus:true}));
+      // All awaited login/recovery checks finish before this final synchronous
+      // scope check and dispatch. A second client cannot switch the target here.
+      if(controlled){
+        if(this.batch.active||this.source.active||this.capturing)throw err('已有任务运行或属性读取，请等待完成');
+        if(action!=='resume-single')this.assertScope(input);
+        this.source.store.db.prepare('INSERT INTO product_actions VALUES(?,?,?,?,?)').run(input.requestId,action,input.id,new Date().toISOString(),JSON.stringify({accepted:true,id:input.id,awaitStatus:true}));
+      }
       let data;
       switch(action){
         case 'publishing-preview':data=await this.preparePreview(input.importId,input.limit||20);break;
         case 'publishing-capture':data=await this.capturePublishingFields();break;
         case 'publishing-save':this.assertRulesIdle();data=await this.rules.save(this.shop.id,input,(await this.settings()).assets);break;
         case 'settings':data=await this.saveSettings(input);break;
-        case 'import':{const imported=await this.batch.import({...await this.settings(),...input});data=this.preview(imported.importId,20);break;}
+        case 'import':{const settings=await this.settings(),setup=await this.setup.config();if(setup.format==='standard'&&(!input.pool||input.pool===settings.pool)){const imported=await this.setup.importSource({format:'standard',root:settings.assets});data=imported.preview;}else{const imported=await this.batch.import({...settings,...input});data=this.preview(imported.importId,20);}break;}
         case 'upload':data=await this.source.stage(input);break;
         case 'create':data=await this.createBatch(input);break;
         case 'start':case 'continue':data=this.batch.start(input.id,this.shop);break;
@@ -263,6 +293,7 @@ export class ProductApi {
         }
         case 'check':data=await this.checkConfiguration();break;
         case 'recovery-check':data=await this.recovery(input,input.single===true);break;
+        case 'reconcile':data=await this.reconciliation.associate(input);break;
         case 'browser':data=await this.launch(this.shop);await this.owner.focus(this.shop);break;
         default:throw err('未找到操作',404);
       }

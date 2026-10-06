@@ -135,6 +135,8 @@ html[data-visual-test=reference] *,html[data-visual-test=reference] *:before,htm
 .globe-tools button:hover .tool-tooltip,.globe-tools button:focus-visible .tool-tooltip{visibility:visible}
 #helpDialog .source-note{margin-bottom:20px}
 .globe-composition-frame{display:none;pointer-events:none;visibility:hidden}
+.globe-point{touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+.globe-point:active{cursor:grabbing}
 @media(min-width:951px) and (min-height:640px){
  .landing{height:100dvh;min-height:0;display:flex;flex-direction:column;background-size:cover}
  .header{height:78px;min-height:78px;flex-shrink:0;padding-top:12px;padding-bottom:12px}

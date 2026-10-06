@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "createdAt": "2026-10-04T09:59:35.258Z",
+  "createdAt": "2026-10-06T09:50:51.196Z",
   "files": [
     {
       "path": ".gitattributes",
@@ -9,8 +9,8 @@
     },
     {
       "path": ".gitignore",
-      "bytes": 514,
-      "sha256": "a752cfe79f7bb299453f709e4c9efa3f10422c7bfde8202bbc0c9b4881d3c8a9"
+      "bytes": 614,
+      "sha256": "8feaa4d61f6599076ed039c8c2af1d9b770b814efead7e107746ee4c80b1d922"
     },
     {
       "path": ".impeccable/design.json",
@@ -19,8 +19,8 @@
     },
     {
       "path": ".interface-design/system.md",
-      "bytes": 22425,
-      "sha256": "6c0f3c69e09aca6578e6b7eae74dff8118cbe2a6633a61c376c62987c1edc486"
+      "bytes": 23151,
+      "sha256": "e5fc7b830aab3afc64d0fc6d6e0739cea238bd7f9afa25b1aeeb33e112edd114"
     },
     {
       "path": "AGENTS.md",
@@ -39,8 +39,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 10611,
-      "sha256": "4de9b0ab6b946032c6fca889da159cb21e9f90b498b3ca790a0b5af3a1cbd204"
+      "bytes": 11754,
+      "sha256": "8c21e787966ee8f866080618f6d328f5cb324e3a4436465c1dac62cb8fac28db"
     },
     {
       "path": "design-qa.md",
@@ -76,6 +76,11 @@
       "path": "docs/GITHUB_INSTALL_MIGRATION_20261001.md",
       "bytes": 6294,
       "sha256": "95092c921900ed9ecd8779da1f1b0dd221593558a69f65edd0181a48a3593de1"
+    },
+    {
+      "path": "docs/GITHUB_SYNC_20261006.md",
+      "bytes": 3515,
+      "sha256": "bbf97a3d7496a1cb9f480cb98519c8bc84e036a237ecdd67c9701071310361dc"
     },
     {
       "path": "docs/GITHUB_SYNC_VERIFICATION_20261001.md",
@@ -159,23 +164,38 @@
     },
     {
       "path": "docs/PROJECT_FILE_MAP.md",
-      "bytes": 11735,
-      "sha256": "bb91e73da7fc555ffadd7230bf732158ce6ba528df9c7379e743a745347518b0"
+      "bytes": 12395,
+      "sha256": "90e60a8405669a32e2380bbad14784260bb84041171a172216342bd749611198"
     },
     {
       "path": "docs/PROJECT_STATUS.md",
-      "bytes": 29744,
-      "sha256": "3ae9a6e670a1df6682be5b761a0547a5deed3c29ba8daefd5877ef5935eb4bfa"
+      "bytes": 34621,
+      "sha256": "2f61ef62636e2fbe3bd17da69e0ffb4e076328d6d17d8f64cbabcb13efa7dbec"
+    },
+    {
+      "path": "docs/QA_AUDIT_20261004.md",
+      "bytes": 22540,
+      "sha256": "f7ce46423a4b806a877217d5738250c9d61288b4fd2b56cc47026f507d1f2e90"
     },
     {
       "path": "docs/RANDOM_PUBLISHING_RULES_20261004.md",
-      "bytes": 4524,
-      "sha256": "2ebd3cec5b0c03d6acbcc5e45b29fb671912e57b9339f738b8fd8f928e4b253b"
+      "bytes": 4789,
+      "sha256": "38536c1d9b36220614a124326f892be82e65db0e6ad21be278dba29bff518362"
     },
     {
       "path": "docs/RELEASE_GATES.md",
       "bytes": 4764,
       "sha256": "f80f1fc0362e27d348cb784b21352a5fee9abc05ce7acbae11fd1c539c80b4af"
+    },
+    {
+      "path": "docs/RELIABILITY_ACTIVATION_20261005.md",
+      "bytes": 3302,
+      "sha256": "277a9e426c33478c35f04c6028f7e60bf1471f0fd10c608577315d0c67dc38f5"
+    },
+    {
+      "path": "docs/RELIABILITY_FIXES_20261004.md",
+      "bytes": 10995,
+      "sha256": "25dc8d6543e9af359faecd6322192ad800f1f04a466da2fe270a0c867f13b1a2"
     },
     {
       "path": "docs/SESSION_GUARD_2026-09-13.md",
@@ -186,6 +206,16 @@
       "path": "docs/SESSION_GUARD_QA_2026-09-13.md",
       "bytes": 5170,
       "sha256": "63e8c753940a5cd49cf4bd049d629d0f3c6c0d59e34329b8b4122a46e3a66e3e"
+    },
+    {
+      "path": "docs/SETUP_GUIDE_20261006.md",
+      "bytes": 3935,
+      "sha256": "0036ab533cecd21360a324125d0956f889fa39a21283419b6bfb07763c82bec1"
+    },
+    {
+      "path": "docs/SETUP_IMPLEMENTATION_20261006.md",
+      "bytes": 5154,
+      "sha256": "a5a9eb10ef9ff47c27d1429387e96dcfeb193db2f7b2ed369ad175886a9cd017"
     },
     {
       "path": "docs/STANDARDIZATION_ROADMAP.md",
@@ -351,6 +381,16 @@
       "path": "docs/kernel-baselines/20260920-before-random-rules.json",
       "bytes": 1214,
       "sha256": "84b8d75851d4ca3c786bef0503841e8a7e9d8bf50e1cb23af5684100c10577bd"
+    },
+    {
+      "path": "docs/kernel-baselines/20261004-before-attribute-navigation.json",
+      "bytes": 1665,
+      "sha256": "9e354737388bb04b544ba9e299de49a34192cb76049a9f9650b7ead2a4f8a1a3"
+    },
+    {
+      "path": "docs/kernel-baselines/20261004-before-reliability-fixes.json",
+      "bytes": 1805,
+      "sha256": "037026f712b1d165decc8d3446b8d92e42812ca35891910a6f4b716290a33422"
     },
     {
       "path": "docs/knowledge/EVIDENCE_RULES.md",
@@ -1044,8 +1084,8 @@
     },
     {
       "path": "workbench/kernel-lock.json",
-      "bytes": 1665,
-      "sha256": "9e354737388bb04b544ba9e299de49a34192cb76049a9f9650b7ead2a4f8a1a3"
+      "bytes": 1973,
+      "sha256": "8473d4601eac865889c92ae0acf7633188326d03a18465fe852f938330f148f8"
     },
     {
       "path": "workbench/legacy.html",
@@ -1079,8 +1119,8 @@
     },
     {
       "path": "workbench/package.json",
-      "bytes": 2190,
-      "sha256": "629b4efd6c9be351155f9aa8627d811bfff693f21f363137894a6a96b7ec03e1"
+      "bytes": 2468,
+      "sha256": "429d555fd2fe25cbed4b9e5aa3c483a89faab2c9f167fb17232e6aff7b0cdfaf"
     },
     {
       "path": "workbench/premium.css",
@@ -1089,8 +1129,8 @@
     },
     {
       "path": "workbench/product-api.mjs",
-      "bytes": 28657,
-      "sha256": "0d74241dfe98a02addc449d5ca845f51009989565599ed398bea1d7288dbc940"
+      "bytes": 31703,
+      "sha256": "e389811d676e565071a71e004c32f281f47f545de2c77f490148776ccdd6427c"
     },
     {
       "path": "workbench/product-package-template.json",
@@ -1109,18 +1149,18 @@
     },
     {
       "path": "workbench/product.js",
-      "bytes": 40198,
-      "sha256": "0e63b3ae6248b89cebcf97ee9ba9e15d15599f1a170386190738cd72633dc2fb"
+      "bytes": 40851,
+      "sha256": "7ce62351ec2311d7fdd3ea005a32095702ac5c31540d478f2d2d4c243b713041"
     },
     {
       "path": "workbench/publishing-attributes.mjs",
-      "bytes": 7995,
-      "sha256": "77dd6378d11960442a56c96339e24ad234e9ac167d918d533f8e88334ab67783"
+      "bytes": 8548,
+      "sha256": "808b3a1deb6aee311c0198ea3d8240dac5c72dc5c6f6bb2baee6909bd0800b79"
     },
     {
       "path": "workbench/publishing-rules-ui.js",
-      "bytes": 12138,
-      "sha256": "7d2adce5387a11bebfb7f09d90ec8a284065ebe904482ce07ab98c52a28c7838"
+      "bytes": 12217,
+      "sha256": "997bddb1eb55e48201cd9dc3dff8a5d41cd9b2ca832232cbab46fd3fbbad719d"
     },
     {
       "path": "workbench/publishing-rules.css",
@@ -1131,6 +1171,21 @@
       "path": "workbench/publishing-rules.mjs",
       "bytes": 11772,
       "sha256": "dc5ad8aa8b181ee4b26184ecd5088938824541ec0ac233bead3f96406642e39a"
+    },
+    {
+      "path": "workbench/result-reconciliation.mjs",
+      "bytes": 9867,
+      "sha256": "2252003521478e5180678d4ac4fa8cd9bdedf08733eac4a3de7ccafeea9b55c3"
+    },
+    {
+      "path": "workbench/scripts/attribute-navigation-qa.mjs",
+      "bytes": 5332,
+      "sha256": "a77e57476ad3351759415495611d5a02ff916ffe15ee6f919e5c985e3a1555fc"
+    },
+    {
+      "path": "workbench/scripts/audit-existing-ui.mjs",
+      "bytes": 2747,
+      "sha256": "e43735351f802fa846e0c13b28e6100926bab5391f85772ab47a77d98ba9e3c6"
     },
     {
       "path": "workbench/scripts/batch-report.mjs",
@@ -1183,9 +1238,24 @@
       "sha256": "6a8030458cd173b6f04ef02c484fa4dcb642382e174c28a6ff58571f9dcad339"
     },
     {
+      "path": "workbench/scripts/execution-scope-ui-qa.mjs",
+      "bytes": 9385,
+      "sha256": "79b40f3a0af86568e80f0d08e08d368c29e18c09150ed3d1e96214eabedfc5a4"
+    },
+    {
+      "path": "workbench/scripts/execution-scope.test.mjs",
+      "bytes": 5952,
+      "sha256": "b2f527a89260393aa92cfa27386df9a3e6230ced81dc14f5b18fb4a4c1079a6d"
+    },
+    {
       "path": "workbench/scripts/globe-premium-ui.mjs",
       "bytes": 11449,
       "sha256": "a7aaac3379d3e685fbc0d3f2c1d4c341d3f36c022e57364ab3e3d1c40ef50d15"
+    },
+    {
+      "path": "workbench/scripts/globe-rotation-ui-qa.mjs",
+      "bytes": 2914,
+      "sha256": "2455a760ff004ada2b7ed1f60342d385ede56a55a5ddc5b1eb25a27c846e8e7c"
     },
     {
       "path": "workbench/scripts/globe-ui.mjs",
@@ -1234,8 +1304,8 @@
     },
     {
       "path": "workbench/scripts/overview-ui-qa.mjs",
-      "bytes": 13240,
-      "sha256": "ada17f493916c1785afe6e22816c7919674cc0d52cb72bff14dc883ab8bcf219"
+      "bytes": 13284,
+      "sha256": "e0f2e53c16431c62496626cb4ada249a10f97aa0a64d28c834becd6b03322ef6"
     },
     {
       "path": "workbench/scripts/overview-view.test.mjs",
@@ -1244,8 +1314,8 @@
     },
     {
       "path": "workbench/scripts/product-api.test.mjs",
-      "bytes": 15199,
-      "sha256": "c317c5a6fa38536b2f9019d46e8e7b9aabb95d9c0d1b23c6fdb5912dfa199ef0"
+      "bytes": 16276,
+      "sha256": "e191ae8bd23843213cfce3a32485fddeb60aec6bf4bff4f94fd07b3e8b2ad8b9"
     },
     {
       "path": "workbench/scripts/product-contract-ui.mjs",
@@ -1263,9 +1333,14 @@
       "sha256": "7149423ec2307b7a3729a92125192261c6bab9dfa3502705ffd21f8ad3050d3b"
     },
     {
+      "path": "workbench/scripts/project-audit-qa.mjs",
+      "bytes": 16470,
+      "sha256": "3481c37482ca8b9c28220ce36921fad5e4595b8fcae43fcfcbc3cee7b31203a6"
+    },
+    {
       "path": "workbench/scripts/publishing-rules-ui-qa.mjs",
-      "bytes": 13841,
-      "sha256": "0deca37b8f2e7807cbc0f5b22fa845fbd0112176e3fe8d959434dfa0eda50780"
+      "bytes": 14155,
+      "sha256": "441222428620f93fbb5578d0f3cd651ed894b762615f8f5c6ced455407b2b5f2"
     },
     {
       "path": "workbench/scripts/publishing-rules.test.mjs",
@@ -1279,8 +1354,13 @@
     },
     {
       "path": "workbench/scripts/quotes-ui-qa.mjs",
-      "bytes": 11213,
-      "sha256": "3caa6023a9f3f2c73626593b89985a044f61d867acf99d620984be89c2e7e262"
+      "bytes": 11500,
+      "sha256": "475dfd818c2ce8f25481ddd206e468d39034cc13a4b2cca1b0d29ef5b2a0eca8"
+    },
+    {
+      "path": "workbench/scripts/reconciliation-ui-qa.mjs",
+      "bytes": 10469,
+      "sha256": "28ebbdf85ff46259d099969797e55b017cbc6cd3b1013e117daff6da67b1485d"
     },
     {
       "path": "workbench/scripts/records-ui-qa.mjs",
@@ -1293,14 +1373,39 @@
       "sha256": "dc72a5f62533fa60d8b7bcac2c2bcae0fbb41737fe13802c7c9344cbff9e98af"
     },
     {
+      "path": "workbench/scripts/result-reconciliation.test.mjs",
+      "bytes": 9669,
+      "sha256": "27814bcbabf199fa2d29c19e966807490f280f3e842e6275031d37963bf89115"
+    },
+    {
       "path": "workbench/scripts/session-guard.test.mjs",
       "bytes": 11371,
       "sha256": "0aa340449017f8516e8dd24290bf22e9d593fabf2dbc60dc9ad9d1554af10370"
     },
     {
       "path": "workbench/scripts/settings-ui-qa.mjs",
-      "bytes": 8939,
-      "sha256": "dedd8f510acbc59e75a4900cb0f5c5d635ca742075af2aade3dabba58f299bd3"
+      "bytes": 215,
+      "sha256": "7750f20f12b1d442f82366c4eaf05e36b11206700ffc025df678fbb36bc803a5"
+    },
+    {
+      "path": "workbench/scripts/setup-fixture.mjs",
+      "bytes": 1828,
+      "sha256": "35c29441cf4145297da653aab55306801a7dc2f5ffe054cb155a7d3b2c76b68f"
+    },
+    {
+      "path": "workbench/scripts/setup-fixture.py",
+      "bytes": 2963,
+      "sha256": "5e040dac13cf52f296d3adc45cc5580cf8195e7f46daef4176cbb16d44ca841f"
+    },
+    {
+      "path": "workbench/scripts/setup-flow.test.mjs",
+      "bytes": 9900,
+      "sha256": "34a90e66a06db0ee4277edcb689330e69a6f92230f61e164a82a436dc7bd69f5"
+    },
+    {
+      "path": "workbench/scripts/setup-ui-qa.mjs",
+      "bytes": 7875,
+      "sha256": "92c0400db4a62b0815ff5d27c097b41f44aaa0f996f296d381446b9ce5406249"
     },
     {
       "path": "workbench/scripts/source-workflow.test.mjs",
@@ -1311,6 +1416,11 @@
       "path": "workbench/scripts/static-files.test.mjs",
       "bytes": 9424,
       "sha256": "9774a067aa889b03384320f79c86c3bf8fc1a11cd0b421b7f20fd00d1d87fc29"
+    },
+    {
+      "path": "workbench/scripts/task-screenshot.test.mjs",
+      "bytes": 3930,
+      "sha256": "a7f0dc7d12d66bd221a89aee48d35426708e5c351ef005ac43c1ae37e47e5e61"
     },
     {
       "path": "workbench/scripts/task-view-model.test.mjs",
@@ -1329,8 +1439,8 @@
     },
     {
       "path": "workbench/scripts/travel-os-ui-qa.mjs",
-      "bytes": 12402,
-      "sha256": "84f3f4ea18de5114ebd3bbf2199040d3739a4bee9223b99a9e4a543c21462bec"
+      "bytes": 12805,
+      "sha256": "d019f5134ee214d8360daab6f70f8135645c873f8f77b0d539b04157ddae24d3"
     },
     {
       "path": "workbench/scripts/travel-os.test.mjs",
@@ -1339,13 +1449,38 @@
     },
     {
       "path": "workbench/server.mjs",
-      "bytes": 87283,
-      "sha256": "11f14ff5adb09460fca2f1b8c5ccb87dd292e254a0bfe9adad0d25a88310f434"
+      "bytes": 87295,
+      "sha256": "456463e273bea79591a863d95e74d7372b0b68bb43b646a669d0da2dba8972c0"
     },
     {
       "path": "workbench/session-guard.mjs",
       "bytes": 10531,
       "sha256": "4d15ae4a780521f6f5b72dbb8675ead264d8ca27b99e151e6b506480e2320fba"
+    },
+    {
+      "path": "workbench/setup-adapter.py",
+      "bytes": 10255,
+      "sha256": "e98f994342f652db67c5c4238972cebba7ea537d4a7a8964731b4522d95d652a"
+    },
+    {
+      "path": "workbench/setup-flow.mjs",
+      "bytes": 13684,
+      "sha256": "bc65a3b8e48ad7a024c9bada526c697b53d4f20485713f4504c92ee162148ee2"
+    },
+    {
+      "path": "workbench/setup-template.json",
+      "bytes": 2051,
+      "sha256": "ddb679202d88053986db7005a57a6fc7af637aeb3224453d4429e547be29fe0e"
+    },
+    {
+      "path": "workbench/setup-ui.css",
+      "bytes": 5502,
+      "sha256": "4f83aef911fc05476f142f4d2048d54381f5db6c3dbf517da0a9a01de75527db"
+    },
+    {
+      "path": "workbench/setup-ui.js",
+      "bytes": 20345,
+      "sha256": "35ea9f1e03fb94d429b09c0b2bf76144dd00a69cb67483b44d4826cb12197e28"
     },
     {
       "path": "workbench/source-store.mjs",
@@ -1365,12 +1500,12 @@
     {
       "path": "workbench/source-workflow.mjs",
       "bytes": 11995,
-      "sha256": "9e05d1baed754afbee2cf5508d4af8557abb55e57ad0294539ce85bd41a91d3c"
+      "sha256": "37568a0c03603d13307735410dedc05d2c6034e1499931804f7f44e49d172349"
     },
     {
       "path": "workbench/static-files.mjs",
-      "bytes": 5543,
-      "sha256": "b4e5461168b47eb30410bb9b1524703d029808fe28af6584803c3196a37b27c0"
+      "bytes": 5668,
+      "sha256": "10965c2ae086844388b4a63b116805c7e83ccf7bf034c0feef25b4651b8f44ac"
     },
     {
       "path": "workbench/styles.css",
@@ -1383,6 +1518,11 @@
       "sha256": "3d383605b03143eccfae369ff88990933b3093590ce78c4910b016db91ddbe37"
     },
     {
+      "path": "workbench/task-screenshot.mjs",
+      "bytes": 940,
+      "sha256": "8ba331237f2a45001f42543254c0979fae0d844da95760ab6a55ec5ed1cb919c"
+    },
+    {
       "path": "workbench/task-view-model.mjs",
       "bytes": 3633,
       "sha256": "2f121b80f90d5ce93d19bc36f20116ed0d259188db38f5e05054a5d78ecaaa0f"
@@ -1393,19 +1533,24 @@
       "sha256": "8adfdc7dfdef7920098b617c3c31ba816c581e9dd98cad945f5bbc5bd690f0a3"
     },
     {
+      "path": "workbench/templates/travel-os-template-v1.zip",
+      "bytes": 7619,
+      "sha256": "c8f0f804042b9291a969b6765b9fb56433c5542b4e97ce1a7ca13559024427e8"
+    },
+    {
       "path": "workbench/travel-globe-ui.css",
       "bytes": 6321,
       "sha256": "764aabd3b0ef5937e540cd1ea363fc3bfdf9e16a15cfba2e48e1e3e2b1e2cfa2"
     },
     {
       "path": "workbench/travel-globe.js",
-      "bytes": 31810,
-      "sha256": "dbb1a4f7b9282b3ba7f9b0a6354abd20be0b822f73230ce9f720623a50f89ee8"
+      "bytes": 33366,
+      "sha256": "d2203850de80fb7c45b0c9aaa8bc62e6cb670024026e622c83f75b8ac4be343a"
     },
     {
       "path": "workbench/travel-home.css",
-      "bytes": 55765,
-      "sha256": "c27c477c2e868148e4d4945e9e5c18a317a4053b585745e3b78746bced803b5f"
+      "bytes": 55888,
+      "sha256": "fa3643d6db9b4978e3b036b4fa5268bdd669377d481524e88cb8f90c3b87d8a9"
     },
     {
       "path": "workbench/travel-home.html",
@@ -1419,8 +1564,8 @@
     },
     {
       "path": "workbench/travel-os-api.mjs",
-      "bytes": 11111,
-      "sha256": "c1a3e7159edbc3a29c00fc78bab5a66fdc2ad154c7b50e6d1a5540f5d0c62ebb"
+      "bytes": 11147,
+      "sha256": "d0109f6ccee235932689a45e62e90d9d0dd1ca4661d931683c42cb0edec93eac"
     },
     {
       "path": "workbench/travel-os-store.mjs",
@@ -1434,13 +1579,13 @@
     },
     {
       "path": "workbench/travel-os.html",
-      "bytes": 7395,
-      "sha256": "c09bee1f9eee28d8b7eced7619b162f55d4b5a7e706e5cb808430167e4bac153"
+      "bytes": 7446,
+      "sha256": "2ca39372d37fc34c4bc011e45b861b15a2d73cc224c36581ae9314f305e4b586"
     },
     {
       "path": "workbench/travel-os.js",
-      "bytes": 157744,
-      "sha256": "3b3e0102e95f33ebc3964f1f3eb9b6ea78c3bb2b9e69839bf0d518c4dd0f1e82"
+      "bytes": 151385,
+      "sha256": "603da10ac337316b9068dfff85faacd9282d4fd43bec7f63ba65f26053115688"
     },
     {
       "path": "workbench/typography.css",

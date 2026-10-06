@@ -26,3 +26,6 @@ __pycache__/
 *.zip
 **/.travelos-export-*/
 **/.travelos-restore-*/
+
+# Shipped blank setup template, no business data.
+!/workbench/templates/travel-os-template-v1.zip

@@ -64,7 +64,7 @@ try{
  await page.locator('[data-action="overview-running"]').click();await page.locator('#page-tasks:not([hidden])').waitFor();
  check(await page.locator('[data-action="queue-filter"][data-filter="running"]').getAttribute('aria-pressed')==='true','running metric opens running queue');
  await page.locator('#navigation a[href="#overview"]').click();
- await page.locator('#checkBrowser').click();await page.locator('#toast').filter({hasText:'浏览器和配置检查完成'}).waitFor();check(writes.length===1&&writes[0]==='/api/v1/check','check button invokes only intercepted check, never publish');
+ await page.locator('#checkBrowser').click();await page.locator('#page-settings:not([hidden])').waitFor();check(writes.length===0,'connection shortcut navigates to single settings entry without opening Chrome or starting a task');await page.locator('#navigation a[href="#overview"]').click();
  // Explicitly verify stale evidence, connection loss, and recovery using fixture updates.
  state.engine.browser={...state.engine.browser,checkedAt:'2000-01-01T00:00:00Z',stale:true};await page.reload();await page.locator('.overview-metric').first().waitFor();
  check((await page.locator('#overviewShop .ov-state').innerText())==='待检查','stale login evidence is not presented as ready');

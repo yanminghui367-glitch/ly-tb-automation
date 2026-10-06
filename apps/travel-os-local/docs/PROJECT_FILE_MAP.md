@@ -107,3 +107,11 @@
 - 页面实现：`workbench/travel-os.js` 的 records view 与 `workbench/travel-os.css` 的 `#page-records` 样式；页面资源版本在 `workbench/travel-os.html`。
 - 验证：`workbench/scripts/records-view.test.mjs`、`workbench/scripts/records-ui-qa.mjs`。
 - 说明：`docs/UI_RECORDS_20260925.md`；证据：`output/records-ui-20260925/`，本地截图／导出样例不作为代码版本基线。
+
+## 2026-10-06 首次设置与统一资料导入
+
+- `workbench/setup-flow.mjs`：产品层目录选择、上传、识别与准备检查；`setup-adapter.py`：固定模板转原任务契约。
+- `workbench/setup-template.json` / `templates/travel-os-template-v1.zip`：模板规范和可下载的空白模板。
+- `workbench/setup-ui.js` / `setup-ui.css`：资料设置四步界面及新电脑引导。
+- `scripts/setup-flow.test.mjs` / `setup-ui-qa.mjs`：隔离回归；证据存放在 `output/setup-20261006/` 和 `output/playwright/setup-20261006/`。
+- `docs/SETUP_GUIDE_20261006.md` / `SETUP_IMPLEMENTATION_20261006.md`：使用与实际验收边界。

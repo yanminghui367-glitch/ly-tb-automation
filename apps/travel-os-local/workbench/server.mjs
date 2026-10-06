@@ -678,7 +678,7 @@ export const workbenchServer = createServer(async (req, res) => {
     if(req.method==='POST'&&executionRoute(url.pathname))await (await product()).assertExecution();
     if(url.pathname.startsWith('/api/os/'))return await travelOs().handle(req,res,url,{body,json});
     if(url.pathname.startsWith('/api/v1/')){
-      if(req.method==='POST'&&['start','continue','retry','resume-single','create'].includes(url.pathname.slice(8))&&travelOs().store.removed((await product()).shop.id))return json(res,409,{error:'执行店铺已从管理中移除，禁止创建或启动任务'});
+      if(req.method==='POST'&&['start','continue','retry','resume-single','reconcile','create'].includes(url.pathname.slice(8))&&travelOs().store.removed((await product()).shop.id))return json(res,409,{error:'执行店铺已从管理中移除，禁止创建或启动任务'});
       return await (await product()).handle(req,res,url,{body,json});
     }
     if (req.method === "GET" && url.pathname === "/api/browser/status") { const { shop } = await context(); return json(res, 200, { shop: { id: shop.id, name: shop.name, port: shop.port }, browser: await browserEnvironment.status(shop) }); }

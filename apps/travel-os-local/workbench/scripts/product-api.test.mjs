@@ -19,7 +19,7 @@ async function fixture(t){
  async resume({id}){store.move(id,'QUEUED');this.launch(id);}};
  const batch=new BatchWorkflow(flow),owner={sessions:new Map(),status:async()=>({running:true,loggedIn,loginState:loggedIn?'LOGGED_IN':'LOGIN_UNVERIFIED',checkedAt:new Date().toISOString(),reason:'需要人工登录'})},params={batch,source:flow,owner,shop,runtime:dir,launch:async()=>({}),checkFiles:async()=>{},integrity:async()=>({ok:true,baseline:'test',files:10})},api=new ProductApi(params);
  const tasks=[task(1),task(2)],importId=store.imported({sourceHash:'fixture',sheet:'境外城市热度',tasks});
- const call=async(action,input,method=input===undefined?'GET':'POST')=>{if(input&&['start','continue','retry','resume-single'].includes(action)&&!input.requestId)input={...input,requestId:randomUUID()};let result;const res=new EventEmitter();res.writeHead=()=>{};res.end=v=>result=v;res.write=v=>result=v;await api.handle({method},res,new URL('/api/v1/'+action,'http://localhost'),{body:async()=>input,json:(res,status,data)=>result={status,data}});return {result,res};};
+ const call=async(action,input,method=input===undefined?'GET':'POST')=>{if(input&&['start','continue','retry','resume-single'].includes(action)&&!input.requestId)input={...input,requestId:randomUUID()};if(input&&['start','continue','retry'].includes(action)&&!('scope' in input))input={...input,scope:api.executionScope(input.id)};let result;const res=new EventEmitter();res.writeHead=()=>{};res.end=v=>result=v;res.write=v=>result=v;await api.handle({method},res,new URL('/api/v1/'+action,'http://localhost'),{body:async()=>input,json:(res,status,data)=>result={status,data}});return {result,res};};
  return {dir,store,flow,batch,params,api,call,importId,tasks,setOutcome:v=>outcome=v,setLogin:v=>loggedIn=v};
 }
 test('execution is off by default and persists without dispatching tasks',async t=>{const x=await fixture(t);await assert.rejects(x.api.assertExecution(),/暂停/);await assert.rejects(x.call('start',{id:'x'}),/暂停/);await assert.rejects(x.api.saveSettings({executionEnabled:true,confirmShop:'wrong'}),/确认/);await x.api.saveSettings({executionEnabled:true,confirmShop:shop.name});await new ProductApi(x.params).assertExecution();assert.equal(x.flow.submits,0);await x.api.saveSettings({executionEnabled:false});await assert.rejects(new ProductApi(x.params).assertExecution(),/暂停/);await assert.rejects(x.api.saveSettings({limit:21}),/1—20/);await assert.rejects(x.api.saveSettings({cookie:'x'}),/无效/);});
@@ -91,4 +91,18 @@ test('an in-flight step remains pausing until the persisted pause is available',
  await x.api.saveSettings({executionEnabled:true,confirmShop:shop.name});const p=x.batch.preview(x.importId,1),b=x.batch.create({importId:x.importId,limit:1,mode:'LIVE',review:{reviewed:true,selectionHash:p.selectionHash,authorization:'isolated'}},shop);
  await x.call('start',{id:b.id});await x.call('pause',{});let snapshot=await x.api.snapshot();assert.equal(snapshot.execution.state,'PAUSING');assert.equal(snapshot.execution.saved,false);assert.equal(x.store.list()[0].state,'RUNNING');
  release();await x.batch.pending;snapshot=await x.api.snapshot();assert.equal(snapshot.execution.state,'PAUSED');assert.equal(snapshot.execution.saved,true);assert.equal(x.store.list()[0].checkpoint.step,'title');assert.equal(x.flow.submits,0);
+});
+
+
+test('failed screenshot projects an explicit error without replacing it with earlier evidence',async t=>{
+ const x=await fixture(t),r=x.store.create(x.importId,x.tasks[0],'DRY_RUN','SOURCE',{reviewed:true,taskHash:digest(x.tasks[0])});
+ x.store.move(r.id,'RUNNING');x.store.move(r.id,'PAUSED','fixture pause');
+ const old=join(x.flow.artifacts,r.id,'previous.png');
+ x.store.event(r.id,'STEP_VERIFIED',{name:'title',screenshot:old});
+ x.store.event(r.id,'STEP_PAUSED',{name:'price',screenshot:null,screenshotError:'PAGE_CLOSED'});
+ x.store.checkpoint(r.id,{screenshot:null,screenshotError:'PAGE_CLOSED'});
+ const {result:{data}}=await x.call('task?id='+r.id);
+ assert.equal(data.screenshot,null);assert.equal(data.screenshotError,'PAGE_CLOSED');
+ assert.equal(data.events.at(-1).screenshot,null);assert.equal(data.events.at(-1).screenshotError,'PAGE_CLOSED');
+ assert.equal(data.events.at(-2).screenshot,x.api.screenshot(old));
 });

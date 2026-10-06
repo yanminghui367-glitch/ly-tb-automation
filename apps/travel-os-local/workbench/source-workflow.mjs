@@ -7,6 +7,7 @@ import {expect} from 'playwright/test';
 import { SourceStore, digest, destinationKey } from './source-store.mjs';
 import { PROJECT_ROOT, visibleChallenge } from './browser-environment.mjs';
 import { assertTaskFiles, fillTask, newForm, openTaskPage, verifyForm, submitTask, verifyResult, MAPPING_VERSION } from './taobao-publisher.mjs';
+import {captureTaskScreenshot} from './task-screenshot.mjs';
 
 const exec = promisify(execFile);
 const defaults = { workbook: 'D:/桌面文件迁移/五洲畅游店铺：境外旅游目的地链接池_700.xlsx', assetRoot: 'D:/桌面文件迁移/五洲畅游---图片' };
@@ -111,9 +112,8 @@ export class SourceWorkflow {
       try {await guard();await fn();await guard();}
       catch(e){error=errorText(e);throw e;}
       finally {
-        const screenshot=join(dir,`${this.store.events(id).length}-${name}.png`);
-        await page?.screenshot({path:screenshot,timeout:5000}).catch(()=>{});
-        const data={name,durationMs:Date.now()-start,screenshot,error};this.store.event(id,error?'STEP_PAUSED':'STEP_VERIFIED',data);
+        const evidence=await captureTaskScreenshot(page,dir,name);
+        const data={name,durationMs:Date.now()-start,...evidence,error};this.store.event(id,error?'STEP_PAUSED':'STEP_VERIFIED',data);
         checkpoint({step:name,...data});await writeFile(join(dir,'checkpoint.json'),JSON.stringify(this.store.run(id).checkpoint,null,2));
       }
     };
@@ -138,7 +138,8 @@ export class SourceWorkflow {
       this.store.move(id,'SUBMITTING');
       let itemId;
       await step('submit-once',async()=>{itemId=await submitTask(page,guard);checkpoint({itemId,successUrl:page.url()});});
-      await page.screenshot({path:dir+'submit-success.png',fullPage:true});
+      const submittedEvidence=await captureTaskScreenshot(page,dir,'submit-success');
+      this.store.event(id,'SUBMIT_EVIDENCE',submittedEvidence);
       let result;
       await step('verify-platform-result',async()=>{result=await verifyResult(context,r.task,itemId,target,dir,guard);});
       this.store.move(id,'VERIFIED','',result);await writeFile(dir+'result.json',JSON.stringify(result,null,2));
@@ -146,8 +147,8 @@ export class SourceWorkflow {
       const current=this.store.run(id);if(current.state==='VERIFIED'){this.store.event(id,'ARTIFACT_WRITE_ERROR',{error:errorText(e)});return;}
       const reason=page && await visibleChallenge(page).catch(()=>false)?'PAUSED_CAPTCHA':errorText(e);
       const state=['SUBMITTING','RESULT_UNKNOWN'].includes(current.state)?'RESULT_UNKNOWN':reason==='PAUSED_CAPTCHA'?'PAUSED_CAPTCHA':'PAUSED';
-      const shot=dir+'paused.png';await page?.screenshot({path:shot,timeout:5000}).catch(()=>{});
-      checkpoint({pausedAt:new Date().toISOString(),reason,screenshot:page?shot:null});
+      const evidence=await captureTaskScreenshot(page,dir,'paused');
+      checkpoint({pausedAt:new Date().toISOString(),reason,...evidence});
       this.store.move(id,state,reason);await writeFile(dir+'checkpoint.json',JSON.stringify(this.store.run(id).checkpoint,null,2));
     } finally {
       const final=this.store.run(id);

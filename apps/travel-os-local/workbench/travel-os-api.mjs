@@ -36,6 +36,7 @@ export class TravelOsApi {
   if(shop.id!==p.shop.id||d.shopId!==shop.id)throw problem('此店铺尚未完成该商品的执行适配，不能修改原任务的店铺归属');
   const imported=p.source.store.batch(d.source.importId),task=imported?.tasks.find(t=>destinationKey(t)===d.key);
   if(!task)throw problem('原始任务快照不存在，请重新导入资料');
+  p.assertImportRules(imported.id);
   if(task.adapterIssues?.length)throw problem('资料未齐备：'+task.adapterIssues.join('；'));
   if(p.source.store.completed(task))throw problem('商品已有成功记录，禁止重复发布');
   if(p.source.store.db.prepare('SELECT 1 FROM runs WHERE key=?').get(d.key)||p.source.store.db.prepare('SELECT 1 FROM batch_items WHERE key=?').get(d.key))throw problem('商品已有任务，请从原任务继续');

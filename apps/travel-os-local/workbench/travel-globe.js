@@ -73,6 +73,35 @@ export async function mountGlobe({host,labels,onSelect,presentation='workspace',
   host.prepend(renderer.domElement);renderer.domElement.setAttribute('aria-label','3D 地球：拖动旋转，滚轮或双指缩放；方向键旋转，加减键缩放，Esc 退出全屏');renderer.domElement.tabIndex=0;
   controls=new OrbitControls(camera,renderer.domElement);controls.enablePan=false;controls.enableZoom=false;controls.enableDamping=true;controls.dampingFactor=.075;controls.rotateSpeed=.48;controls.minDistance=1.14;controls.maxDistance=5;controls.autoRotateSpeed=.2;autoRotate(!reduced()&&!visualTest);
   controls.addEventListener('change',()=>dirty=true);controls.addEventListener('start',stopMotion);
+  // City pins overlay the canvas. Hand their pointer gesture to the same controls,
+  // retaining a click only when the pointer has not travelled (including touch).
+  let markerGesture=null;
+  listen(labels,'pointerdown',e=>{
+   const button=e.target.closest('.globe-point');
+   if(!button||e.button!==0)return;
+   e.preventDefault();e.stopPropagation();
+   if(markerGesture)markerGesture.dragged=true;
+   else if(e.isPrimary)markerGesture={button,id:e.pointerId,x:e.clientX,y:e.clientY,dragged:false};
+   renderer.domElement.dispatchEvent(new PointerEvent('pointerdown',{
+    bubbles:true,cancelable:true,pointerId:e.pointerId,pointerType:e.pointerType,
+    isPrimary:e.isPrimary,button:e.button,buttons:e.buttons,
+    clientX:e.clientX,clientY:e.clientY,ctrlKey:e.ctrlKey,shiftKey:e.shiftKey,metaKey:e.metaKey
+   }));
+  });
+  listen(document,'pointermove',e=>{
+   if(markerGesture?.id===e.pointerId&&Math.hypot(e.clientX-markerGesture.x,e.clientY-markerGesture.y)>6)markerGesture.dragged=true;
+  },true);
+  listen(document,'pointerup',e=>{
+   if(markerGesture?.id!==e.pointerId)return;
+   const gesture=markerGesture;markerGesture=null;
+   if(!gesture.dragged)queueMicrotask(()=>gesture.button.click());
+  },true);
+  listen(document,'pointercancel',()=>{markerGesture=null;},true);
+  listen(renderer.domElement,'lostpointercapture',()=>{markerGesture=null;});
+  listen(labels,'wheel',e=>{
+   e.preventDefault();
+   renderer.domElement.dispatchEvent(new WheelEvent('wheel',{deltaY:e.deltaY,deltaMode:e.deltaMode,cancelable:true}));
+  },{passive:false});
   const loader=new THREE.TextureLoader();
   const [day,night,bump,cloud]=await Promise.all(['earth-day.jpg',homePresentation?'earth-lights-2016.jpg':'earth-night.jpg','earth-bump.jpg','earth-clouds.png'].map(async name=>own(await loader.loadAsync('/assets/travel-os/'+name))));
   if(disposed){resources.forEach(x=>x.dispose());return {focus(){},dispose(){}};}

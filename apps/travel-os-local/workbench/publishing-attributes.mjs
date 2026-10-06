@@ -42,7 +42,11 @@ export async function discoverFields(page) {
 }
 
 function control(page,field){return page.locator('#'+field.containerId).locator(field.kind==='native'?'select':'input:not([type="hidden"]),[role="combobox"]').first();}
-function options(page){return page.locator('.options-item:visible,[role="option"]:visible');}
+function options(page){
+  // Taobao's fixed section navigation also uses listbox/option roles. It is not
+  // an attribute popup; keep rejecting all other visible option lists.
+  return page.locator(':is(.options-item,[role="option"]):visible:not(#struct-nav *):not(.sell-component-navigation-bar *)');
+}
 async function openOptions(page,field,guard){
   await guard();const input=control(page,field);await expect(input).toBeVisible();await expect(input).toBeEnabled();
   assert.equal(await options(page).count(),0,'页面已有其他候选列表，请人工关闭后重新读取');
@@ -58,7 +62,17 @@ async function openOptions(page,field,guard){
   },owned);
   return input;
 }
-async function closeOptions(page,input,guard){await guard();if(await options(page).count()){await input.press('Escape');await guard();await expect(options(page)).toHaveCount(0);}}
+async function closeOptions(page,input,guard){
+  await guard();
+  if(await options(page).count()){
+    // The live Taobao select exposes its open state but does not handle Escape.
+    // Its own trigger closes it without choosing a value. Other controls keep
+    // the existing keyboard path; never click an arbitrary blank coordinate.
+    if(await input.getAttribute('aria-expanded')==='true')await input.click();
+    else await input.press('Escape');
+    await guard();await expect(options(page)).toHaveCount(0);
+  }
+}
 async function readCustom(input,field){
   if(await input.evaluate(el=>el.tagName==='INPUT'))await expect(input).toHaveValue(field.text);else await expect(input).toHaveText(field.text);
   const value=await input.getAttribute('data-value');if(value!==null)assert.equal(value,field.value,'已选属性标识不一致：'+field.label);

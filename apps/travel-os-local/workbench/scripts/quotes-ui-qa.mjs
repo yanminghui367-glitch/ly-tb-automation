@@ -53,6 +53,9 @@ try{
   await f.getByRole('button',{name:'保存报价',exact:true}).click();await page.locator('#editor').waitFor({state:'hidden'});
  };
  await add('COST','隔离成本服务','100');await add('SALE','隔离销售服务','150','USD','巴黎');
+ // Closing the editor precedes the asynchronous state refresh. Wait for the
+ // same expected statistics; do not accept stale UI or relax the assertion.
+ await page.waitForFunction(()=>Array.from(document.querySelectorAll('.quotes-stat strong'),e=>e.textContent).join(',')==='2,1,1,2');
  check((await page.locator('.quotes-stat strong').allTextContents()).join(',')==='2,1,1,2','成本和销售条数、目的地去重正确，不混加币种');
  check((await rows.first().innerText()).includes('隔离销售服务'),'默认按最新创建排序');
  await page.locator('#quoteSort').selectOption('oldest');check((await rows.first().innerText()).includes('隔离成本服务'),'最早创建排序生效');

@@ -46,8 +46,8 @@ try{
  const blocked=await request('/api/v1/publishing-capture',{});assert.equal(blocked.status,409);check((await request('/api/v1/publishing-rules')).data.checkpoint.state==='WAITING_HUMAN','合成验证码立即暂停并持久保存 checkpoint');
  check((await readFile(join(dir,'artifacts/attribute-capture/paused.png'))).length>0,'验证码截图已保存到隔离目录');
  await seller.locator('#qa-captcha').evaluate(e=>e.remove());
- await page.goto(base+'/travel-os.html#settings');await page.locator('#publishingConfigure').waitFor();await expect(page.locator('#testBanner')).toBeVisible();
- await expect(page.locator('.publishing-card')).toContainText('属性读取已暂停');
+ await page.goto(base+'/travel-os.html#settings');await page.locator('[data-setup=step][data-step="4"]').click();await page.locator('.setup-more summary').click();await page.locator('#publishingConfigure').waitFor();await expect(page.locator('#testBanner')).toBeVisible();
+ await expect(page.locator('[data-rules-paused]')).toContainText('属性读取已暂停');
  await page.locator('#publishingConfigure').click();await page.locator('#publishingCapture').click();await expect(page.locator('.publishing-field input')).toHaveCount(10);
  check(!(await request('/api/v1/publishing-rules')).data.checkpoint,'人工处理后重新读取，真实条件通过才清除暂停记录');
  for(const [group,start,count] of [['A',1,4],['B',5,4],['covers',9,2]])for(let i=0;i<count;i++){
@@ -58,7 +58,7 @@ try{
  await page.setViewportSize({width:390,height:844});check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'390px 规则配置无横向溢出');await page.screenshot({path:join(out,'settings-mobile.png')});
  await page.setViewportSize({width:1440,height:1000});await page.locator('#publishingSave').click();await expect(page.locator('.publishing-editor')).not.toBeVisible();
  const config=(await request('/api/v1/publishing-rules')).data;check(config.preset.enabled&&config.preset.secondary.A.length===4&&config.preset.secondary.B.length===4&&config.preset.covers.length===2,'界面保存两套4张副图、两张首页及五项候选');
- await page.reload();await page.locator('#publishingConfigure').click();await expect(page.locator('.publishing-field input:checked')).toHaveCount(10);await page.locator('#publishingClose').click();checks.push('刷新后配置与勾选仍存在');
+ await page.reload();await page.locator('[data-setup=step][data-step="4"]').click();await page.locator('.setup-more summary').click();await page.locator('#publishingConfigure').click();await expect(page.locator('.publishing-field input:checked')).toHaveCount(10);await page.locator('#publishingClose').click();checks.push('刷新后配置与勾选仍存在');
  const draft=await post('/api/v1/publishing-preview',{importId,limit:1}),same=await post('/api/v1/publishing-preview',{importId,limit:1});check(draft.draftId===same.draftId&&digest(draft.tasks)===digest(same.tasks),'HTTP重复预览返回相同随机快照');
  const selection=draft.tasks[0];const steps=[];await fillAttributes(seller,selection,{guard:async()=>{},step:async(name,fn)=>{steps.push(name);await fn();}});await verifyAttributes(seller,selection);check(steps.length===5,'真实浏览器合成原生下拉：填写与逐项回读通过');
  await seller.locator('#struct-p-101 select option:checked').evaluate(e=>e.disabled=true);await assert.rejects(fillAttributes(seller,selection,{guard:async()=>{},step:async(_,fn)=>fn()}),/选项已失效/);checks.push('原生候选失效拒绝替代选择');await seller.setContent(nativeHtml());
