@@ -3,11 +3,12 @@ import { join, resolve, relative, extname, basename, sep } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { randomUUID } from 'node:crypto';
-import {expect} from 'playwright/test';
 import { SourceStore, digest, destinationKey } from './source-store.mjs';
 import { PROJECT_ROOT, visibleChallenge } from './browser-environment.mjs';
-import { assertTaskFiles, fillTask, newForm, openTaskPage, verifyForm, submitTask, verifyResult, MAPPING_VERSION } from './taobao-publisher.mjs';
+import { assertTaskFiles, assertPublishIdentity, fillTask, newForm, openTaskPage, verifyForm, submitTask, verifyResult, MAPPING_VERSION } from './taobao-publisher.mjs';
 import {captureTaskScreenshot} from './task-screenshot.mjs';
+import {closeVerifiedOwnedPage} from './publishing-pages.mjs';
+import {setPageScope} from './page-ownership.mjs';
 
 const exec = promisify(execFile);
 const defaults = { workbook: 'D:/桌面文件迁移/五洲畅游店铺：境外旅游目的地链接池_700.xlsx', assetRoot: 'D:/桌面文件迁移/五洲畅游---图片' };
@@ -25,6 +26,11 @@ export class SourceWorkflow {
     const batch=this.store.batch(), runs=this.store.list();
     return {defaults,active:this.active, batch:batch ? {id:batch.id,at:batch.at,summary:batch.summary,sourceReadonly:batch.sourceReadonly,workbook:batch.workbook,assetRoot:batch.assetRoot,
       items:batch.tasks.map(t=>({order:t.priority,destination:t.listing.city||t.listing.country,title:t.listing.title,price:t.business.price_cny,inventory:t.business.inventory,issues:t.adapterIssues,completed:this.store.completed(t),run:runs.find(r=>r.key===destinationKey(t))?.id}))}:null,runs:runs.map(publicRun)};
+  }
+  async preflight(tasks,guard=()=>{}){
+    const cache=new Map(); // Shared files hash once per batch preflight only.
+    for(const task of tasks){guard();await assertTaskFiles(task,{cache});}guard();
+    // fillTask always hashes again immediately before use; this is not a waiver.
   }
   async import({workbook,assetRoot}) {
     if(this.active)throw Error('任务执行期间不能重新识别');
@@ -80,6 +86,7 @@ export class SourceWorkflow {
     if(this.active)throw Error('已有执行任务');
     const r=this.store.run(input.id);if(r.task.shopId!==shop.id)throw Error('请切换到任务店铺');
     if(r.state==='RESULT_UNKNOWN') {this.launch(r.id,shop);return publicRun(r);}
+    if(this.store.completed(r.task))throw Error('该目的地已有成功核验记录，禁止恢复填写或重复发布');
     if(!['PAUSED','PAUSED_CAPTCHA','DRY_RUN_COMPLETE'].includes(r.state))throw Error('当前任务不能恢复');
     if(r.state==='DRY_RUN_COMPLETE') {
       if(input.publish!==true || r.mode!=='DRY_RUN')throw Error('草稿已填好；确认正式执行后才提交');
@@ -91,68 +98,100 @@ export class SourceWorkflow {
   pause() {this.stop=true;return {pauseRequested:true};}
   async shutdown() {this.stop=true;if(this.pending)await this.pending;}
   async execute(id,shop) {
-    let r=this.store.run(id),page;
+    let r=this.store.run(id),page,pageLedger,createdThisExecution=false,submitClicked=false,submissionFormUrl;
     const dir=join(this.artifacts,id)+sep;await mkdir(dir,{recursive:true});
     const checkpoint=patch=>this.store.checkpoint(id,patch);
+    // Once a click is recorded (or recovery is verification-only), drain the
+    // existing result before honoring the operator pause at the task boundary.
+    // SUBMITTING alone is only intent: it must never authorize a paused click.
+    const checkPause=()=>{
+      if(!submitClicked&&r.state!=='RESULT_UNKNOWN')pageLedger?.assertHealthy();
+      if(this.stop&&!submitClicked&&r.state!=='RESULT_UNKNOWN')throw Error('操作者暂停');
+    };
     const guard=async(p=page)=>{
-      if(this.stop)throw Error('操作者暂停');
+      checkPause();
       const s=await this.owner.status(shop);
       if(!s.running)throw Error('专用浏览器未运行，请启动并登录');
       if(s.loginState==='PAUSED_CAPTCHA')throw Error('PAUSED_CAPTCHA');
       if(!s.loggedIn)throw Error(s.reason||'请人工登录目标店铺');
       if(p && await visibleChallenge(p))throw Error('PAUSED_CAPTCHA');
-      if(p && newForm(p)) {
-        const identity=p.locator('div.UserArea_shopName__3xGhm');
-        try {await expect(identity).toBeVisible({timeout:8000});await expect(identity).toHaveText(shop.name,{timeout:8000,useInnerText:true});}catch{throw Error('当前发布页店铺身份不匹配或未加载完成');}
-      }
+      if(p&&(p===page&&submitClicked||newForm(p)))await assertPublishIdentity(p,r.task,{submitted:p===page&&submitClicked,formUrl:submissionFormUrl,requireTitle:this.store.run(id).state==='SUBMITTING',shopName:shop.name});
+      // Pause may arrive while the identity/challenge reads above are pending.
+      checkPause();
     };
     const step=async(name,fn)=>{
       const start=Date.now();this.store.event(id,'STEP_INTENT',{name});
-      let error;
+      let error,errorCode=null;
       try {await guard();await fn();await guard();}
-      catch(e){error=errorText(e);throw e;}
+      catch(e){error=errorText(e);errorCode=/^(?:SAFE_RETRY|PRODUCT|TASK_DATA|ATTRIBUTE_VALUE_INVALID|MATERIAL|ATTRIBUTE|FORM|CONTENT)(?:_[A-Z0-9]+)*$/.test(e.code||'')?e.code:null;throw e;}
       finally {
         const evidence=await captureTaskScreenshot(page,dir,name);
-        const data={name,durationMs:Date.now()-start,...evidence,error};this.store.event(id,error?'STEP_PAUSED':'STEP_VERIFIED',data);
+        const data={name,durationMs:Date.now()-start,...evidence,error,errorCode};this.store.event(id,error?'STEP_PAUSED':'STEP_VERIFIED',data);
         checkpoint({step:name,...data});await writeFile(join(dir,'checkpoint.json'),JSON.stringify(this.store.run(id).checkpoint,null,2));
       }
     };
     try {
+      if(r.state!=='RESULT_UNKNOWN'&&this.store.completed(r.task))throw Error('该目的地已有成功核验记录，禁止恢复填写或重复发布');
       if(r.state!=='RESULT_UNKNOWN')this.store.move(id,'RUNNING');
       await guard();await assertTaskFiles(r.task);
+      if(r.mode==='LIVE'&&r.state!=='RESULT_UNKNOWN')await this.checkLiveContent(r.task);
       const context=this.owner.sessions.get(shop.id)?.context;if(!context)throw Error('专用浏览器归属未验证');
+      pageLedger=setPageScope(context,{db:this.store.db,shopId:shop.id,runId:r.id,taskKey:r.key,taskHash:digest(r.task),roundId:null,executionWindowId:null,...this.pageScopeForRun?.(r)});
+      if(r.state!=='RESULT_UNKNOWN')pageLedger.assertHealthy();
+      if(r.state!=='RESULT_UNKNOWN'&&!r.checkpoint.formUrl)pageLedger.assertCanStartTask();
       const target=r.target==='WAREHOUSE'||r.task.business.listing_time==='放入仓库'?'WAREHOUSE':'SOURCE';
       if(r.state==='RESULT_UNKNOWN') {
         let itemId=r.checkpoint.itemId;
         if(!itemId) {const success=context.pages().find(p=>p.url()===r.checkpoint.successUrl);if(success)itemId=(await success.locator('body').innerText()).match(/商品ID[：:]\s*(\d+)/)?.[1];}
         if(!itemId)throw Error('提交结果未知且无商品 ID，需先在淘宝核对；不会重新提交');
-        const result=await verifyResult(context,r.task,itemId,target,dir,guard);this.store.move(id,'VERIFIED','',result);return;
+        const result=await verifyResult(context,r.task,itemId,target,dir,guard);await this.beforeVerified?.(this.store.run(id),result);this.store.move(id,'VERIFIED','',result);return;
       }
-      await step('open-new-form',async()=>{page=await openTaskPage(context,r.task,r.checkpoint,guard,checkpoint,p=>{page=p;});});
+      await step('open-new-form',async()=>{page=await openTaskPage(context,r.task,r.checkpoint,guard,checkpoint,(p,ownership={})=>{page=p;createdThisExecution=ownership.createdThisExecution===true;});});
       checkpoint({formUrl:page.url(),mappingVersion:MAPPING_VERSION});
-      const formGuard=async()=>{await guard();if(!newForm(page))throw Error('只允许新增商品页，禁止编辑旧链接');};
+      const formGuard=async()=>{await guard();if(!newForm(page))throw Error('只允许新增商品页，禁止编辑旧链接');if(await page.locator('#sell-field-title input').inputValue()!==r.task.listing.title)throw Error('当前发布页与原任务标题不一致，已停止填写');};
       const review=await fillTask({page,task:r.task,dir,target,step,guard:formGuard});
       await guard();await verifyForm(page,r.task,target,review);
       if(r.mode==='DRY_RUN') {this.store.move(id,'DRY_RUN_COMPLETE','填写已核验，尚未提交');return;}
       // Persist intent before the only final submit. Recovery never clicks it twice.
-      this.store.move(id,'SUBMITTING');
+      if(this.store.completed(r.task))throw Error('该目的地已有成功核验记录，禁止重复发布');
+      await this.checkLiveContent(r.task);await guard();
+      submissionFormUrl=page.url();this.store.move(id,'SUBMITTING');
       let itemId;
-      await step('submit-once',async()=>{itemId=await submitTask(page,guard);checkpoint({itemId,successUrl:page.url()});});
+      await step('submit-once',async()=>{itemId=await submitTask(page,guard,async()=>{this.store.event(id,'SUBMIT_CLICKED',{at:new Date().toISOString()});submitClicked=true;});checkpoint({itemId,successUrl:page.url()});});
       const submittedEvidence=await captureTaskScreenshot(page,dir,'submit-success');
       this.store.event(id,'SUBMIT_EVIDENCE',submittedEvidence);
       let result;
       await step('verify-platform-result',async()=>{result=await verifyResult(context,r.task,itemId,target,dir,guard);});
-      this.store.move(id,'VERIFIED','',result);await writeFile(dir+'result.json',JSON.stringify(result,null,2));
+      await this.beforeVerified?.(this.store.run(id),result);this.store.move(id,'VERIFIED','',result);await writeFile(dir+'result.json',JSON.stringify(result,null,2));
+      try{
+        const cleanup=await closeVerifiedOwnedPage(page,{createdThisExecution,verifiedPersisted:this.store.run(id).state==='VERIFIED'&&!!this.store.completed(r.task),itemId,successUrl:this.store.run(id).checkpoint.successUrl},guard);
+        this.store.event(id,'VERIFIED_PAGE_CLEANUP',cleanup);
+      }catch(error){this.store.event(id,'VERIFIED_PAGE_CLEANUP_FAILED',{error:errorText(error)});}
     } catch(e) {
-      const current=this.store.run(id);if(current.state==='VERIFIED'){this.store.event(id,'ARTIFACT_WRITE_ERROR',{error:errorText(e)});return;}
+      const current=this.store.run(id);if(current.state==='VERIFIED'){
+        if(pageLedger&&page&&!page.isClosed()&&pageLedger.describe(page)?.owned){
+          try{pageLedger.retain(page,{reason:'ARTIFACT_WRITE_FAILED'});}
+          catch{this.store.event(id,'PAGE_LEDGER_PERSISTENCE_FAILED',{nextTaskBlocked:true});}
+        }
+        this.store.event(id,'ARTIFACT_WRITE_ERROR',{error:errorText(e)});return;
+      }
       const reason=page && await visibleChallenge(page).catch(()=>false)?'PAUSED_CAPTCHA':errorText(e);
       const state=['SUBMITTING','RESULT_UNKNOWN'].includes(current.state)?'RESULT_UNKNOWN':reason==='PAUSED_CAPTCHA'?'PAUSED_CAPTCHA':'PAUSED';
+      if(pageLedger&&page&&pageLedger.describe(page)?.owned){
+        try{pageLedger.retain(page,{reason:state==='RESULT_UNKNOWN'?'RESULT_UNKNOWN':state==='PAUSED_CAPTCHA'?'HUMAN_VERIFICATION':'TASK_INTERRUPTED'});}
+        catch{this.store.event(id,'PAGE_LEDGER_PERSISTENCE_FAILED',{nextTaskBlocked:true});}
+      }
       const evidence=await captureTaskScreenshot(page,dir,'paused');
-      checkpoint({pausedAt:new Date().toISOString(),reason,...evidence});
+      const errorCode=/^(?:SAFE_RETRY|PRODUCT|TASK_DATA|ATTRIBUTE_VALUE_INVALID|MATERIAL|ATTRIBUTE|FORM|CONTENT)(?:_[A-Z0-9]+)*$/.test(e.code||'')?e.code:null;
+      checkpoint({pausedAt:new Date().toISOString(),reason,errorCode,...evidence});
       this.store.move(id,state,reason);await writeFile(dir+'checkpoint.json',JSON.stringify(this.store.run(id).checkpoint,null,2));
     } finally {
       const final=this.store.run(id);
       await writeFile(dir+'checkpoint.json',JSON.stringify({runId:id,state:final.state,reason:final.reason,checkpoint:final.checkpoint,result:final.result},null,2));
     }
+  }
+  async checkLiveContent(task){
+    if(typeof this.assertContentForLive!=='function')throw Object.assign(Error('CONTENT_REVIEW_REQUIRED: 缺少主图内容审核，禁止正式提交'),{code:'CONTENT_REVIEW_REQUIRED'});
+    return this.assertContentForLive(task);
   }
 }

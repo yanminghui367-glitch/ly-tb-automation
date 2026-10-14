@@ -25,8 +25,10 @@ test('real workflow records screenshot failure and saves pause without retaining
  const task={shopId:'wuzhou-changyou',priority:1,source:{workbook:file,sha256:asset.sha256},listing:{type:'city',country:'测试国',city:'测试城市',title:'测试商品'},assets:{main:[asset],secondary:[asset,asset,asset,asset],details:[asset]},business:{category_path:'个性定制/设计服务/DIY>>其它定制>>其它商品定制',custom_service:true,procurement:'中国内地（大陆）',ship_from:'北京/北京',shipping_time:'24小时内发货',ship_from_region:'大陆及港澳台',region_restriction:'不设置商品维度区域限售模板',listing_time:'立刻上架'},adapterIssues:[]};
  const run=store.create('isolated',task,'DRY_RUN','SOURCE',{reviewed:true,taskHash:digest(task)}),artifacts=join(dir,'artifacts'),old=join(artifacts,run.id,'paused.png');
  await mkdir(dirname(old),{recursive:true});await writeFile(old,'OLD EVIDENCE');store.checkpoint(run.id,{screenshot:old});
- const page={frames:()=>[],url:()=> 'about:blank',setViewportSize:async()=>{throw Error('ISOLATED_PAGE_CLOSED');},screenshot:async()=>{throw Error('ISOLATED_SCREENSHOT_FAILED');}};
- const owner={status:async()=>({running:true,loggedIn:true}),sessions:new Map([['wuzhou-changyou',{context:{pages:()=>[],newPage:async()=>page}}]])};
+ const page={id:'created',isClosed:()=>false,frames:()=>[],url:()=> 'about:blank',goto:async()=>{throw Error('ISOLATED_PAGE_CLOSED');},screenshot:async()=>{throw Error('ISOLATED_SCREENSHOT_FAILED');}};
+ const anchor={id:'anchor',isClosed:()=>false};let created=false;
+ const context={pages:()=>created?[anchor,page]:[anchor],newCDPSession:async p=>({send:async(method,params)=>{if(method==='Target.getTargetInfo')return {targetInfo:{targetId:p.id}};assert.equal(params.background,true);created=true;return {targetId:page.id};},detach:async()=>{}})};
+ const owner={status:async()=>({running:true,loggedIn:true}),sessions:new Map([['wuzhou-changyou',{context}]])};
  const flow=new SourceWorkflow(owner,{runtime:dir,artifacts,store});flow.launch(run.id,{id:'wuzhou-changyou'});await flow.pending;
  const saved=store.run(run.id),step=store.events(run.id).find(e=>e.kind==='STEP_PAUSED');
  assert.equal(saved.state,'PAUSED');assert.equal(saved.checkpoint.screenshot,null);assert.match(saved.checkpoint.screenshotError,/SCREENSHOT_FAILED/);

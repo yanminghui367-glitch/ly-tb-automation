@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "check": "node --check server.mjs && node --check app.js && node --check static-files.mjs && node --check session-guard.mjs && node --check browser-environment.mjs && node --check source-workflow.mjs && node --check source-workflow.js && node --check source-store.mjs && node --check taobao-publisher.mjs && node --check batch-store.mjs && node --check batch-workflow.mjs && node --check batch-workflow.js && node --check product-api.mjs && node --check product.js && node --check kernel-integrity.mjs && node --check ../tools/start-workbench.mjs && node --check product-state.mjs && node --check destination-catalog.mjs && node --check travel-home.js && node --check travel-globe.js && node --check globe-layout.js && node --check globe-catalog.mjs && node --check travel-os-api.mjs && node --check travel-os-store.mjs && node --check travel-os.js && node --check publishing-rules.mjs && node --check publishing-attributes.mjs && node --check publishing-rules-ui.js && node --check setup-flow.mjs && node --check setup-ui.js",
+    "check": "node --check server.mjs && node --check app.js && node --check static-files.mjs && node --check session-guard.mjs && node --check browser-environment.mjs && node --check source-workflow.mjs && node --check source-workflow.js && node --check source-store.mjs && node --check taobao-publisher.mjs && node --check batch-store.mjs && node --check batch-workflow.mjs && node --check batch-workflow.js && node --check product-api.mjs && node --check product.js && node --check kernel-integrity.mjs && node --check ../tools/start-workbench.mjs && node --check product-state.mjs && node --check destination-catalog.mjs && node --check travel-home.js && node --check travel-globe.js && node --check globe-layout.js && node --check globe-catalog.mjs && node --check travel-os-api.mjs && node --check travel-os-store.mjs && node --check travel-os.js && node --check publishing-rules.mjs && node --check publishing-attributes.mjs && node --check publishing-materials.mjs && node --check batch-policy.mjs && node --check publishing-rules-ui.js && node --check setup-flow.mjs && node --check setup-ui.js && node --check publishing-pages.mjs && node --check listing-round.mjs && node --check listing-identity.mjs && node --check listing-verification.mjs && node --check round-verification.mjs && node --check publishing-content-review.mjs && node --check round-windows.mjs && node --check page-protection.mjs && node --check page-ownership.mjs && node --check publishing-address.mjs && node --check round-item-attempts.mjs && node --check round-item-api.mjs && node --check round-item-host.mjs && node --check round-item-host-api.mjs && node --check round-item-verify.mjs && node --check round-item-verify-api.mjs && node --check round-manual-skip.mjs && node --check round-item-detail.js && node --check round-item-candidates.mjs && node --check round-execution-attempts.mjs && node --check round-item-retry.mjs && node --check round-item-retry-api.mjs && node --check operations-catalog.mjs && node --check operations-api.mjs && node --check operations-catalog-ui.js && node --check round-selection.mjs",
     "test:engine": "node --test scripts/engine-mapping.test.mjs",
     "test:static": "node --test scripts/static-files.test.mjs",
     "test:session": "node --test scripts/session-guard.test.mjs",
@@ -19,11 +19,22 @@
     "qa:travel-home": "node scripts/travel-home-ui.mjs",
     "qa:globe": "node scripts/globe-premium-ui.mjs",
     "qa:travel-os": "node scripts/travel-os-ui-qa.mjs",
+    "test:publishing-controls": "node --test scripts/publishing-controls.test.mjs",
+    "qa:batch100": "node scripts/batch100-ui-qa.mjs",
     "test:publishing-rules": "node --test scripts/publishing-rules.test.mjs",
     "qa:publishing-rules": "node scripts/publishing-rules-ui-qa.mjs",
     "qa:attribute-navigation": "node scripts/attribute-navigation-qa.mjs",
-    "test:setup": "node --test scripts/setup-flow.test.mjs",
-    "qa:setup": "node scripts/setup-ui-qa.mjs"
+    "test:setup": "node --test scripts/setup-flow.test.mjs scripts/setup-current-label.test.mjs",
+    "qa:setup": "node scripts/setup-ui-qa.mjs",
+    "test:publishing-pages": "node --test scripts/publishing-pages.test.mjs",
+    "qa:publishing-pages": "node scripts/publishing-pages-qa.mjs",
+    "test:round": "node --test scripts/listing-round.test.mjs scripts/listing-identity.test.mjs scripts/listing-verification.test.mjs scripts/round-verification.test.mjs",
+    "test:round-windows": "node --test scripts/round-windows.test.mjs scripts/submission-pause-boundary.test.mjs",
+    "qa:round-windows": "node scripts/round-windows-ui-qa.mjs",
+    "qa:item-retry": "node scripts/round-item-retry-ui-qa.mjs",
+    "test:operations": "node --test scripts/operations-catalog.test.mjs scripts/round-selection.test.mjs",
+    "test:current-skip": "node --test scripts/round-current-skip.test.mjs",
+    "qa:current-skip": "node scripts/round-current-skip-ui-qa.mjs"
   },
   "dependencies": {
     "playwright": "1.62.1",

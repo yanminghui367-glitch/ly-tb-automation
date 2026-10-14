@@ -17,7 +17,7 @@ async function fixture(t,n=3){const dir=await mkdtemp(join(tmpdir(),'ly-batch-')
  return {dir,source,tasks,flow,batch,create,importId,setOutcome:v=>outcome=v,hold:()=>hold=true,release:()=>{hold=false;release?.();}};
 }
 test('20 frozen tasks run once, stop at the cap, retain unique task IDs and results',async t=>{const x=await fixture(t,25),b=x.create(20);x.batch.start(b.id,shop);await x.batch.pending;const v=x.batch.store.view(b.id);assert.equal(v.counts.SUCCEEDED,20);assert.equal(v.state,'COMPLETED');assert.equal(x.flow.submits,20);assert.equal(x.source.list().length,20);assert.equal(new Set(v.items.map(i=>i.id)).size,20);assert.throws(()=>x.batch.start(b.id,shop),/结束/);});
-test('wrong selection hash, duplicate destinations and cap overflow create no queue',async t=>{const x=await fixture(t);assert.throws(()=>x.batch.create({importId:x.importId,limit:21,mode:'LIVE'},shop),/20/);assert.throws(()=>x.batch.create({importId:x.importId,mode:'LIVE',review:{selectionHash:'stale'}},shop),/改变/);assert.equal(x.batch.store.batch(),null);});
+test('wrong selection hash, duplicate destinations and cap overflow create no queue',async t=>{const x=await fixture(t);assert.throws(()=>x.batch.create({importId:x.importId,limit:101,mode:'LIVE'},shop),/100/);assert.throws(()=>x.batch.create({importId:x.importId,limit:0,mode:'LIVE'},shop),/100/);assert.throws(()=>x.batch.create({importId:x.importId,mode:'LIVE',review:{selectionHash:'stale'}},shop),/改变/);assert.equal(x.batch.store.batch(),null);});
 test('CAPTCHA pauses the entire batch and manual continue resumes original run',async t=>{const x=await fixture(t),b=x.create();x.setOutcome('PAUSED_CAPTCHA');x.batch.start(b.id,shop);await x.batch.pending;let v=x.batch.store.view(b.id);assert.equal(v.counts.WAITING_HUMAN,1);assert.equal(v.counts.PENDING,2);assert.equal(x.flow.submits,0);const id=v.items[0].runId;x.setOutcome('VERIFIED');x.batch.start(b.id,shop);await x.batch.pending;v=x.batch.store.view(b.id);assert.equal(v.items[0].runId,id);assert.equal(v.items[0].attempts,1);assert.equal(v.counts.SUCCEEDED,3);});
 test('failures are finite: manual retries cannot exceed three attempts',async t=>{const x=await fixture(t,1),b=x.create();x.setOutcome('PAUSED');x.batch.start(b.id,shop);await x.batch.pending;assert.equal(x.batch.store.view(b.id).counts.FAILED,1);for(let n=0;n<2;n++){x.batch.retry(b.id,shop);await x.batch.pending;}assert.equal(x.batch.store.view(b.id).items[0].attempts,3);assert.throws(()=>x.batch.retry(b.id,shop),/上限/);assert.equal(x.flow.submits,0);});
 test('pause during a step prevents later tasks and concurrent start is rejected',async t=>{const x=await fixture(t),b=x.create();x.hold();x.batch.start(b.id,shop);assert.throws(()=>x.batch.start(b.id,shop),/已有/);x.batch.pause();x.release();await x.batch.pending;const v=x.batch.store.view(b.id);assert.equal(v.state,'PAUSED');assert.equal(v.counts.PENDING,2);assert.equal(x.flow.submits,0);});
@@ -26,3 +26,64 @@ test('crash after submit preserves result-unknown and only reconciles, never res
 test('success history is excluded across reordered imports and title versions',async t=>{const x=await fixture(t),b=x.create();x.batch.start(b.id,shop);await x.batch.pending;const tasks=x.tasks.map(t=>({...t,priority:100+t.priority,listing:{...t.listing,title:'different'}})),id=x.source.imported({sheet:'境外城市热度',tasks,sourceHash:'new'});assert.equal(x.batch.preview(id).tasks.length,0);assert(x.batch.preview(id).excluded.every(x=>x.reason==='已有成功记录'));});
 test('explicit skipped state never dispatches that destination',async t=>{const x=await fixture(t),b=x.create(),i=x.batch.store.items(b.id)[0];x.batch.skip(b.id,i.id,'excluded by reviewer');x.batch.start(b.id,shop);await x.batch.pending;assert.equal(x.batch.store.view(b.id).counts.SKIPPED,1);assert.equal(x.flow.submits,2);});
 test('skipping all pending tasks finishes the batch without submissions',async t=>{const x=await fixture(t),b=x.create();for(const i of x.batch.store.items(b.id))x.batch.skip(b.id,i.id,'review exclusion');assert.equal(x.batch.store.view(b.id).state,'COMPLETED');assert.equal(x.flow.submits,0);});
+
+test('100 serial tasks stop at the reviewed cap without expanding to 101',async t=>{
+ const x=await fixture(t,101),b=x.create(100),before=digest(x.batch.store.items(b.id).map(i=>i.task));
+ const launch=x.flow.launch.bind(x.flow);let active=0,max=0;
+ x.flow.launch=id=>{active++;max=Math.max(max,active);launch(id);x.flow.pending=x.flow.pending.finally(()=>active--);};
+ x.batch.start(b.id,shop);await x.batch.pending;
+ assert.equal(x.flow.submits,100);assert.equal(max,1);assert.equal(x.source.list().length,100);assert.equal(x.batch.store.view(b.id).counts.SUCCEEDED,100);
+ assert.equal(digest(x.batch.store.items(b.id).map(i=>i.task)),before);
+});
+
+test('first ordinary fault stops 100 batch; retry is limited to fault, then explicit continue',async t=>{
+ const x=await fixture(t,100),b=x.create(),before=digest(x.batch.store.items(b.id).map(i=>i.task));x.setOutcome('PAUSED');
+ x.batch.start(b.id,shop);await x.batch.pending;
+ let v=x.batch.store.view(b.id);assert.equal(v.state,'PAUSED');assert.equal(v.counts.FAILED,1);assert.equal(v.counts.PENDING,99);assert.equal(x.source.list().length,1);
+ assert.throws(()=>x.batch.start(b.id,shop),/未处理异常/);assert.equal(x.flow.submits,0);
+ const runId=v.items[0].runId;x.setOutcome('VERIFIED');x.batch.retry(b.id,shop);await x.batch.pending;
+ v=x.batch.store.view(b.id);assert.equal(v.counts.SUCCEEDED,1);assert.equal(v.counts.PENDING,99);assert.equal(v.state,'PAUSED');assert.equal(v.items[0].runId,runId);assert.equal(v.items[0].attempts,2);
+ x.batch.start(b.id,shop);await x.batch.pending;assert.equal(x.flow.submits,100);assert.equal(digest(x.batch.store.items(b.id).map(i=>i.task)),before);
+});
+
+test('retry scope survives CAPTCHA and service reconstruction without dispatching pending',async t=>{
+ const x=await fixture(t,3),b=x.create();x.setOutcome('PAUSED');x.batch.start(b.id,shop);await x.batch.pending;
+ x.setOutcome('PAUSED_CAPTCHA');x.batch.retry(b.id,shop);await x.batch.pending;
+ const recovered=new BatchWorkflow(x.flow);x.setOutcome('VERIFIED');recovered.start(b.id,shop);await recovered.pending;
+ assert.equal(recovered.store.view(b.id).counts.SUCCEEDED,1);assert.equal(recovered.store.view(b.id).counts.PENDING,2);assert.equal(x.flow.submits,1);assert.equal(recovered.store.view(b.id).state,'PAUSED');
+});
+
+test('repeated failure requires explicit skip at retry cap and never touches later pending',async t=>{
+ const x=await fixture(t,3),b=x.create();x.setOutcome('PAUSED');x.batch.start(b.id,shop);await x.batch.pending;
+ for(let n=0;n<2;n++){x.batch.retry(b.id,shop);await x.batch.pending;}
+ const i=x.batch.store.items(b.id)[0];assert.equal(i.attempts,3);assert.equal(x.source.list().length,1);assert.throws(()=>x.batch.retry(b.id,shop),/上限/);assert.throws(()=>x.batch.start(b.id,shop),/未处理异常/);
+ x.batch.skip(b.id,i.id,'operator excluded');x.batch.start(b.id,shop);await x.batch.pending; // closes the retry-only scope
+ assert.equal(x.source.list().length,1);x.setOutcome('VERIFIED');x.batch.start(b.id,shop);await x.batch.pending;assert.equal(x.flow.submits,2);
+});
+
+test('whole-scope preflight failure and thrown resume failure never cascade',async t=>{
+ const x=await fixture(t,3),b=x.create();let checked=0;
+ x.flow.preflight=async tasks=>{checked=tasks.length;throw Error('SOURCE_OR_ASSET_CHANGED');};
+ x.batch.start(b.id,shop);await x.batch.pending;assert.equal(checked,3);assert.equal(x.source.list().length,0);assert.equal(x.batch.store.view(b.id).counts.PENDING,3);assert.equal(x.batch.store.view(b.id).state,'PAUSED');
+ delete x.flow.preflight;x.setOutcome('PAUSED');x.batch.start(b.id,shop);await x.batch.pending;
+ x.flow.resume=async()=>{throw Error('resume field mismatch');};x.batch.retry(b.id,shop);await x.batch.pending;
+ assert.equal(x.source.list().length,1);assert.equal(x.batch.store.view(b.id).counts.FAILED,1);assert.equal(x.batch.store.view(b.id).items[0].attempts,2);
+});
+
+test('legacy failed batch preserves all frozen tasks and retry scope stops on recurring error',async t=>{
+ const x=await fixture(t,20),b=x.create();
+ for(const i of x.batch.store.items(b.id)){x.batch.store.claim(i.id);x.batch.store.move(i.id,'FAILED','historical failure');}x.batch.store.setBatch(b.id,'COMPLETED');
+ const before=digest(x.batch.store.items(b.id).map(i=>i.task));x.setOutcome('PAUSED');x.batch.retry(b.id,shop);await x.batch.pending;
+ assert.equal(x.batch.store.view(b.id).counts.FAILED,1);assert.equal(x.batch.store.view(b.id).counts.RETRY,19);assert.equal(x.source.list().length,1);
+ x.setOutcome('VERIFIED');x.batch.retry(b.id,shop);await x.batch.pending;assert.equal(x.flow.submits,20);assert.equal(digest(x.batch.store.items(b.id).map(i=>i.task)),before);
+});
+
+test('manual pause during retry retains waiting original and blocks a replacement retry scope',async t=>{
+ const x=await fixture(t,3),b=x.create();
+ for(const i of x.batch.store.items(b.id).slice(0,2)){x.batch.store.claim(i.id);x.batch.store.move(i.id,'FAILED','old failure');}
+ x.hold();x.batch.retry(b.id,shop);await new Promise(r=>setTimeout(r,5));x.batch.pause();x.release();await x.batch.pending;
+ const scope=x.batch.store.retryScope(b.id),waiting=x.batch.store.view(b.id).items.find(x=>x.state==='WAITING_HUMAN');assert(waiting);
+ assert.throws(()=>x.batch.retry(b.id,shop),/人工/);assert.throws(()=>x.batch.store.retryFailed(b.id),/人工/);assert.deepEqual(x.batch.store.retryScope(b.id),scope);
+ x.setOutcome('VERIFIED');x.batch.start(b.id,shop);await x.batch.pending;
+ assert.equal(x.batch.store.view(b.id).counts.SUCCEEDED,2);assert.equal(x.batch.store.view(b.id).counts.PENDING,1);assert.equal(x.batch.store.view(b.id).items[0].runId,waiting.runId);
+});

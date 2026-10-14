@@ -101,7 +101,7 @@ export class SetupFlow {
   if(req.method==='GET'){
    if(action==='state')return json(res,200,await this.state());
    if(action==='folders')return json(res,200,await this.folders(url.searchParams.get('path')));
-   if(action==='template'){const data=await readFile(join(here,'templates','travel-os-template-v1.zip'));res.writeHead(200,{'content-type':'application/zip','content-disposition':'attachment; filename="Travel-OS-template-v1.zip"','cache-control':'no-store'});return res.end(data);}
+   if(action==='template'){const data=await readFile(join(here,'templates','travel-os-template-v2.zip'));res.writeHead(200,{'content-type':'application/zip','content-disposition':'attachment; filename="XingTu-product-template-v2.zip"','cache-control':'no-store'});return res.end(data);}
   }
   if(req.method==='POST'){const input=await body(req);let result;
    if(action==='storage')result=await this.storage(input);

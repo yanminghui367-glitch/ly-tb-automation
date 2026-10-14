@@ -1,0 +1,25 @@
+{
+  "description": "真实CSS图标不再干扰原生checkbox定位，保留设置校验；库存使用原值有界重填和稳定回读，提交前继续核验。16项冻结仅素材上传/发布映射两项变化。",
+  "baselineCommit": "25a47febfe08f8af6bfade20198d787354b76bff",
+  "files": {
+    "workbench/taobao-publisher.mjs": "3fb9dfeb1eb8e3f2a8f2ebd5cebeb658a074c32a5160ca7fc5b8fc3c55b2c2f1",
+    "workbench/source-workflow.mjs": "468cf5fba2941d03ce13c860b0f7bf5cd8d32398960aacb40a54f82a168046e3",
+    "workbench/source-store.mjs": "bb8d716be69bd66caa449096b4d5e71604164224e4857a807b41f9f677058428",
+    "engine/v2/adapter.py": "086d59dee6c6c832231d7a7ada467aaba4b7dc883ba013a7ab6ac6bb10837cff",
+    "engine/v2/heat_queue_adapter.py": "eb092402a227c4f9258faa3af1b5c2ee609645d06d0c8f55105b4d35e0a89096",
+    "engine/v2/pool_adapter.py": "994ecb511e62fd550c64dc2b95016326934b7141730a90f1c8b69e7b7a5dff68",
+    "workbench/batch-workflow.mjs": "5e19bf18c30893044a617cbe61107e37361ca7b8b3f8d2d3c241093fb0ddebc0",
+    "workbench/batch-store.mjs": "93868bcc7630614edd7fd64cc257ebc2a7c7304bbd6298cd7d2c907a0517eebf",
+    "workbench/session-guard.mjs": "4d15ae4a780521f6f5b72dbb8675ead264d8ca27b99e151e6b506480e2320fba",
+    "workbench/browser-environment.mjs": "c59bd33aefcbd7eb777383bb1f91820d998cdff7d224f262278467b0f2c7f385",
+    "workbench/publishing-attributes.mjs": "9621c9909b0b19cc28798d4ca42967e6bb594b0c45d26e257a50e899a183c5d1",
+    "workbench/task-screenshot.mjs": "8ba331237f2a45001f42543254c0979fae0d844da95760ab6a55ec5ed1cb919c",
+    "workbench/result-reconciliation.mjs": "939c0c37e561bc1f02ced66aca8b782ace951922d016ec844fad103476f40686",
+    "workbench/batch-policy.mjs": "0c719ae35ac9eaf922ad62e97ed64f7fe6e948882e127b7aae4acc8cb1e21df9",
+    "workbench/publishing-materials.mjs": "95a768f1306d7b2c69114a1a7227757ea855fb7e661a914aa18b66e5bd88baeb",
+    "workbench/publishing-pages.mjs": "92f71c1f3249cc0f376a62502ee3a8b4b7314b0c37a9c5cbb7342e6ae5268a47"
+  },
+  "revision": "20261008-upload-css-stock",
+  "previousManifest": "docs/kernel-baselines/20261008-before-upload-css-stock.json",
+  "authorization": "用户要求自行修复反复异常；新目标授权现有店铺固定700清单在闸门通过后真实发布。此版本仅上传设置和库存读写增量，不自动执行。"
+}

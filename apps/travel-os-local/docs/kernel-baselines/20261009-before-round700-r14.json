@@ -1,0 +1,33 @@
+{
+  "description": "复用现有SourceWorkflow/BatchWorkflow单浏览器执行器；固定轮次持久化、官方后台查重与结果核验、安全有限恢复、暂停续跑、首1→5→100门槛、原批次ID与快照保留。",
+  "baselineCommit": "25a47febfe08f8af6bfade20198d787354b76bff",
+  "files": {
+    "workbench/taobao-publisher.mjs": "7549a15acff5561fe2a4a3718b43ea766ae0ac7cd49ec41730a672f9594638de",
+    "workbench/source-workflow.mjs": "71fd9d6cd0d27cc02fcd39a310993915208a58562c4e08947482b9d413dcc197",
+    "workbench/source-store.mjs": "bb8d716be69bd66caa449096b4d5e71604164224e4857a807b41f9f677058428",
+    "engine/v2/adapter.py": "086d59dee6c6c832231d7a7ada467aaba4b7dc883ba013a7ab6ac6bb10837cff",
+    "engine/v2/heat_queue_adapter.py": "eb092402a227c4f9258faa3af1b5c2ee609645d06d0c8f55105b4d35e0a89096",
+    "engine/v2/pool_adapter.py": "994ecb511e62fd550c64dc2b95016326934b7141730a90f1c8b69e7b7a5dff68",
+    "workbench/batch-workflow.mjs": "0b2d54e758ebdabeaf372a2472c1d701f3338e02bc26048205a6feb5809a5034",
+    "workbench/batch-store.mjs": "99a477cbaeaef02a3513e9884d58fae1f3ee4d92e786185e86d25b3fae81668c",
+    "workbench/session-guard.mjs": "4d15ae4a780521f6f5b72dbb8675ead264d8ca27b99e151e6b506480e2320fba",
+    "workbench/browser-environment.mjs": "20a6605f9b7a7d8bd15707b34bd7bdb9304475278be9b170e303fdebc0d00eec",
+    "workbench/publishing-attributes.mjs": "9621c9909b0b19cc28798d4ca42967e6bb594b0c45d26e257a50e899a183c5d1",
+    "workbench/task-screenshot.mjs": "8ba331237f2a45001f42543254c0979fae0d844da95760ab6a55ec5ed1cb919c",
+    "workbench/result-reconciliation.mjs": "939c0c37e561bc1f02ced66aca8b782ace951922d016ec844fad103476f40686",
+    "workbench/batch-policy.mjs": "0c719ae35ac9eaf922ad62e97ed64f7fe6e948882e127b7aae4acc8cb1e21df9",
+    "workbench/publishing-materials.mjs": "a786dde96a3fba43858650d252498224d44a5718ed0455c80e0defd61799f5c3",
+    "workbench/publishing-pages.mjs": "a721e5306057f81c9d65ce0e126f52e3fc595eb7b0c014c32700fae9f1a9e3ab",
+    "workbench/listing-round.mjs": "22c503ff3cc3d197ac880bcf92e864d6a5918bac6d4d4e732a5b4b81d5760c93",
+    "workbench/listing-identity.mjs": "bf6be77ffc5fe95cce27215a5182cb264b7d51f87aef090fdbda99bdc9d495c1",
+    "workbench/listing-verification.mjs": "aa7440326bd3420beb2dcfcf44d4c0d0f531a30c569809ed055594b13e1e253e",
+    "workbench/round-verification.mjs": "6f1fc7b0a747387e9b07dd58aeeb8a45edb574f48ada84e9b24a7bc72a70de34",
+    "workbench/product-api.mjs": "0d3284ada85b36098088bfc0e29fba10e7a838e50751cedcbee04550537edabf",
+    "workbench/server.mjs": "896f01228b4cf1a9a4f3c0191bc13d13b0e11450b0789ab1ebff5ddc0167ca0f",
+    "workbench/kernel-integrity.mjs": "422e481abf069cc93622e9eafb7649bb35a3826bbe3e3a43904f2b515ca267d1",
+    "workbench/publishing-content-review.mjs": "33a79d342fbc064fe17597776e90a4add7296b96f6e76a090190ab416f9dfef3"
+  },
+  "revision": "20261008-round700-r13",
+  "previousManifest": "docs/kernel-baselines/20261008-before-round700-r13.json",
+  "authorization": "goal-objective.md sha256 ccacfb05c6bf9d88d786946d4c00ef82650d563bf91d97757212e4c2d4780c87，固定目标店铺700清单，经1→5真实核验与有界恢复后继续；未知提交禁止重投。"
+}

@@ -55,5 +55,19 @@ try{
  await page.setViewportSize({width:390,height:844});for(const name of ['自动化任务','店铺管理','产品库','目的地中心','报价库','上架记录','资料设置']){await nav(name);check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'390px '+name+'无文档横向溢出');}
  await page.screenshot({path:join(out,'settings-mobile.png'),fullPage:true});
  await page.context().setOffline(true);await page.locator('#connectionNotice:visible').waitFor({timeout:20000});check(await page.locator('[data-write]:enabled').count()===0,'连接中断时写操作禁用');await page.context().setOffline(false);await page.locator('#connectionNotice').waitFor({state:'hidden'});checks.push('重连恢复后端真实状态');
+ const roundTasks=[task('罗马','意大利',3),task('马德里','西班牙',4)].map(t=>({...t,business:{...t.business,shop_name:shop.name}}));
+ const roundImport=store.imported({sourceHash:'round-ui-isolated',tasks:roundTasks});
+ const r=await product.round.create({importId:roundImport,repairVersion:'ISOLATED',expectedCount:2,authorization:{allowLive:true,maxSafeRecoveries:2,confirmedShop:shop.name,expectedCount:2}});
+ let releaseRound;const initialCheck=new Promise(resolve=>releaseRound=resolve);product.round.assertExecution=()=>initialCheck;
+ await nav('自动化任务');await page.locator('.listing-round').waitFor();
+ check(await page.locator('.round-counts dd').count()===7,'整轮七类互斥进度可见');
+ check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'390px整轮进度无横向溢出');
+ await page.screenshot({path:join(out,'round-mobile.png'),fullPage:true});
+ await page.setViewportSize({width:1440,height:1000});await page.locator('[data-action=round-resume]').click();await page.locator('[data-action=round-pause]').waitFor();
+ check(product.round.active===r.id&&fakeLaunches===2,'轮次开始进入同一持久协调器，预检中未调用发布');
+ await Promise.all([page.waitForResponse(r=>r.url().endsWith('/api/v1/rounds/pause')&&r.ok()),page.locator('[data-action=round-pause]').click()]);releaseRound();await product.round.pending;
+ await page.locator('[data-action=round-resume]').waitFor();check(product.round.round().state==='PAUSED'&&product.round.summary().counts.PENDING===2,'UI暂停在初始核验中生效，未处理项不改成失败');
+ const csv=await page.request.get(base+'/api/v1/rounds/results.csv?id='+r.id);check(csv.ok()&&(await csv.text()).includes('罗马'),'本轮CSV从真实隔离数据库导出');
+ await page.screenshot({path:join(out,'round-paused-desktop.png'),fullPage:true});
  check(errors.length===0,'无浏览器未捕获错误');
 }finally{await writeFile(join(out,'qa.json'),JSON.stringify({at:new Date().toISOString(),checks,errors,fakeLaunches,mutationsToIsolatedServer:mutationCount,productionRequests:0,productionSuccessWrites:0},null,2));console.log(JSON.stringify({checks,errors,fakeLaunches}));await browser.close();product.closeStreams();await new Promise(r=>server.close(r));os.store.close();store.close();assert.equal(dirname(resolve(dir)),resolve(tmpdir()));await rm(dir,{recursive:true,force:true});}

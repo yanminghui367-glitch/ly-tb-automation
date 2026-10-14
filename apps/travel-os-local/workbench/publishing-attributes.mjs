@@ -1,6 +1,8 @@
 // Only confirmed, frozen selections are applied. Discovery never selects an option.
 import {expect} from 'playwright/test';
 import assert from 'node:assert/strict';
+import {visibleChallenge} from './browser-environment.mjs';
+import {setTimeout as delay} from 'node:timers/promises';
 export const ATTRIBUTE_FIELDS = Object.freeze({pattern:'图案',size:'尺寸',style:'款式',subject:'科目',people:'适用人数'});
 export const NO_BRAND = '无品牌/无注册商标';
 
@@ -73,9 +75,77 @@ async function closeOptions(page,input,guard){
     await guard();await expect(options(page)).toHaveCount(0);
   }
 }
+// Fusion Select renders the selection in a sibling <em>; its readonly search
+// input stays empty. Read only the owning control, never popup/placeholder text.
+export function selectedCustomState(el){
+  const select=el.closest('.next-select-single');
+  const visible=n=>n.getClientRects().length>0&&getComputedStyle(n).visibility!=='hidden';
+  const labels=select?[...select.querySelectorAll('.next-select-values > em')].filter(visible):[];
+  const text=select?(labels.length===1?labels[0].textContent.trim():''):(el.tagName==='INPUT'?el.value:el.textContent.trim());
+  const values=[el,...labels].map(n=>n.getAttribute('data-value')).filter(v=>v!==null);
+  const announced=el.getAttribute('aria-valuetext');
+  const committed=select?labels.length===1:el.tagName==='INPUT'&&el.readOnly&&el.getAttribute('role')==='combobox'&&el.hasAttribute('data-value');
+  return {text,values,ambiguous:labels.length>1,conflicting:!!announced&&!!text&&announced.trim()!==text,committed};
+}
+
+// A custom option may take effect even if Playwright's single click times out.
+// Only the original control's committed value and naturally closed menu count;
+// a search string, popup label, closed-by-us menu or timeout is never success.
+export async function clickCustomAttributeAndVerify(page,target,field,guard,{onEvent=async()=>{},timeout=5000}={}){
+  assert(field.kind==='custom'&&ATTRIBUTE_FIELDS[field.key]===field.label&&/^struct-p-\d+$/.test(field.containerId),'ATTRIBUTE_MAPPING_INVALID');
+  assert(typeof field.text==='string'&&field.text&&typeof field.value==='string'&&field.value,'ATTRIBUTE_VALUE_INVALID');
+  assert(Number.isFinite(timeout)&&timeout>0&&timeout<=5000,'ATTRIBUTE_READ_TIMEOUT_INVALID');
+  const formUrl=page.url();
+  const check=async()=>{await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');assert.equal(page.url(),formUrl,'ATTRIBUTE_FORM_CHANGED');};
+  const fieldInput=async()=>{
+    const actual=await discoverFields(page);
+    assert(actual.some(a=>a.key===field.key&&a.containerId===field.containerId&&a.kind===field.kind),'ATTRIBUTE_MAPPING_CHANGED');
+    const container=page.locator('#'+field.containerId);
+    assert.equal(await container.count(),1,'ATTRIBUTE_CONTAINER_NOT_UNIQUE');
+    const inputs=container.locator('input:not([type="hidden"]),[role="combobox"]');
+    assert.equal(await inputs.count(),1,'ATTRIBUTE_CONTROL_NOT_UNIQUE');
+    assert(await inputs.isVisible()&&await inputs.isEnabled(),'ATTRIBUTE_CONTROL_UNAVAILABLE');
+    assert(await inputs.evaluate((el,id)=>{const owner=el.closest('[id^="struct-p-"]'),select=el.closest('.next-select-single');return owner?.id===id&&(!select||owner.contains(select));},field.containerId),'ATTRIBUTE_SELECTION_OWNER_CHANGED');
+    return inputs;
+  };
+  const read=async()=>{
+    const input=await fieldInput(),state=await input.evaluate(selectedCustomState);
+    const expanded=await input.evaluate(el=>el.getAttribute('aria-expanded')==='true'||el.closest('.next-select-single')?.getAttribute('aria-expanded')==='true');
+    const menuClosed=!expanded&&await options(page).count()===0;
+    assert.equal(page.url(),formUrl,'ATTRIBUTE_FORM_CHANGED');
+    return {state,menuClosed,matches:state.committed&&!state.ambiguous&&!state.conflicting&&state.text===field.text&&state.values.every(v=>v===field.value)};
+  };
+  await check();await fieldInput();
+  let clickTimeout=null;
+  if(target){
+    assert.equal(await target.count(),1,'ATTRIBUTE_OPTION_NOT_UNIQUE');
+    assert((await target.innerText()).trim()===field.text,'ATTRIBUTE_OPTION_CHANGED');
+    assert.equal(await target.getAttribute('data-value')||field.text,field.value,'ATTRIBUTE_OPTION_CHANGED');
+    assert(await target.getAttribute('aria-disabled')!=='true'&&!await target.evaluate(e=>e.classList.contains('disabled')),'ATTRIBUTE_OPTION_DISABLED');
+    await check();
+    try{await target.click();}catch(error){if(error.name!=='TimeoutError')throw error;clickTimeout=error;}
+  }
+  let final;
+  try{
+    const deadline=Date.now()+timeout;
+    do{
+      await check();const result=await read();
+      if(result.matches&&result.menuClosed){
+        await check();final=await read();
+        assert(final.matches&&final.menuClosed,'ATTRIBUTE_SELECTION_CHANGED');
+        break;
+      }
+      if(Date.now()>=deadline)throw Error('ATTRIBUTE_SELECTION_MISMATCH：已选属性或菜单状态未确认：'+field.label);
+      await delay(Math.min(100,deadline-Date.now()));
+    }while(true);
+  }catch(error){if(clickTimeout)error.attributeClickTimeout=clickTimeout.message;throw error;}
+  if(clickTimeout)await onEvent({kind:'ATTRIBUTE_CLICK_TIMEOUT_RECONCILED',field:{key:field.key,label:field.label,containerId:field.containerId,kind:field.kind,value:field.value,text:field.text},actual:final.state,menuClosed:final.menuClosed,clickCount:1,clickRepeated:false,originalError:clickTimeout.message});
+}
 async function readCustom(input,field){
-  if(await input.evaluate(el=>el.tagName==='INPUT'))await expect(input).toHaveValue(field.text);else await expect(input).toHaveText(field.text);
-  const value=await input.getAttribute('data-value');if(value!==null)assert.equal(value,field.value,'已选属性标识不一致：'+field.label);
+  await expect.poll(async()=>{
+    const s=await input.evaluate(selectedCustomState);
+    return !s.ambiguous&&!s.conflicting&&s.text===field.text&&s.values.every(v=>v===field.value);
+  },{timeout:5000,message:'ATTRIBUTE_SELECTION_MISMATCH：已选属性回读不一致：'+field.label}).toBe(true);
 }
 
 export async function captureAttributes(page,guard){
@@ -109,7 +179,7 @@ export async function verifyAttributes(page,task,guard=async()=>{}){
   await guard();
 }
 
-export async function fillAttributes(page,task,{guard,step}){
+export async function fillAttributes(page,task,{guard,step,onEvent=async()=>{}}){
   if(!task.publishVariant)return;
   validateSelections(task);await guard();const actual=await discoverFields(page);
   for(const f of task.publishVariant.attributes){
@@ -122,16 +192,15 @@ export async function fillAttributes(page,task,{guard,step}){
         await input.selectOption({value:f.value});await expect(input).toHaveValue(f.value);
         await expect(input.locator('option:checked')).toHaveText(f.text);
       }else{
-        const current=await input.evaluate(el=>el.tagName==='INPUT'?el.value:el.textContent.trim());
-        if(current===f.text){await readCustom(input,f);await guard();return;}
+        const current=await input.evaluate(selectedCustomState);
+        if(current.text===f.text){await clickCustomAttributeAndVerify(page,null,f,guard,{onEvent});return;}
           await openOptions(page,f,guard);
           // Some option nodes carry the text themselves rather than a child span.
           const choices=await options(page).all();let target;
           for(const choice of choices)if((await choice.innerText()).trim()===f.text){assert(!target,'原属性选项不唯一：'+f.label);target=choice;}
           assert(target,'原属性选项已失效：'+f.label);assert(await target.getAttribute('aria-disabled')!=='true'&&!await target.evaluate(e=>e.classList.contains('disabled')),'原属性选项已禁用：'+f.label);
           assert.equal(await target.getAttribute('data-value')||f.text,f.value,'原属性选项标识已变化：'+f.label);
-          await guard();await target.click();
-          await guard();await readCustom(input,f);await closeOptions(page,input,guard);
+          await clickCustomAttributeAndVerify(page,target,f,guard,{onEvent});
       }
       await guard();
     });

@@ -1,0 +1,54 @@
+// Real local API/UI with a fake executor, isolated DB, and network isolation.
+import assert from 'node:assert/strict';
+import {mkdtemp,mkdir,writeFile,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join,resolve,dirname} from 'node:path';
+import {createServer} from 'node:http';
+import {chromium} from 'playwright';
+import {SourceStore} from '../source-store.mjs';
+import {BatchWorkflow} from '../batch-workflow.mjs';
+import {ProductApi} from '../product-api.mjs';
+import {TravelOsApi} from '../travel-os-api.mjs';
+import {createStaticHandler} from '../static-files.mjs';
+const root=resolve(import.meta.dirname,'../..'),out=join(root,'output/batch-fix-20261007/ui');await mkdir(out,{recursive:true});
+const dir=await mkdtemp(join(tmpdir(),'travel-batch100-')),store=new SourceStore(join(dir,'source.sqlite')),shop={id:'wuzhou-changyou',name:'批次100隔离测试店'};
+const tasks=Array.from({length:101},(_,i)=>({shopId:shop.id,priority:i+1,source:{sheet:'境外城市热度',row:i+2},listing:{type:'city',country:'测试国',city:'测试城市'+(i+1),title:'隔离商品'+(i+1)},business:{price_cny:20,inventory:1},assets:{main:[],secondary:[],details:[]},adapterIssues:[]}));
+store.imported({sheet:'境外城市热度',sourceHash:'BATCH100_ISOLATED',tasks});
+let outcome='fault';const launches=[],requests=[],external=[],errors=[],checks=[];
+const check=(ok,label)=>{assert(ok,label);checks.push(label);};
+const flow={store,runtime:dir,artifacts:join(dir,'artifacts'),active:null,pause(){},launch(id){this.active=id;this.pending=Promise.resolve().then(()=>{launches.push(id);store.move(id,'RUNNING');if(outcome==='fault')store.move(id,'PAUSED','MATERIAL_UPLOAD_NOT_READY：测试上传弹窗未打开，整批暂停');else if(outcome==='success'){store.move(id,'SUBMITTING');store.move(id,'VERIFIED','',{itemId:'100000001',status:'仓库中',rowText:'isolated verification',screenshot:'synthetic.png'});}else store.move(id,'PAUSED','操作者暂停：隔离测试在提交前停止');}).finally(()=>this.active=null);},async resume({id}){store.move(id,'QUEUED');this.launch(id);}};
+const batch=new BatchWorkflow(flow),owner={sessions:new Map(),status:async()=>({running:true,loggedIn:true,loginState:'LOGGED_IN',checkedAt:new Date().toISOString()})};
+const product=new ProductApi({source:flow,batch,owner,shop,runtime:dir,integrity:async()=>({ok:true,files:15,baseline:'ISOLATED'}),checkFiles:async()=>{},launch:async()=>{throw Error('NO_PRODUCTION_BROWSER');}});
+const os=new TravelOsApi({product:async()=>product,shops:async()=>[shop],browser:owner,runtime:dir,launch:async()=>{throw Error('NO_PRODUCTION_BROWSER');}});
+const json=(res,status,data)=>{res.writeHead(status,{'content-type':'application/json'});res.end(JSON.stringify(data));};
+const body=async req=>{let s='';for await(const b of req)s+=b;const input=JSON.parse(s||'{}');requests.push({path:req.url,input});return input;};
+const serve=createStaticHandler(join(root,'workbench'));
+const server=createServer(async(req,res)=>{try{const u=new URL(req.url,'http://localhost');if(u.pathname.startsWith('/api/os/'))return await os.handle(req,res,u,{json,body});if(u.pathname.startsWith('/api/v1/'))return await product.handle(req,res,u,{json,body});if(u.pathname.startsWith('/api/'))throw Error('UNDECLARED_API');await serve(req,res);}catch(e){json(res,e.statusCode||409,{error:e.message});}});
+let browser;
+try{
+ await product.saveSettings({executionEnabled:true,confirmShop:shop.name});await new Promise(r=>server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+server.address().port;
+ browser=await chromium.launch({channel:'chrome',headless:true});const context=await browser.newContext({viewport:{width:1440,height:900},serviceWorkers:'block'});
+ await context.route('**/*',r=>{if(new URL(r.request().url()).origin!==base){external.push(r.request().url());return r.abort();}return r.continue();});
+ const page=await context.newPage();page.setDefaultTimeout(12000);page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(base+'/travel-os.html#tasks');await page.locator('[data-action=review-batch]').first().click();
+ await page.locator('#reviewLimit').waitFor();check(await page.locator('#reviewLimit').inputValue()==='100','创建批次默认最多100条');check(await page.locator('#batchForm tbody tr').count()===100,'101条导入只预览100条');
+ check(await page.locator('#batchForm select[name=mode]').inputValue()==='DRY_RUN','默认仍为仅填写模式');
+ await page.screenshot({path:join(out,'01-batch100-preview.png')});
+ await page.locator('#batchForm select[name=mode]').selectOption('LIVE');await page.locator('#batchForm input[name=reviewed]').check();await page.locator('#batchForm button[type=submit]').click();
+ await page.locator('#editor').waitFor({state:'hidden'});check(launches.length===0,'创建100条不启动执行');
+ await page.locator('[data-action=start]').first().click();await page.locator('#executeForm input[type=checkbox]').check();await page.locator('#executeForm button[type=submit]').click();await page.locator('#editor').waitFor({state:'hidden'});
+ await page.locator('[data-action=retry]').first().waitFor();await batch.pending;
+ const b=batch.store.view();check(b.counts.FAILED===1&&b.counts.PENDING===99&&launches.length===1,'首个错误停止整批，99条未开始');check(b.failureBlocked,'异常阻止直接继续');
+ await page.reload();await page.locator('[data-action=retry]').first().waitFor();check(await page.locator('[data-action=continue]').count()===0,'故障状态不显示可绕过的继续按钮');
+ await page.locator('[data-action=retry]').first().click();check(await page.locator('.retry-scope li').count()===1,'重试弹窗只列原异常商品');check((await page.locator('#editorBody').innerText()).includes('余下待上架商品另行确认'),'重试明确不包括99条待上架商品');
+ await page.screenshot({path:join(out,'02-fault-and-retry-scope.png')});
+ outcome='success';await page.locator('#executeForm input[name=humanVerified]').check();await page.locator('#executeForm button[type=submit]').click();await page.locator('#editor').waitFor({state:'hidden'});await batch.pending;
+ check(launches.length===2&&batch.store.view().counts.SUCCEEDED===1&&batch.store.view().counts.PENDING===99,'原商品重试成功后99条仍未执行');
+ await page.reload();await page.locator('[data-action=continue]').first().waitFor();await page.screenshot({path:join(out,'03-retry-complete-pending-paused.png')});
+ const overflow=await context.request.get(base+'/api/v1/preview?limit=101');check(overflow.status()===409,'API拒绝101条');
+ const legacy=await context.newPage();await legacy.goto(base+'/index.html#settings');check(await legacy.locator('#settingLimit').getAttribute('max')==='100','旧工作台设置上限同步100');
+ check(external.length===0&&errors.length===0,'无外部网络请求和浏览器未捕获错误');
+}finally{
+ await writeFile(join(out,'result.json'),JSON.stringify({at:new Date().toISOString(),checks,launches,requests,external,errors,productionWrites:0,productionBrowserAccess:false,limit:'Synthetic executor only; not a real 100-item platform acceptance'},null,2));
+ console.log(JSON.stringify({checks,external,errors},null,2));await browser?.close();product.closeStreams();await new Promise(r=>{server.close(r);server.closeAllConnections();});os.store.close();store.close();assert.equal(dirname(resolve(dir)),resolve(tmpdir()));await rm(dir,{recursive:true,force:true});
+}

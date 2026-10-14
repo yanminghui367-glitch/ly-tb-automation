@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,rm,writeFile,mkdir} from 'node:fs/promises';
+import {mkdtemp,rm,writeFile,mkdir,readFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {randomUUID} from 'node:crypto';
@@ -10,7 +10,7 @@ import {verifyKernel} from '../kernel-integrity.mjs';
 import {SourceStore,digest} from '../source-store.mjs';
 import {BatchWorkflow} from '../batch-workflow.mjs';
 const shop={id:'wuzhou-changyou',name:'五洲畅游'};
-const task=n=>({shopId:shop.id,priority:n,source:{sheet:'境外城市热度',row:n+1},listing:{type:'city',country:'测试国家',city:'测试城市'+n,title:'测试标题'+n},business:{price_cny:20,inventory:100},assets:{main:[],secondary:[],details:[]},adapterIssues:[]});
+const task=n=>({shopId:shop.id,priority:n,source:{sheet:'境外城市热度',row:n+1},listing:{type:'city',country:'测试国家',city:'测试城市'+n,title:'测试标题'+n},business:{shop_name:shop.name,price_cny:20,inventory:100},assets:{main:[],secondary:[],details:[]},adapterIssues:[]});
 async function fixture(t){
  const dir=await mkdtemp(join(tmpdir(),'ly-product-')),store=new SourceStore(join(dir,'source.sqlite'));
  t.after(async()=>{store.close();await rm(dir,{recursive:true,force:true});});
@@ -22,16 +22,16 @@ async function fixture(t){
  const call=async(action,input,method=input===undefined?'GET':'POST')=>{if(input&&['start','continue','retry','resume-single'].includes(action)&&!input.requestId)input={...input,requestId:randomUUID()};if(input&&['start','continue','retry'].includes(action)&&!('scope' in input))input={...input,scope:api.executionScope(input.id)};let result;const res=new EventEmitter();res.writeHead=()=>{};res.end=v=>result=v;res.write=v=>result=v;await api.handle({method},res,new URL('/api/v1/'+action,'http://localhost'),{body:async()=>input,json:(res,status,data)=>result={status,data}});return {result,res};};
  return {dir,store,flow,batch,params,api,call,importId,tasks,setOutcome:v=>outcome=v,setLogin:v=>loggedIn=v};
 }
-test('execution is off by default and persists without dispatching tasks',async t=>{const x=await fixture(t);await assert.rejects(x.api.assertExecution(),/暂停/);await assert.rejects(x.call('start',{id:'x'}),/暂停/);await assert.rejects(x.api.saveSettings({executionEnabled:true,confirmShop:'wrong'}),/确认/);await x.api.saveSettings({executionEnabled:true,confirmShop:shop.name});await new ProductApi(x.params).assertExecution();assert.equal(x.flow.submits,0);await x.api.saveSettings({executionEnabled:false});await assert.rejects(new ProductApi(x.params).assertExecution(),/暂停/);await assert.rejects(x.api.saveSettings({limit:21}),/1—20/);await assert.rejects(x.api.saveSettings({cookie:'x'}),/无效/);});
+test('execution is off by default and persists without dispatching tasks',async t=>{const x=await fixture(t);await assert.rejects(x.api.assertExecution(),/暂停/);await assert.rejects(x.call('start',{id:'x'}),/暂停/);await assert.rejects(x.api.saveSettings({executionEnabled:true,confirmShop:'wrong'}),/确认/);await x.api.saveSettings({executionEnabled:true,confirmShop:shop.name});await new ProductApi(x.params).assertExecution();assert.equal(x.flow.submits,0);await x.api.saveSettings({executionEnabled:false});await assert.rejects(new ProductApi(x.params).assertExecution(),/暂停/);await assert.rejects(x.api.saveSettings({limit:101}),/1—100/);await assert.rejects(x.api.saveSettings({cookie:'x'}),/无效/);});
 
-test('retry recovery rejects unknown, mixed pending and exhausted batches before dispatch',async t=>{
+test('retry recovery rejects unknown and exhausted; mixed pending stays outside retry scope batches before dispatch',async t=>{
  const x=await fixture(t);await x.api.saveSettings({executionEnabled:true,confirmShop:shop.name});
  const failed={id:'f',state:'FAILED',attempts:1,maxAttempts:3,runId:'run'};
  let state='PAUSED',items=[failed];
  x.batch.store.view=()=>({id:'batch',items});x.store.run=()=>({state,task:x.tasks[0],checkpoint:{}});
  assert.equal((await x.api.recovery({id:'batch',operation:'retry'})).ready,true);
  for(const invalid of ['RESULT_UNKNOWN','SUBMITTING','PAUSED_CAPTCHA','VERIFIED']){state=invalid;const r=await x.api.recovery({id:'batch',operation:'retry'});assert.equal(r.ready,false,invalid);}
- state='PAUSED';items=[failed,{id:'pending',state:'PENDING'}];assert.equal((await x.api.recovery({id:'batch',operation:'retry'})).ready,false);
+ state='PAUSED';items=[failed,{id:'pending',state:'PENDING'}];assert.equal((await x.api.recovery({id:'batch',operation:'retry'})).ready,true);
  items=[{...failed,attempts:3}];assert.equal((await x.api.recovery({id:'batch',operation:'retry'})).ready,false);
  assert.equal(x.flow.submits,0);
 });
@@ -43,9 +43,13 @@ test('attribute capture beginning during awaited execution checks blocks dispatc
  const checking=x.api.assertExecution();x.api.capturing=true;release();await assert.rejects(checking,/读取属性/);assert.equal(x.flow.submits,0);
 });
 test('records export, task logs and screenshots remain bounded to task artifacts',async t=>{const x=await fixture(t);x.tasks[0].listing.title='=formula';x.store.create(x.importId,x.tasks[0],'DRY_RUN','SOURCE',{reviewed:true,taskHash:digest(x.tasks[0])});x.store.imported({sourceHash:'new',tasks:x.tasks});x.store.history(x.tasks[0],{itemId:'1',status:'仓库中',url:'https://attacker.test',at:'2026-09-21'});const {result}=await x.call('records.csv');assert(result.includes("'=formula"));assert.equal((await x.api.snapshot()).records[0].url,null);assert.equal(x.api.screenshot(join(x.dir,'secret.png')),null);assert.equal(x.api.screenshot(join(x.flow.artifacts,'r','ok.png')),'/output/tasks/r/ok.png');const r=x.store.create(x.importId,x.tasks[1],'DRY_RUN','SOURCE',{reviewed:true,taskHash:digest(x.tasks[1])});const detail=await x.call('task?id='+r.id);assert.equal(detail.result.data.events.length,1);});
-test('SSE supplies current snapshot and cleans up on close',async t=>{const x=await fixture(t);const {result,res}=await x.call('events');assert(result.startsWith('event: state\n'));assert.equal(JSON.parse(result.split('data: ')[1]).settings.executionEnabled,false);res.emit('close');assert.equal(res.listenerCount('close'),1);});
+test('SSE supplies current snapshot and cleans up on close',async t=>{const x=await fixture(t);const {result,res}=await x.call('events');assert(result.startsWith('event: state\n'));assert.equal(JSON.parse(result.split('data: ')[1]).settings.executionEnabled,false);res.emit('close');assert.equal(res.listenerCount('close'),0);});
 test('all legacy execution routes are covered by the product stop switch',()=>{for(const p of ['batch/start','batch/continue','batch/retry','source/start','source/resume','tasks/abc/start','tasks/abc/resume','tasks/abc/acknowledge-manual','tasks/abc/complete-dry-run'])assert(executionRoute('/api/'+p));assert(!executionRoute('/api/batch/pause'));assert(!executionRoute('/api/source/import'));});
 test('frozen production kernel matches the recorded baseline',async()=>assert.equal((await verifyKernel()).ok,true));
+test('batch cap and material upload adapter are included in the frozen execution boundary',async()=>{
+ const lock=JSON.parse(await readFile(new URL('../kernel-lock.json',import.meta.url),'utf8'));
+ for(const path of ['workbench/batch-policy.mjs','workbench/publishing-materials.mjs','workbench/publishing-pages.mjs'])assert.match(lock.files[path]||'',/^[a-f0-9]{64}$/);
+});
 test('kernel verification detects edits and missing files',async t=>{const dir=await mkdtemp(join(tmpdir(),'ly-kernel-'));t.after(()=>rm(dir,{recursive:true,force:true}));await mkdir(join(dir,'engine'));await writeFile(join(dir,'engine','core'),'original');const manifest=join(dir,'lock.json');await writeFile(manifest,JSON.stringify({baselineCommit:'test',files:{'engine/core':digest('original')}}));assert.equal((await verifyKernel(dir,manifest)).ok,true);await writeFile(join(dir,'engine','core'),'changed');assert.deepEqual((await verifyKernel(dir,manifest)).changed,['engine/core']);});
 
 test('duplicate clicks and persisted request replay never dispatch a task twice',async t=>{
@@ -77,6 +81,56 @@ test('same import is idempotent and preview labels failed material checks separa
 test('published record links to its source batch and actual verification timestamp',async t=>{
  const x=await fixture(t);await x.api.saveSettings({executionEnabled:true,confirmShop:shop.name});const p=x.batch.preview(x.importId,1),b=x.batch.create({importId:x.importId,limit:1,mode:'LIVE',review:{reviewed:true,selectionHash:p.selectionHash,authorization:'isolated'}},shop);
  x.setOutcome('VERIFIED');await x.call('start',{id:b.id});await x.batch.pending;const r=(await x.api.snapshot()).records[0];assert.equal(r.batchId,b.id);assert.equal(r.importId,x.importId);assert.equal(r.timeBasis,'平台核验事件');assert.equal(r.at,x.store.events(r.runId).find(e=>e.kind==='VERIFIED').at);
+});
+
+test('round API fixes scope, rejects duplicate execution, persists first gate and resumes original round',async t=>{
+ const x=await fixture(t);await x.api.saveSettings({executionEnabled:true,confirmShop:shop.name});
+ // This workflow test now supplies explicit persisted content-review fixtures;
+ // the dedicated content suite checks visual mismatches and missing reviews.
+ for(const [i,task] of x.tasks.entries()){const path=join(x.dir,'reviewed-main-'+i+'.png');await writeFile(path,'isolated image '+i);task.assets.main=[{path,sha256:digest(await readFile(path))}];}
+ x.importId=x.store.imported({sourceHash:'fixture-content-reviewed',sheet:'境外城市热度',tasks:x.tasks});
+ x.api.round.verifyExisting=async()=>null;
+ x.flow.launch=function(id){this.active=id;this.pending=Promise.resolve().then(()=>{x.store.move(id,'RUNNING');x.store.move(id,'SUBMITTING');x.store.event(id,'SUBMIT_CLICKED',{});this.submits++;x.store.move(id,'VERIFIED','',{itemId:String(800000+this.submits),status:'待审核',rowText:'isolated fixture',screenshot:join(x.dir,'proof.png'),verifiedAt:new Date().toISOString()});}).finally(()=>this.active=null);};
+ const input={importId:x.importId,repairVersion:'test-round',expectedCount:2,requestId:randomUUID(),authorization:{allowLive:true,maxSafeRecoveries:2,confirmedShop:shop.name,expectedCount:2}};
+ const created=(await x.call('rounds/create',input)).result.data;assert.equal(created.total,2);assert.equal(x.flow.submits,0);
+ await x.call('rounds/content-review',{id:created.id,manifestHash:created.manifestHash,requestId:randomUUID(),reviewer:'isolated API fixture',method:'direct-visual',entries:created.items.map((item,i)=>({key:item.key,taskHash:item.taskHash,mainHashes:x.tasks[i].assets.main.map(a=>a.sha256),decision:'PASS',observedText:'isolated destination '+i,evidence:x.tasks[i].assets.main}))});
+ const oldCreate={importId:x.importId,limit:1,mode:'LIVE',review:{reviewed:true,selectionHash:x.batch.preview(x.importId,1).selectionHash,authorization:'isolated'}};
+ const queuedBefore=x.store.db.prepare('SELECT COUNT(*) n FROM batches').get().n;
+ await assert.rejects(x.call('create',oldCreate),/原轮次/);await assert.rejects(x.api.createBatch(oldCreate),/原轮次/);
+ assert.equal(x.store.db.prepare('SELECT COUNT(*) n FROM batches').get().n,queuedBefore);
+ assert((await x.call('rounds/create',input)).result.data.replayed);
+ const start={id:created.id,manifestHash:created.manifestHash,requestId:randomUUID()};
+ await assert.rejects(x.call('rounds/start',{...start,manifestHash:'changed'}),/范围/);
+ await x.call('rounds/start',start);await x.api.round.pending;
+ assert.equal(x.api.round.round().state,'PAUSED',x.api.round.round().reason);assert.equal(x.flow.submits,1);
+ const pausedBefore=x.store.db.prepare('SELECT COUNT(*) n FROM batches').get().n;
+ await assert.rejects(x.call('create',oldCreate),/原轮次/);await assert.rejects(x.api.createBatch(oldCreate),/原轮次/);
+ assert.equal(x.store.db.prepare('SELECT COUNT(*) n FROM batches').get().n,pausedBefore);
+ assert((await x.call('rounds/start',start)).result.data.replayed);assert.equal(x.flow.submits,1);
+ assert.equal((await x.api.snapshot()).round.counts.NEW_SUCCESS,1);
+ await assert.rejects(x.api.assertExecution({legacy:true}),/原轮次/);
+ const restored=new ProductApi(x.params);restored.round.verifyExisting=async()=>null;assert.equal(restored.round.round().state,'PAUSED');
+ let result;await restored.handle({method:'POST'},{},new URL('http://localhost/api/v1/rounds/resume'),{body:async()=>({...start,requestId:randomUUID()}),json:(res,code,data)=>result=data});
+ await restored.round.pending;assert.equal(x.flow.submits,2);assert.equal(restored.round.round().state,'COMPLETED');assert.equal(result.id,created.id);
+ assert.equal(restored.round.summary().counts.NEW_SUCCESS,2);assert.equal(x.store.list().length,2);
+});
+
+test('round rules API appends scoped duplicate policy idempotently without changing manifest or submitting',async t=>{
+ const x=await fixture(t);await x.api.saveSettings({executionEnabled:true,confirmShop:shop.name});const created=(await x.call('rounds/create',{importId:x.importId,repairVersion:'fixture-rules',expectedCount:2,requestId:randomUUID(),authorization:{allowLive:true,maxSafeRecoveries:2,confirmedShop:shop.name,expectedCount:2}})).result.data;
+ const item=x.api.round.items(created.id)[0];x.api.round.update(created.id,item.key,{state:'RESULT_UNKNOWN',failure_stage:'existing-listing-check',reason:'old same-destination hold'});x.api.round.state(created.id,'PAUSED','fixture pause');
+ const requestId=randomUUID(),payload={id:created.id,manifestHash:created.manifestHash,requestId,ignoreDestinationDuplicates:true};
+ const first=await x.call('rounds/rules-apply',payload);assert.equal(first.result.data.applied[0].releasedCount,1);assert.equal(first.result.data.round.counts.PENDING,2);
+ assert.equal(x.api.round.round(created.id).manifest_hash,created.manifestHash);assert.equal(x.api.round.item(created.id,item.key).state,'PENDING');assert.equal(x.flow.submits,0);
+ const replay=await x.call('rounds/rules-apply',payload);assert.equal(replay.result.data.replayed,true);await assert.rejects(x.call('rounds/rules-apply',{...payload,ignoreDestinationDuplicates:false}),/请求编号对应的范围内容已改变/);assert.equal(x.flow.submits,0);
+});
+
+test('round pause and stop are accepted during read-only checks and do not mark untouched items failed',async t=>{
+ const x=await fixture(t);await x.api.saveSettings({executionEnabled:true,confirmShop:shop.name});
+ let release;const gate=new Promise(r=>release=r);x.api.round.verifyExisting=async()=>{await gate;return null;};
+ const created=(await x.call('rounds/create',{importId:x.importId,repairVersion:'fixture',expectedCount:2,requestId:randomUUID(),authorization:{allowLive:true,maxSafeRecoveries:2,confirmedShop:shop.name,expectedCount:2}})).result.data;
+ await x.call('rounds/start',{id:created.id,manifestHash:created.manifestHash,requestId:randomUUID()});
+ const stopped=await x.call('rounds/stop',{});assert.equal(stopped.result.data.stopRequested,true);release();await x.api.round.pending;
+ assert.equal(x.api.round.round().state,'STOPPED',x.api.round.round().reason);assert.equal(x.api.round.summary().counts.PENDING,2);assert.equal(x.flow.submits,0);
 });
 
 test('configuration checks report missing paths without enabling execution',async t=>{

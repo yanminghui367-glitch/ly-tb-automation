@@ -7,7 +7,7 @@ const skipped=new Set(['node_modules','.runtime','.playwright-cli','browser-prof
 const roots=['docs','engine','tools','workbench','.interface-design','.impeccable'];
 const top=['.gitignore','.gitattributes','AGENTS.md','README.md','PRODUCT.md','DESIGN.md','design-qa.md','安装工作台.cmd','恢复业务数据.cmd','启动上架工作台.vbs','打开旅行上架工作台.cmd'];
 const files=[];
-async function add(path){const s=await lstat(path);if(s.isSymbolicLink())throw Error('源码不包含链接：'+relative(root,path));if(s.isDirectory()){for(const e of await readdir(path,{withFileTypes:true}))if(!skipped.has(e.name))await add(join(path,e.name));}else if(!/\.(log|pyc|sqlite.*|db|key|pem)$/i.test(path)&&!/^\.env(?:\.|$)/.test(path.split(sep).at(-1)))files.push(path);}
+async function add(path){const projectPath=relative(root,path).split(sep).join('/');if(projectPath.startsWith('workbench/workbench/'))return;const s=await lstat(path);if(s.isSymbolicLink())throw Error('源码不包含链接：'+projectPath);if(s.isDirectory()){for(const e of await readdir(path,{withFileTypes:true}))if(!skipped.has(e.name))await add(join(path,e.name));}else if(!/\.(log|pyc|sqlite.*|db|key|pem)$/i.test(path)&&!/^\.env(?:\.|$)/.test(path.split(sep).at(-1)))files.push(path);}
 for(const p of [...top,...roots])await add(join(root,p));
 const entries=[];
 for(const p of files.sort()){

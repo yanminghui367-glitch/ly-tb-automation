@@ -39,10 +39,13 @@ test('retry scope excludes successful and exhausted items and blocks unsafe batc
  const items=[failed,{...failed,id:'exhausted',attempts:3},{...failed,id:'ok',state:'SUCCEEDED',displayState:'VERIFIED'}];
  assert.deepEqual(retryPlan({items},false).eligible.map(x=>x.id),['failed']);
  assert.equal(retryPlan({items},false).allowed,true);assert.equal(retryPlan({items},true).allowed,false);
- for(const state of ['RESULT_UNKNOWN','SUBMITTING','PAUSED_CAPTCHA','RUNNING','WAITING_HUMAN','PENDING','RETRY'])assert.equal(retryPlan({items:[failed,{id:'blocked',state}]},false).allowed,false,state);
+ for(const state of ['RESULT_UNKNOWN','SUBMITTING','PAUSED_CAPTCHA','RUNNING','WAITING_HUMAN'])assert.equal(retryPlan({items:[failed,{id:'blocked',state}]},false).allowed,false,state);
  assert.equal(retryPlan({items:[{...failed,runState:'RESULT_UNKNOWN',displayState:undefined}]},false).allowed,false);
  assert.equal(retryPlan({items:[{...failed,attempts:3}]},false).allowed,false);
  assert.equal(retryPlan(null,false).allowed,false);
+ assert.equal(retryPlan({items:[failed,{id:'pending',state:'PENDING'}]},false).allowed,true);
+ assert.deepEqual(retryPlan({items:[{...failed,state:'RETRY'}]},false).eligible.map(x=>x.id),['failed']);
+ assert.equal(retryPlan({items:[failed,{id:'paused',state:'WAITING_HUMAN',runState:'PAUSED'}]},false).allowed,false);
  assert.match(failureSummary({reason:'locator #sucai-tu-upload Timeout 30000ms'}),/上传按钮/);
  assert.match(failureSummary({reason:'unknown original error'}),/待人工确认/);
 });

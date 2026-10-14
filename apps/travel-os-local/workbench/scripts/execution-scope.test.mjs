@@ -4,7 +4,7 @@ import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join,resolve,dirname} from 'node:path';
 import {randomUUID} from 'node:crypto';
-import {SourceStore} from '../source-store.mjs';
+import {SourceStore,digest} from '../source-store.mjs';
 import {BatchWorkflow} from '../batch-workflow.mjs';
 import {ProductApi} from '../product-api.mjs';
 
@@ -70,4 +70,21 @@ test('simultaneous confirmed requests can dispatch the scope only once',async t=
 test('unchanged snapshots yield a stable scope and retain confirmed successful targets',async t=>{
  const x=await fixture(t),a=await x.api.snapshot(x.b.id),b=await x.api.snapshot(x.b.id);
  assert.equal(a.batch.executionScope,b.batch.executionScope);await x.call('start',{id:x.b.id,scope:a.batch.executionScope,requestId:randomUUID()});assert.equal(x.calls(),1);
+});
+test('bulk execution scope preserves the original canonical scope for queued, running and checkpointed rows',async t=>{
+ const x=await fixture(t);x.batch.store.setBatch(x.b.id,'COMPLETED','isolated fixture');
+ const base=x.batch.store.items(x.b.id)[0].task,tasks=Array.from({length:100},(_,n)=>({...base,priority:n+1,source:{sheet:'境外城市热度',row:n+1},listing:{...base.listing,city:'隔离城市'+n,title:'商品'+n}}));
+ const importId=x.store.imported({sheet:'境外城市热度',sourceHash:'SYNTHETIC-100',tasks}),preview=x.batch.preview(importId,100);
+ const b=x.batch.create({importId,limit:100,mode:'LIVE',review:{reviewed:true,selectionHash:preview.selectionHash,authorization:'isolated only'}},{id:'scope-fixture',name:'隔离店铺'});
+ const legacy=()=>{
+  const batch=x.batch.store.batch(b.id),revision=x.store.db.prepare('SELECT MAX(seq) n FROM batch_events WHERE batch=?').get(b.id).n;
+  const items=x.batch.store.items(b.id).map(row=>({id:row.id,position:row.position,task:digest(row.task),state:row.state,attempts:row.attempts,maxAttempts:row.max_attempts,runId:row.run_id,
+   run:row.run_id?x.store.run(row.run_id):null,revision:row.run_id?x.store.db.prepare('SELECT MAX(seq) n FROM events WHERE run=?').get(row.run_id).n:null}));
+  return digest({version:1,id:batch.id,shop:batch.shop,mode:batch.mode,state:batch.state,review:batch.review,revision,items});
+ };
+ assert.equal(x.api.executionScope(b.id),legacy(),'queued scope');
+ const first=x.batch.store.items(b.id)[0],run=x.store.create('fixture-import',first.task,'LIVE','SOURCE',{reviewed:true,taskHash:digest(first.task)});
+ x.batch.store.attach(first.id,run.id);x.store.checkpoint(run.id,{step:'price',itemId:'fixture-id'});x.store.event(run.id,'STEP_VERIFIED',{name:'price'});
+ assert.equal(x.api.executionScope(b.id),legacy(),'scope with attached run and checkpoint');
+ x.batch.store.claim(first.id);assert.equal(x.api.executionScope(b.id),legacy(),'running queue scope');
 });

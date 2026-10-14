@@ -1,7 +1,83 @@
 import { chromium } from 'playwright';
-import { mkdir, writeFile, lstat } from 'node:fs/promises';
+import { mkdir, writeFile, appendFile, lstat } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
+import { isAbsolute } from 'node:path';
+
+const require = createRequire(import.meta.url);
+const ownedLaunchRuntime = () => ({
+  playwrightVersion: require('playwright/package.json').version,
+  coreVersion: require('playwright-core/package.json').version,
+  platform: process.platform, env: process.env
+});
+// Exact Windows/headful/no-proxy Playwright 1.62.1 argv, observed with a new
+// empty profile and checked against that installed version. The full 45-argument
+// packet (including owner args, profile, pipe, blank page) has normalized SHA256
+// e2eb7879ea6fea609387eef3b1426a2137b41c7280c4566d14ef58d6c3ca1b1d.
+// Retaining the defaults while using the PUBLIC ignoreDefaultArgs:true avoids
+// only Playwright's extra wait for the first restored page's complete load.
+// Native persistent-context/page initialization, ownership and cleanup remain.
+const ownedChromiumDefaults = Object.freeze([
+  '--disable-field-trial-config',
+  '--disable-background-networking',
+  '--disable-background-timer-throttling',
+  '--disable-backgrounding-occluded-windows',
+  '--disable-back-forward-cache',
+  '--disable-breakpad',
+  '--disable-client-side-phishing-detection',
+  '--disable-component-extensions-with-background-pages',
+  '--disable-component-update',
+  '--no-default-browser-check',
+  '--disable-default-apps',
+  '--disable-dev-shm-usage',
+  '--disable-edgeupdater',
+  '--disable-extensions',
+  '--disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion',
+  '--enable-features=CDPScreenshotNewSurface',
+  '--allow-pre-commit-input',
+  '--disable-hang-monitor',
+  '--disable-ipc-flooding-protection',
+  '--disable-popup-blocking',
+  '--disable-prompt-on-repost',
+  '--disable-renderer-backgrounding',
+  '--disable-updater-scheduler',
+  '--force-color-profile=srgb',
+  '--metrics-recording-only',
+  '--no-first-run',
+  '--password-store=basic',
+  '--use-mock-keychain',
+  '--no-service-autorun',
+  '--export-tagged-pdf',
+  '--disable-search-engine-choice-screen',
+  '--unsafely-disable-devtools-self-xss-warnings',
+  '--edge-skip-compat-layer-relaunch',
+  '--disable-infobars',
+  '--disable-search-engine-choice-screen',
+  '--disable-sync',
+  '--enable-unsafe-swiftshader',
+  '--no-sandbox'
+]);
+
+export function ownedPersistentLaunchOptions(profileDir, options, runtime = ownedLaunchRuntime()) {
+  if (runtime.playwrightVersion !== '1.62.1' || runtime.coreVersion !== '1.62.1' || runtime.platform !== 'win32') throw Error('OWNED_BROWSER_UNSUPPORTED_RUNTIME');
+  // These environment switches alter default argv, timeout or connection mode.
+  if (['PLAYWRIGHT_LEGACY_SCREENSHOT', 'PWDEBUG', 'npm_config_pwdebug', 'npm_package_config_pwdebug', 'SELENIUM_REMOTE_URL', 'PW_CHROMIUM_ATTACH_TO_OTHER'].some(k => runtime.env?.[k])) throw Error('OWNED_BROWSER_UNSUPPORTED_ENV');
+  if (!options || Object.keys(options).some(k => !['executablePath', 'headless', 'viewport', 'args', 'timeout'].includes(k))) throw Error('OWNED_BROWSER_UNSUPPORTED_OPTIONS');
+  if (options.headless !== false || options.viewport !== null || typeof options.executablePath !== 'string' || !isAbsolute(options.executablePath)) throw Error('OWNED_BROWSER_UNSUPPORTED_OPTIONS');
+  if (typeof profileDir !== 'string' || !isAbsolute(profileDir) || /[\r\n\0]/.test(profileDir)) throw Error('OWNED_BROWSER_PROFILE_REQUIRED');
+  const args = options.args;
+  if (!Array.isArray(args) || args.length !== 4 || !/^--remote-debugging-port=\d+$/.test(args[0]) || args[1] !== '--remote-debugging-address=127.0.0.1' || args[2] !== '--restore-last-session' || args[3] !== '--enable-automation') throw Error('OWNED_BROWSER_UNSUPPORTED_ARGS');
+  const port = Number(args[0].split('=')[1]);
+  if (!Number.isInteger(port) || port < 1024 || port > 65535 || args[0] !== `--remote-debugging-port=${port}`) throw Error('OWNED_BROWSER_INVALID_PORT');
+  if ('timeout' in options && (!Number.isFinite(options.timeout) || options.timeout <= 0)) throw Error('OWNED_BROWSER_INVALID_TIMEOUT');
+  return { ...options, timeout: options.timeout ?? 180000, ignoreDefaultArgs: true,
+    args: [...ownedChromiumDefaults, ...args, `--user-data-dir=${resolve(profileDir)}`, '--remote-debugging-pipe', 'about:blank'] };
+}
+
+export function launchOwnedPersistentContext(profileDir, options) {
+  return chromium.launchPersistentContext(profileDir, ownedPersistentLaunchOptions(profileDir, options));
+}
 
 export const PROJECT_ROOT = fileURLToPath(new URL('../', import.meta.url));
 export const SELLER_HOME = 'https://myseller.taobao.com/home.htm/QnworkbenchHome/';
@@ -22,28 +98,45 @@ export async function visibleChallenge(page) {
 }
 export async function inspectLogin(pages, shop) {
   let loggedIn = false, hasLogin = false, wrongShop = false;
+  const identityEvidence = [];
   for (const page of pages) {
     if (page.isClosed()) continue;
     let u; try { u = new URL(page.url()); } catch { continue; }
     if (!/(^|\.)(taobao|tmall)\.com$/.test(u.hostname)) continue;
+    let phase = 'challenge';
+    try {
     if (await visibleChallenge(page)) return { loginState: 'PAUSED_CAPTCHA', loggedIn: false, reason: '出现验证码或滑块，任务已暂停；请在专用 Chrome 人工处理后恢复。' };
     if (/login|passport|signin/.test(u.hostname + u.pathname)) { hasLogin = true; continue; }
     if (!sellerHosts.has(u.hostname)) continue;
+    phase = 'identity';
     const identity = page.locator('div.shopName--x6nyUylx');
     if (await identity.count() === 1 && await identity.isVisible()) {
       const name = (await identity.innerText()).trim();
-      if (name === shop.name) loggedIn = true; else wrongShop = true;
+      // A mounted shell can still have an empty shop label while loading.
+      // It supplies no identity; only an explicit different name proves a mismatch.
+      identityEvidence.push({ page: u.origin + u.pathname, name: name.slice(0, 120) });
+      if (name && name === shop.name) loggedIn = true; else if (name) wrongShop = true;
+    }
+    } catch (error) {
+      // A success page may close after this scan took its page snapshot.
+      // Only an actually closed page can be discarded; a live unreadable page
+      // still prevents publication. Previously observed wrong-shop or challenge
+      // evidence is never replaced by a cached logged-in result.
+      if (page.isClosed()) continue;
+      const failure = new Error('LOGIN_PAGE_INSPECTION_FAILED');
+      failure.inspectionFailure = { page: u.origin + u.pathname, phase, kind: /Execution context was destroyed|Cannot find context with specified id/i.test(String(error?.message || '')) ? 'NAVIGATION_INTERRUPTED' : 'PAGE_READ_FAILED' };
+      throw failure;
     }
   }
-  if (wrongShop) return { loginState: 'WRONG_SHOP', loggedIn: false, reason: '当前店铺与任务店铺不一致，已暂停。' };
+  if (wrongShop) return { loginState: 'WRONG_SHOP', loggedIn: false, reason: '当前店铺与任务店铺不一致，已暂停。', identityEvidence };
   if (loggedIn) return { loginState: 'LOGGED_IN', loggedIn: true, reason: '已检测到目标店铺登录状态；所有任务复用此专用浏览器。' };
-  return { loginState: hasLogin ? 'LOGIN_REQUIRED' : 'LOGIN_UNVERIFIED', loggedIn: false, reason: '请在专用 Chrome 人工登录目标店铺，并进入商家后台；登录状态由 Chrome 持久化保存。' };
+  return { loginState: hasLogin ? 'LOGIN_REQUIRED' : 'LOGIN_UNVERIFIED', loggedIn: false, reason: '请在专用 Chrome 人工登录目标店铺，并进入商家后台；登录状态由 Chrome 持久化保存。', identityEvidence };
 }
 
 // This owner lives with the workbench, never with a product task. No storageState,
 // cookies or credentials are read/exported; Chrome manages its own profile.
 export class BrowserEnvironment {
-  constructor({ launch = (...args) => chromium.launchPersistentContext(...args), portAvailable, checkpointRoot = resolve(PROJECT_ROOT, 'workbench/.runtime/browser-checkpoints'), profilePath = projectProfile } = {}) {
+  constructor({ launch = launchOwnedPersistentContext, portAvailable, checkpointRoot = resolve(PROJECT_ROOT, 'workbench/.runtime/browser-checkpoints'), profilePath = projectProfile } = {}) {
     this.launch = launch; this.portAvailable = portAvailable; this.checkpointRoot = checkpointRoot;
     this.sessions = new Map(); this.pending = new Map(); this.closing = false;
     this.profilePath = profilePath;
@@ -87,11 +180,21 @@ export class BrowserEnvironment {
     s.checking = (async () => {
       let state;
       try { state = await inspectLogin(s.context.pages(), shop); }
-      catch { state = { loginState: 'LOGIN_UNVERIFIED', loggedIn: false, reason: '页面暂时无法核验，自动化保持暂停。' }; }
+      catch (error) { state = { loginState: 'LOGIN_UNVERIFIED', loggedIn: false, reason: '页面暂时无法核验，自动化保持暂停。', inspectionFailure: error?.inspectionFailure || { phase: 'scan', kind: 'PAGE_READ_FAILED' } }; }
       const result = { running: true, persistent: true, profileDir: s.profileDir, generation: s.generation, checkedAt: new Date().toISOString(), ...state };
       if (s.last?.loginState !== result.loginState) {
         await mkdir(this.checkpointRoot, { recursive: true });
         const record = { shopId: shop.id, at: result.checkedAt, state: result.loginState, taskMayResume: result.loggedIn, resumeRequiresRevalidation: true };
+        if (state.inspectionFailure) {
+          record.inspectionFailure = state.inspectionFailure;
+          await appendFile(join(this.checkpointRoot, `${shop.id}-inspection-anomalies.jsonl`), JSON.stringify(record) + '\n');
+        }
+        if (state.identityEvidence) {
+          record.identityEvidence = state.identityEvidence;
+          // Keep transient identity failures after the next successful status check.
+          // Only visible shop names and origin/path are included, never query strings or credentials.
+          await appendFile(join(this.checkpointRoot, `${shop.id}-identity-anomalies.jsonl`), JSON.stringify(record) + '\n');
+        }
         if (!result.loggedIn) {
           const pages = s.context.pages();
           const page = pages.find(p => /taobao|tmall/.test(p.url()));

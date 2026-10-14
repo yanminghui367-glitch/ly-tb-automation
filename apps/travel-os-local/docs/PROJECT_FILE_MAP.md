@@ -1,5 +1,53 @@
 # 项目文件导航｜标准化第 1 步
 
+## 2026-10-14 局域网商品资料识别同步
+
+`workbench/setup-adapter.py` 识别 v2 标准 Excel 的固定发货时效选项；`workbench/scripts/setup-current-label.test.mjs` 覆盖该选项的隔离导入回归。用户工作簿结构、识别范围与未完成资料边界见 [同步记录](SETUP_IMPORT_STANDARD_SYNC_20261014.md)。
+
+## 2026-10-13 执行监控整合
+
+`workbench/travel-os.js`、`tasks.css` 管理本轮监控与独立历史区；`round-item-detail.js` 同时提供原当前商品跳过控制，`round-current-skip.js` 保留兼容导出，避免旧服务静态路由使页面加载失败。`scripts/execution-monitor-ui-qa.mjs` 检查身份隔离与状态边界；原轮次浏览器回归更新布局定位。范围与证据见 [执行监控整合](EXECUTION_MONITOR_20261013.md)。
+
+## 2026-10-13 导购标题焦点超时修复
+
+workbench/taobao-publisher.mjs 在主图选择后关闭已验证的主图操作菜单，再恢复原标题字段焦点；scripts/main-image-click.test.mjs 增加菜单开关安全验证。正式安装状态与待人工身份确认边界见 [GUIDE_TITLE_FOCUS_20261013.md](GUIDE_TITLE_FOCUS_20261013.md)。
+
+## 2026-10-12 网站商品总表与批量选择
+
+`workbench/operations-catalog.mjs`、`operations-catalog-ui.js/css` 统一店铺/资料包状态和表格操作；`round-selection.mjs`、`operations-api.mjs` 在原轮次和执行窗口中持久化勾选范围、预检和幂等回执。`listing-round.mjs`、`round-windows.mjs` 继续复用原发布执行器，最多100条分窗。对应两组回归为 `scripts/operations-catalog.test.mjs`、`scripts/round-selection.test.mjs`。操作、安装、维护保全及尚未完成的真实验收见 [WEBSITE_OPERATIONS_20261011.md](WEBSITE_OPERATIONS_20261011.md)。
+
+## 2026-10-11 主图素材面板诊断
+
+`workbench/taobao-publisher.mjs` 的主图就绪等待、主图/详情iframe区分及图片点击结果核对，`publishing-attributes.mjs` 的自定义属性点击结果核对为本次有限修复范围。对应测试位于 `workbench/scripts/`：`main-material-frame.test.mjs`、`detail-material-frame.test.mjs`、`main-image-click.test.mjs`、`attribute-click.test.mjs`。当前安装与平台验收状态见 [MAIN_MATERIAL_FRAME_20261011.md](MAIN_MATERIAL_FRAME_20261011.md)，独立候选验证不等于真实发布结果。
+
+后续 `batch-store.mjs`、`round-item-retry.mjs`、`round-item-retry-api.mjs` 与 `round-item-detail.js` 统一原重试预算的预检及原因展示，配套 `scripts/retry-budget.test.mjs`。这不增加恢复次数或改写历史；旧清单分别保留于 `docs/kernel-baselines/`。
+
+## 2026-10-11 P0 / P1 正式安装与入口核对
+
+`workbench/round-item-retry.mjs`、`round-item-retry-api.mjs` 及配套19文件已安装正式网站，更新下方10月9日“未安装”的历史状态。按钮盘点见 [P0_BUTTON_INVENTORY_20261011.md](P0_BUTTON_INVENTORY_20261011.md)，新千牛核验入口、部署与测试证据见 [P0_P1_20261011.md](P0_P1_20261011.md)。历史记录不回写，真实任务保持暂停。
+
+`workbench/publishing-pages.mjs` 与 `listing-verification.mjs` 已增量兼容实测千牛商品管理入口，正式版本 `20261011-verification-origin`。两对应测试文件覆盖新旧来源及保护条件，旧内核清单存于 `docs/kernel-baselines/20261011-before-verification-origin.json`。
+
+## 2026-10-09 单条重试候选
+
+隔离候选 `output/item-actions-r16/table-response/manual-retry-1791517483795/project/workbench/round-item-retry.mjs` 和 `round-item-retry-api.mjs` 复用原发布者处理单个异常商品，详情页提供原请求核对与中断记录恢复。尚未安装到正式 `workbench/`；范围、测试与19项更新准备见 [ITEM_RETRY_20261009.md](ITEM_RETRY_20261009.md)。
+
+## 2026-10-09 单条详情与实际处理记录
+
+`round-execution-attempts.mjs` / `round-item-attempts.mjs` 在现有执行器内记录原任务的实际尝试及中断恢复；`round-item-api.mjs`、`round-item-host*.mjs`、`round-item-verify*.mjs`、`round-manual-skip.mjs` 接入原网站的详情、受控核验及手动跳过。`round-item-candidates.mjs` 读取原查重证据，`round-item-detail.js/css` 显示问题和关联历史。全部位于 `workbench/`，原队列与发布者保持；单条人工重试尚未接入。实际部署、恢复及当前故障见 `EXECUTION_ATTEMPTS_20261009.md` 和 `PROJECT_STATUS.md`，不能用隔离测试替代平台验收。
+
+## 2026-10-09 执行轮次与页面保护
+
+`workbench/round-windows.mjs` 管理父清单内持久执行轮次、范围、历史和导出；`page-ownership.mjs` 管理原生context内页面归属/预算/关闭回执；`page-protection.mjs` 读取真实标签固定状态并精确核对父子target。原执行入口仍为SourceWorkflow/BatchWorkflow，不新增发布者。专项回归在`workbench/scripts/round-windows.test.mjs`、`page-ownership.test.mjs`、`page-protection.test.mjs`、`page-source-integration.test.mjs`；范围与当前验收见`INDEPENDENT100_20261009.md`和`PAGE_MANAGEMENT_20261009.md`。
+
+## 2026-10-07 上传页面稳定性
+
+`workbench/publishing-pages.mjs` 管理同一执行浏览器内的后台新页、精确targetId绑定及素材/核验角色复用；`scripts/publishing-pages.test.mjs` 为绑定/失效回归，`scripts/publishing-pages-qa.mjs` 为隔离有界面 Chrome 专项。修改范围、证据与部署状态见 `BROWSER_STABILITY_20261007.md`，原冻结清单在 `kernel-baselines/20261007-before-stable-pages.json`。
+
+## 2026-10-07 批次故障隔离与100条上限
+
+`workbench/batch-policy.mjs` 统一批次上限；`batch-workflow.mjs` 首故障暂停与整批预检；`batch-store.mjs` 持久化有限重试范围；`publishing-materials.mjs` 上传弹窗、唯一文件控件与新回执核对；`publishing-attributes.mjs` 真实选中文字回读。隔离回归为 `scripts/batch-workflow.test.mjs`、`publishing-controls.test.mjs`、`batch100-ui-qa.mjs`，实施说明 `BATCH_RECOVERY_20261007.md`。
+
 ## 2026-10-01 GitHub 安装与业务迁移
 
 `安装工作台.cmd` → `tools/install-workbench.ps1` 与 `verify-installation.mjs`：锁文件安装与 SHA-256 检查；`恢复业务数据.cmd` → `tools/migration-data.mjs` / `migration-archive.py`：白名单业务备份/全新目录恢复与路径重定位；`tools/sync-source.mjs` → `SOURCE_MANIFEST.json`：完整代码和 UI 资源导出。`migration-data.test.mjs` 验证防重键/历史/报价/原字节、路径、执行关闭与拒绝覆盖。使用说明 `GITHUB_INSTALL_MIGRATION_20261001.md`。本地业务包独立传输，禁止进入公开 GitHub。
@@ -115,3 +163,20 @@
 - `workbench/setup-ui.js` / `setup-ui.css`：资料设置四步界面及新电脑引导。
 - `scripts/setup-flow.test.mjs` / `setup-ui-qa.mjs`：隔离回归；证据存放在 `output/setup-20261006/` 和 `output/playwright/setup-20261006/`。
 - `docs/SETUP_GUIDE_20261006.md` / `SETUP_IMPLEMENTATION_20261006.md`：使用与实际验收边界。
+
+## 2026-10-09 库存稳定采样
+
+- `workbench/taobao-publisher.mjs` 的 `fillStableInventory`：受保护首次采样后建立观察预算，每次核对唯一且可编辑的库存控件。
+- `workbench/scripts/inventory-timing.test.mjs`：慢检查、回滚、控件失效、暂停和默认稳定窗口回归。
+- `docs/INVENTORY_TIMING_20261009.md`：r20故障证据、范围、维护保全和原任务恢复边界；本地证据在 `output/item-actions-r16/inventory-timing/`，不纳入代码版本。
+
+
+## 2026-10-13 当前商品跳过并继续
+
+docs/ROUND_SKIP_CONTINUE_20261013.md记录范围、保护和隔离验收；工作台实现位于workbench/round-item-detail.js/css，在	ravel-os.js接入当前轮次，回归脚本为scripts/round-item-retry-ui-qa.mjs。复用已有API，不修改发布执行器。
+
+
+## 2026-10-13 成功页活动标签误拦截修复
+
+workbench/publishing-pages.mjs调整仅本轮新建且已核验成功页的活动标签误判；workbench/scripts/publishing-pages.test.mjs覆盖选中成功页继续关闭，其他保护保持。证据、安装状态和边界见docs/ACTIVE_TAB_CLEANUP_20261013.md。
+

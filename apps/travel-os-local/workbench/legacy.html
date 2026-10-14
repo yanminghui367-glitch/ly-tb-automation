@@ -31,11 +31,11 @@
 
       <section class="panel batch-flow" aria-labelledby="batchTitle">
         <div class="panel-head"><div><p class="eyebrow">热度排序 · 断点续跑</p><h2 id="batchTitle">批量上架</h2></div><span id="batchStatus">尚未创建批次</span></div>
-        <p class="field-help">先识别资料并核对清单。本轮每批最多 20 个商品，执行结束自动停止；遇到验证，手动处理后继续原任务。</p>
+        <p class="field-help">先识别资料并核对清单。本轮每批最多 100 个商品，执行异常立即暂停整批；遇到验证，手动处理后继续原任务。</p>
         <details id="batchSources"><summary>资料来源与识别</summary><div class="source-inputs">
           <label>城市热度表<input id="batchHeat" autocomplete="off" /></label><label>工作表<input id="batchSheet" value="境外城市热度" /></label>
           <label>商品字段表<input id="batchPool" autocomplete="off" /></label><label>图片文件夹<input id="batchAssets" autocomplete="off" /></label>
-        </div><div class="source-actions"><label>本次数量<input id="batchLimit" type="number" value="20" min="1" max="20" /></label><button id="batchRecognize" class="secondary" type="button">识别并查看清单</button></div></details>
+        </div><div class="source-actions"><label>本次数量<input id="batchLimit" type="number" value="100" min="1" max="100" /></label><button id="batchRecognize" class="secondary" type="button">识别并查看清单</button></div></details>
         <div id="batchPreview" hidden></div>
         <div id="batchMetrics" class="batch-metrics" aria-label="批量任务统计"></div>
         <div class="batch-current"><strong id="batchCurrent">暂无运行任务</strong><p id="batchReason" role="status" aria-live="polite"></p></div>
@@ -150,8 +150,9 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <dialog id="sourcePreview"><div class="dialog-head"><h2 id="sourcePreviewTitle">商品预览</h2><button id="sourcePreviewClose" class="secondary" type="button">关闭</button></div><p id="sourcePreviewInfo"></p><p id="sourcePreviewIssues" role="alert"></p><div id="sourceFields"></div><div id="sourceGallery"></div><label class="source-review"><input id="sourceReviewed" type="checkbox" />已核对本条标题、价格、库存、素材内容和顺序，按这份资料执行</label><div class="source-inputs"><label>执行方式<select id="sourceMode"><option value="DRY_RUN">仅填写，提交前停止</option value="LIVE">正式提交新商品</option></select></label><label>提交后的状态<select id="sourceTarget"><option value="SOURCE">按表格：立刻上架</option><option value="WAREHOUSE">放入仓库</option></select></label></div><p id="sourcePreviewStatus" role="status"></p><button id="sourceExecute" class="primary" type="button" disabled>执行这一条</button></dialog>
   <dialog id="sourceEvents"><div class="dialog-head"><h2>任务步骤与耗时</h2><button id="sourceEventsClose" class="secondary" type="button">关闭</button></div><div id="sourceEventRows"></div></dialog>
-  <script src="./app.js"></script>
+  <script src="./ui-copy.js?v=20261013-cn-diagnostics3"></script>
+  <script src="./app.js?v=20261013-cn-diagnostics3"></script>
   <script type="module" src="./source-workflow.js"></script>
-  <script type="module" src="./batch-workflow.js"></script>
+  <script type="module" src="./batch-workflow.js?v=20261013-cn-diagnostics3"></script>
 </body>
 </html>

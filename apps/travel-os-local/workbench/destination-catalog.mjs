@@ -18,9 +18,11 @@ export function destinationCatalog(store,shopId){
   const runs=new Map(store.list().map(r=>[r.key,r]));
   const history=new Map(store.db.prepare('SELECT key,payload FROM history').all().map(r=>[r.key,JSON.parse(r.payload)]));
   const queue=new Map(store.db.prepare('SELECT id,batch,key,state,reason,run_id FROM batch_items').all().map(r=>[r.key,r]));
+  const hasRounds=store.db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='round_items'").get();
+  const contentHolds=new Map((hasRounds?store.db.prepare("SELECT key,reason FROM round_items WHERE state='RESULT_UNKNOWN' AND failure_stage='content-review' ORDER BY rowid").all():[]).map(r=>[r.key,r]));
   const items=[...byKey].map(([key,{task:t,source}])=>{
     const run=runs.get(key),completed=history.get(key),queued=queue.get(key),issues=(t.adapterIssues||[]).map(redact);
-    const state=completed?'VERIFIED':run?.state||queued?.state||(issues.length?'NEEDS_DATA':'AVAILABLE');
+    const held=contentHolds.get(key),state=held?'RESULT_UNKNOWN':completed?'VERIFIED':run?.state||queued?.state||(issues.length?'NEEDS_DATA':'AVAILABLE');
     const destination=t.listing.city||t.listing.country,counts=Object.fromEntries(['main','secondary','details'].map(k=>[k,t.assets?.[k]?.length||0]));
     const materials=Object.entries(t.assets||{}).filter(([g])=>['main','secondary','details'].includes(g)).flatMap(([group,files])=>files.map((a,index)=>({group,index,name:basename(a.path),url:'/api/source/asset?'+new URLSearchParams({batch:source.id,order:t.priority,group,index})})));
     const batchId=queued?.batch||null;
@@ -30,7 +32,7 @@ export function destinationCatalog(store,shopId){
     return {key,destination,country:t.listing.country,city:t.listing.city||'',type:t.listing.type,title:t.listing.title,
       rank:source.sheet==='境外城市热度'?t.priority:null,source:{name:basename(source.workbook||''),sheet:t.source?.sheet||source.sheet||'',row:t.source?.row||null,importId:source.id,importedAt:source.at},
       issues,materials,counts,completeness:issues.length?'需补充资料':'上次导入校验通过',price:t.business?.price_cny??null,inventory:t.business?.inventory??null,
-      state,stateLabel:labels[state]||'待检查',reason:redact(run?.reason||queued?.reason||''),batchId,runId:run?.id||null,itemId:completed?.itemId||null,
+      state,stateLabel:held?'主图内容待核验':labels[state]||'待检查',reason:redact(held?.reason||run?.reason||queued?.reason||''),contentHold:!!held,batchId,runId:run?.id||null,itemId:completed?.itemId||null,
       duplicateBlocked:!!(completed||run||queued),next};
   }).sort((a,b)=>(a.rank??Infinity)-(b.rank??Infinity)||a.destination.localeCompare(b.destination,'zh-CN'));
   return {at:new Date().toISOString(),scope:'最新商品池与最新热度导入，按店铺和原商品标识合并；资料状态为导入快照',sources:[pool,heat].filter(Boolean).map(x=>({id:x.id,name:basename(x.workbook||''),sheet:x.sheet||'商品资料',at:x.at})),

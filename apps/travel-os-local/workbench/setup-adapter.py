@@ -13,6 +13,7 @@ from adapter import read_sheet, sha
 from pool_adapter import known_destination_mismatch
 
 SPEC = json.loads((Path(__file__).with_name('setup-template.json')).read_text(encoding='utf-8'))
+SPEC_V2 = json.loads((Path(__file__).with_name('setup-template-v2.json')).read_text(encoding='utf-8'))
 IMAGE = {'.png', '.jpg', '.jpeg', '.webp'}
 
 
@@ -23,13 +24,22 @@ def prepare(root, shop_id, shop_name):
     with ZipFile(workbook) as z:
         if sum(x.file_size for x in z.infolist()) > 32 * 1024 * 1024:
             raise ValueError('Excel 解压后过大，请拆分资料')
+    product_rows = list(read_sheet(workbook, SPEC['productsSheet']))
+    header = {c: v['value'].strip() for c, v in product_rows[0][1].items()} if product_rows else {}
+    if list(header.values()) == SPEC_V2['columns']:
+        spec = SPEC_V2
+    elif list(header.values()) == SPEC['columns']:
+        spec = SPEC
+    else:
+        raise ValueError('商品清单表头不匹配，请下载最新版模板，保持字段顺序不变')
+    v2 = spec['version'] == 2
     config = {}
-    for row, cells in read_sheet(workbook, SPEC['settingsSheet']):
+    for row, cells in read_sheet(workbook, spec['settingsSheet']):
         if row == 1:
             continue
         label = cells.get('A', {}).get('value', '').strip()
         value = cells.get('B', {}).get('value', '').strip()
-        if label in SPEC['settings']:
+        if label in spec['settings']:
             if label in config:
                 raise ValueError('店铺设置重复：' + label)
             if cells.get('B', {}).get('formula'):
@@ -37,8 +47,17 @@ def prepare(root, shop_id, shop_name):
             config[label] = value
     if config.get('店铺名称') != shop_name:
         raise ValueError('模板店铺名称与当前执行店铺不一致，请核对店铺设置')
-    business = {key: config.get(label, '') for label, key in SPEC['settings'].items()}
-    shared_issues = ['店铺设置缺少：' + label for label in SPEC['settings'] if not config.get(label)]
+    business = {key: config.get(label, '') for label, key in spec['settings'].items()}
+    # The current Taobao fixed template uses this full UI label for the same
+    # verified 24-hour setting. Accept only the exact option; do not infer a
+    # shipping promise from partial text.
+    if business['shipping_time'] == '按商品统一设置-24小时内发货':
+        business['shipping_time'] = '24小时内发货'
+    required_settings = [label for label in spec['settings'] if label not in ('店铺识别码', '素材版本')]
+    shared_issues = ['店铺设置缺少：' + label for label in required_settings if not config.get(label)]
+    if v2:
+        if not re.fullmatch(r'[A-Z0-9]{2,12}', config.get('店铺识别码', '')):
+            shared_issues.append('店铺识别码须为2至12位大写英文字母或数字')
     if config.get('是否定制') not in ('是', '否'):
         shared_issues.append('是否定制必须明确填是或否')
     business['custom_service'] = config.get('是否定制') == '是'
@@ -54,7 +73,7 @@ def prepare(root, shop_id, shop_name):
     if business['listing_time'] not in ('立刻上架', '立即上架', '放入仓库'):
         shared_issues.append('上架方式未填写或不在已验证范围')
     files, by_stem, by_name = [], {}, {}
-    for folder in SPEC['folders']:
+    for folder in spec['folders']:
         base = root / folder
         if not base.is_dir():
             shared_issues.append('缺少目录：' + folder)
@@ -98,18 +117,34 @@ def prepare(root, shop_id, shop_name):
             cache[p] = {'path': str(p), 'sha256': sha(p), 'bytes': p.stat().st_size}
         return [cache[p]]
 
-    sets = {g: [a for n in range(1, 5) for a in image('副图/' + g, f'副图-{g}{n:02}', shared_issues)] for g in ('A', 'B')}
-    covers = [a for n in (1, 2) for a in image('详情首页', f'首页-{n:02}', shared_issues)]
+    def versioned_image(folder, key, issues):
+        if not v2:
+            return image(folder, key, issues)
+        matches = [p for (parent, stem), paths in by_stem.items()
+                   if parent == folder and re.fullmatch(re.escape(key) + r'-R\d{2,}', stem)
+                   for p in paths]
+        if len(matches) != 1:
+            issues.append(('缺少图片：' if not matches else '同一素材存在多个版本：') + folder + '/' + key)
+            return []
+        return image(folder, matches[0].stem, issues)
+
+    shop_code = config.get('店铺识别码', '')
+    def shared_stem(kind, group, number):
+        if not v2:
+            if kind == 'secondary': return f'副图-{group}{number:02}'
+            if kind == 'cover': return f'首页-{number:02}'
+            return f'详情-{number:02}'
+        if kind == 'secondary': return f'{shop_code}-副图-{group}{number:02}'
+        if kind == 'cover': return f'{shop_code}-详情页首页-{number}'
+        return f'{shop_code}-详情页正文-{number:02}'
+    sets = {g: [a for n in range(1, 5) for a in versioned_image('副图/' + g, shared_stem('secondary', g, n), shared_issues)] for g in ('A', 'B')}
+    covers = [a for n in (1, 2) for a in versioned_image('详情首页', shared_stem('cover', '', n), shared_issues)]
     body_files = [p for p in files if p.parent.name == '详情正文']
     if not 7 <= len(body_files) <= 12:
         shared_issues.append('详情正文需7至12张，详情首页单独两张')
-    body = [a for n in range(1, min(len(body_files), 12) + 1) for a in image('详情正文', f'详情-{n:02}', shared_issues)]
+    body = [a for n in range(1, min(len(body_files), 12) + 1) for a in versioned_image('详情正文', shared_stem('body', '', n), shared_issues)]
     tasks, seen, orders = [], set(), set()
-    rows = list(read_sheet(workbook, SPEC['productsSheet']))
-    header = {c: v['value'].strip() for c, v in rows[0][1].items()} if rows else {}
-    if list(header.values()) != SPEC['columns']:
-        raise ValueError('商品清单表头不匹配，请下载最新版模板，保持字段顺序不变')
-    for row, cells in rows[1:]:
+    for row, cells in product_rows[1:]:
         v = {header.get(c): cell['value'].strip() for c, cell in cells.items()}
         if not any(v.values()):
             continue
@@ -117,6 +152,10 @@ def prepare(root, shop_id, shop_name):
             raise ValueError(f'商品清单第{row}行：序号必须为正整数')
         order = int(v['序号'])
         country, city = v.get('国家或地区', ''), v.get('城市', '')
+        if v2 and v.get('链接类型', '') not in ('国家', '城市'):
+            raise ValueError(f'商品清单第{row}行：链接类型必须填“国家”或“城市”')
+        if v2 and ((v.get('链接类型') == '国家' and city) or (v.get('链接类型') == '城市' and not city)):
+            raise ValueError(f'商品清单第{row}行：链接类型须与城市是否填写一致')
         if order in orders or (country, city) in seen:
             raise ValueError(f'商品清单第{row}行：序号或目的地重复，请核对后再导入')
         orders.add(order); seen.add((country, city))
@@ -137,7 +176,12 @@ def prepare(root, shop_id, shop_name):
                 raise ValueError()
         except (ValueError, InvalidOperation):
             issues.append('售价和库存必须填写真实有效的正数，库存为整数')
-        main = image('主图', f'主图-{order:03}', issues)
+        if v2:
+            link_type = v['链接类型']
+            main_stem = f'{shop_code}-{order:03}-{link_type}-{country}-' + (f'{city}-' if city else '') + '主图'
+        else:
+            main_stem = f'主图-{order:03}'
+        main = versioned_image('主图', main_stem, issues)
         if any(known_destination_mismatch(a['sha256'], country, city or None) for a in main):
             issues.append('已知主图内容与目的地不一致，需人工核对')
         selected = int(choice) - 1 if choice in ('1', '2') else 0
@@ -153,10 +197,11 @@ def prepare(root, shop_id, shop_name):
         raise ValueError('识别期间Excel发生变化，请保存后重新导入')
     tasks.sort(key=lambda t: t['priority'])
     return {'sourceHash': before, 'sourceReadonly': True, 'workbook': str(workbook), 'poolWorkbook': str(workbook),
-        'poolHash': before, 'sheet': '境外城市热度', 'format': 'travel-os-template-v1', 'assetRoot': str(root), 'tasks': tasks,
+        'poolHash': before, 'sheet': '境外城市热度', 'assetRoot': str(root), 'tasks': tasks,
         'summary': {'total': len(tasks), 'blocked': sum(bool(t['adapterIssues']) for t in tasks), 'images': len(files),
             'main': sum(p.parent.name == '主图' for p in files), 'secondary': sum(p.parent.name in ('A', 'B') for p in files),
             'covers': len(covers), 'details': len(body_files)},
+        'format': f"travel-os-template-v{spec['version']}",
         'templateMaterials': {'secondary': sets, 'covers': covers}}
 
 

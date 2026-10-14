@@ -22,3 +22,12 @@ test('unknown failures preserve evidence without inventing a cause; credentials 
  const safe=redact('Authorization: Bearer abc-secret\nCookie: session=xyz; id=foo\npassword=hunter\nURL https://test/?token=other');
  for(const secret of ['abc-secret','xyz','foo','hunter','other'])assert(!safe.includes(secret));
 });
+
+test('old watermark locator error is a page issue while missing source remains a data issue',()=>{
+ const old="expect(locator).not.toBeChecked() failed\nLocator: getByRole('dialog', { name: '上传素材', exact: true }).getByLabel('添加水印', { exact: true })\nError: element(s) not found";
+ assert.equal(classify(old,'PAUSED').category,'上传页面异常');
+ assert.equal(classify('MATERIAL_UPLOAD_PREFERENCES：添加水印控件状态不符','PAUSED').category,'上传页面异常');
+ assert.equal(classify('ENOENT: no such file 上传素材-添加水印.png','PAUSED').category,'资料问题');
+ assert.equal(classify('SOURCE_OR_ASSET_CHANGED','PAUSED').category,'资料问题');
+ assert.equal(classify(old,'RESULT_UNKNOWN').category,'待核验');assert.equal(classify(old,'PAUSED_CAPTCHA').category,'验证码');
+});

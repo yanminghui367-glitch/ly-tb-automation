@@ -28,7 +28,7 @@ const sessionGuard = createSessionGuard({ connector: shop => browserEnvironment.
   const sources = () => sourceWorkflow ||= new SourceWorkflow(browserEnvironment);
   const batches = () => batchWorkflow ||= new BatchWorkflow(sources());
   let productApi;
-  const product = () => productApi ||= context().then(({shop})=>new ProductApi({batch:batches(),source:sources(),owner:browserEnvironment,shop,launch:launchChrome,runtime:RUNTIME}));
+  const product = () => productApi ||= context().then(({shop})=>new ProductApi({batch:batches(),source:sources(),owner:browserEnvironment,shop,launch:launchChrome,runtime:RUNTIME,isShopRemoved:id=>travelOs().store.removed(id)}));
   let travelOsApi;
   const travelOs = () => travelOsApi ||= new TravelOsApi({product,shops:loadShops,browser:browserEnvironment,launch:launchChrome,runtime:RUNTIME,addShop:async name=>{
     const shops=await loadShops(),id=`shop-${randomUUID().slice(0,8)}`;
@@ -599,7 +599,6 @@ async function executeDryRunItem(state, shop, task, guard) {
   let page;
   try {
     page = await guard.assertExecute(shop, mapping.draft_url);
-    await page.bringToFront();
     await guard.assertExecute(shop, mapping.draft_url);
     task.currentStep = "DRAFT_FORM_OPENED";
     task.events.unshift(taskEvent("SELLER_DRAFT_OPENED", "已复核当前卖家草稿页及店铺身份；开始 DRY_RUN，不会提交或发布。"));
@@ -666,7 +665,13 @@ export const workbenchServer = createServer(async (req, res) => {
     if (req.method === 'POST' && !network.originAllowed(req.headers.origin)) return json(res,403,{error:'仅允许本机或指定局域网工作台发起操作'});
     // Pausing cannot be discarded behind a slow product status/configuration request.
     if(req.method==='POST'&&url.pathname==='/api/v1/pause'){req.resume();return json(res,200,(await product()).pause());}
-    if (req.method === 'POST' && (sourceWorkflow?.active||batchWorkflow?.active) && !/^\/api\/os\/(quotes\/|preparations\/|shops\/add$)/.test(url.pathname) && !['/api/source/pause','/api/batch/pause','/api/v1/pause','/api/v1/check','/api/v1/recovery-check','/api/program/shutdown'].includes(url.pathname)) return json(res,409,{error:'商品执行中，请先暂停任务'});
+    if(req.method==='POST'&&url.pathname==='/api/source/pause'&&batchWorkflow?.round?.active){req.resume();return json(res,200,batchWorkflow.round.pause());}
+    if(req.method==='POST'&&['/api/v1/rounds/pause','/api/v1/rounds/stop'].includes(url.pathname))return await (await product()).handleRound(req,res,url,{body,json});
+    // Only route a settled original-record recovery to the existing scoped handler.
+    // Body identity, execution permission and shop checks still run below.
+    const recordOwner=batchWorkflow?.round;
+    const recordRecoveryRoute=req.method==='POST'&&url.pathname==='/api/v1/rounds/resume'&&!sourceWorkflow?.active&&recordOwner?.executionAttempts?.coordinatorSettled===true&&!!recordOwner.executionAttempts.recoveryView(recordOwner.active)&&!recordOwner.hasUnsettledExecution();
+    if (req.method === 'POST' && !recordRecoveryRoute && (sourceWorkflow?.active||batchWorkflow?.active) && !/^\/api\/os\/(quotes\/|preparations\/|shops\/add$)/.test(url.pathname) && !['/api/source/pause','/api/batch/pause','/api/v1/pause','/api/v1/check','/api/v1/recovery-check','/api/program/shutdown','/api/v1/rounds/item-verify'].includes(url.pathname)) return json(res,409,{error:'商品执行中，请先暂停任务'});
     if (req.method === "POST") {
       if (mutationBusy) {
         const stopRequested = /^\/api\/tasks\/[^/]+\/(pause|cancel)$/.test(url.pathname);
@@ -675,10 +680,10 @@ export const workbenchServer = createServer(async (req, res) => {
       }
       mutationBusy = true; holdsMutation = true;
     }
-    if(req.method==='POST'&&executionRoute(url.pathname))await (await product()).assertExecution();
+    if(req.method==='POST'&&executionRoute(url.pathname))await (await product()).assertExecution({legacy:true});
     if(url.pathname.startsWith('/api/os/'))return await travelOs().handle(req,res,url,{body,json});
     if(url.pathname.startsWith('/api/v1/')){
-      if(req.method==='POST'&&['start','continue','retry','resume-single','reconcile','create'].includes(url.pathname.slice(8))&&travelOs().store.removed((await product()).shop.id))return json(res,409,{error:'执行店铺已从管理中移除，禁止创建或启动任务'});
+      if(req.method==='POST'&&['start','continue','retry','resume-single','reconcile','create','rounds/create','rounds/start','rounds/resume','rounds/window-create'].includes(url.pathname.slice(8))&&travelOs().store.removed((await product()).shop.id))return json(res,409,{error:'执行店铺已从管理中移除，禁止创建或启动任务'});
       return await (await product()).handle(req,res,url,{body,json});
     }
     if (req.method === "GET" && url.pathname === "/api/browser/status") { const { shop } = await context(); return json(res, 200, { shop: { id: shop.id, name: shop.name, port: shop.port }, browser: await browserEnvironment.status(shop) }); }

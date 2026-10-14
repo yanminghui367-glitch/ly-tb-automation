@@ -2,6 +2,11 @@ import { lstat, readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative, sep } from 'node:path';
 
 const publicFiles = new Map([
+  ['ui-copy.js', 'text/javascript; charset=utf-8'],
+  ['operations-catalog-ui.js', 'text/javascript; charset=utf-8'],
+  ['operations-catalog.css', 'text/css; charset=utf-8'],
+  ['round-item-detail.js', 'text/javascript; charset=utf-8'],
+  ['round-item-detail.css', 'text/css; charset=utf-8'],
   ['setup-ui.js', 'text/javascript; charset=utf-8'],
   ['setup-ui.css', 'text/css; charset=utf-8'],
   ['publishing-rules-ui.js', 'text/javascript; charset=utf-8'],

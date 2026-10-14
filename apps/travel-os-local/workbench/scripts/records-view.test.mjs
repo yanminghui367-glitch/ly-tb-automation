@@ -2,11 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
+import '../ui-copy.js';
 const source=readFileSync(new URL('../travel-os.js',import.meta.url),'utf8');
 const code=source.slice(source.indexOf("let recordResult="),source.indexOf('function renderRecords()'));
 function setup(){
  const data={engine:{shop:{id:'a'},records:[{runId:'v',verified:true,key:'v',destination:'东京',title:'东京',itemId:'001',at:'2026-09-21T11:00:00+08:00',status:'出售中'},{runId:'u',verified:false,key:'u',destination:'巴黎',at:'2026-09-22T11:00:00+08:00'},{verified:true,key:'h',destination:'历史目的地',at:'2026-09-20T11:00:00+08:00',status:'仓库中'}]},products:[{key:'v',shopId:'a',geoKey:'jp-tokyo',materials:[{group:'main',url:'/real-product.jpg'}]},{key:'u',shopId:'a',geoKey:'fr-paris'},{key:'h',shopId:'a',geoKey:'history'}],attempts:[{id:'v',shopId:'a',state:'VERIFIED'},{id:'u',shopId:'a',state:'RESULT_UNKNOWN'},{id:'f',shopId:'b',title:'=HYPERLINK("bad")',destination:'开罗',state:'FAILED',reason:'资料缺失',at:'2026-09-21T11:00:00+08:00'},{id:'d',shopId:'a',title:'未提交',state:'DRY_RUN_COMPLETE'}]};
- const context=vm.createContext({data,recordShop:'',recordGeo:'',recordQuery:'',labels:{RESULT_UNKNOWN:'待核验',FAILED:'异常',DRY_RUN_COMPLETE:'填写完成，未提交'},shopName:id=>id,time:v=>v||'暂无记录'});
+ const context=vm.createContext({data,uiCopy:globalThis.LyUiCopy,recordShop:'',recordGeo:'',recordQuery:'',labels:{RESULT_UNKNOWN:'待核验',FAILED:'异常',DRY_RUN_COMPLETE:'填写完成，未提交'},shopName:id=>id,time:v=>v||'暂无记录'});
  vm.runInContext(code,context);return expression=>JSON.parse(JSON.stringify(vm.runInContext(expression,context)));
 }
 test('merge history and attempts by run ID without duplicate successes',()=>{const run=setup();assert.equal(run('recordRows(data).length'),5);assert.equal(run('recordRows(data).filter(r=>r.success).length'),2);assert.equal(run('recordRows(data).find(r=>r.runId==="v").photo'),'/real-product.jpg');});

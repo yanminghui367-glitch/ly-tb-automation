@@ -30,15 +30,17 @@ export function materialCount(products,group){
 
 export function retryPlan(batch,active){
  const items=batch?.items||[],state=x=>x.displayState||x.runState||x.state;
- const eligible=items.filter(x=>x.state==='FAILED'&&['FAILED','PAUSED'].includes(state(x))&&Number.isInteger(x.attempts)&&Number.isInteger(x.maxAttempts)&&x.attempts<x.maxAttempts);
- const unsafe=items.some(x=>['RESULT_UNKNOWN','SUBMITTING','PAUSED_CAPTCHA','RUNNING','WAITING_HUMAN'].includes(state(x))||x.issue?.category==='验证码');
- const waiting=items.some(x=>['PENDING','RETRY','QUEUED'].includes(x.state));
- const reason=active?'正在执行或保存断点，请等待停止。':unsafe?'批次含等待人工、提交中或结果待核验商品，先处理原任务。':waiting?'批次还有待执行商品；先处理原队列，再单独重试异常项。':!eligible.length?'没有可重试异常项，或已达到每条的尝试上限。':'';
+ const eligible=items.filter(x=>!x.retryBlocked&&['FAILED','RETRY'].includes(x.state)&&['FAILED','PAUSED','RETRY','QUEUED'].includes(state(x))&&Number.isInteger(x.attempts)&&Number.isInteger(x.maxAttempts)&&x.attempts<x.maxAttempts);
+ const unsafe=items.some(x=>x.retryBlocked||['WAITING_HUMAN','RUNNING'].includes(x.state)||['RESULT_UNKNOWN','SUBMITTING','PAUSED_CAPTCHA','RUNNING','WAITING_HUMAN'].includes(state(x))||x.issue?.category==='验证码');
+ const reason=active?'正在执行或保存断点，请等待停止。':unsafe?'批次含等待人工、提交中或结果待核验商品，先处理原任务。':!eligible.length?'没有可重试异常项，或已达到每条的尝试上限。':'';
  return {eligible,reason,allowed:!reason};
 }
 export function failureSummary(task){
+ if(task.roundHold)return task.candidateHold?'商品范围待核验；本轮未提交':task.issue?.category||'原商品待核验';
  const text=task.reason||'';
  if(/sucai-tu-upload/.test(text))return '素材库上传按钮未出现（等待 30 秒超时）';
+ if(/MATERIAL_UPLOAD_/.test(text))return '素材库上传状态未确认，整批已暂停';
+ if(/ATTRIBUTE_SELECTION_MISMATCH|struct-p-2900/.test(text))return '已选属性回读未通过，需核对原页面';
  if(/mainImagesGroup/.test(text)&&/搜索图片名称/.test(text))return '图片选择框未加载完成（等待 5 秒超时）';
  return task.issue?.category==='页面校验'?'页面状态校验未通过，查看日志与截图':task.issue?.category||'原因待人工确认，查看原始日志';
 }

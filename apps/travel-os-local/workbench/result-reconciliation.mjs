@@ -7,6 +7,7 @@ import {expect} from 'playwright/test';
 import {digest} from './source-store.mjs';
 import {visibleChallenge} from './browser-environment.mjs';
 import {redact} from './product-state.mjs';
+import {getAuxiliaryPage} from './publishing-pages.mjs';
 
 const fail=message=>{throw Error(message);};
 const normalize=s=>String(s).replace(/\s+/g,' ').trim();
@@ -35,9 +36,7 @@ export function validateListing(row,task,itemId,window){
 
 export async function inspectExistingListing({context,task,itemId,target,dir,guard,window}){
  const address='https://myseller.taobao.com/home.htm/SellManage/all';
- let page=context.pages().find(p=>p.url().startsWith('https://myseller.taobao.com/home.htm/SellManage/'));
- if(!page){page=await context.newPage();await page.goto(address,{waitUntil:'domcontentloaded'});}
- await guard(page);
+ const page=await getAuxiliaryPage(context,{role:'verification',shopId:task.shopId,url:address,guard});
  const tab=page.getByRole('tab',{name:target==='WAREHOUSE'?/^仓库中\(/:/^全部\(/});await tab.click();
  await page.locator('#queryTitle').fill('');await page.locator('#queryItemId').fill(itemId);await guard(page);
  await page.getByRole('button',{name:'搜索',exact:true}).click();

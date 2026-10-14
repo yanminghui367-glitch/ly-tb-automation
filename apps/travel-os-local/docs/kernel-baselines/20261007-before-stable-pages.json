@@ -1,0 +1,24 @@
+{
+  "description": "2026-10-07 用户授权修复最近20条全异常并调整100条上限。修复属性真实选中文字、上传弹窗及回执；首故障停止整批、整批预检、持久重试范围。修改原5项，新增2项冻结，共15项；不构成实店100条验收。",
+  "baselineCommit": "25a47febfe08f8af6bfade20198d787354b76bff",
+  "files": {
+    "workbench/taobao-publisher.mjs": "46037d31082e8e476ece81855c0790cbe2b042526acb319e16209bc7f7326e13",
+    "workbench/source-workflow.mjs": "f9391511beb4e4a328ebd0954be212aea9707c4518fd57e2448a99a76e6c34bf",
+    "workbench/source-store.mjs": "bb8d716be69bd66caa449096b4d5e71604164224e4857a807b41f9f677058428",
+    "engine/v2/adapter.py": "086d59dee6c6c832231d7a7ada467aaba4b7dc883ba013a7ab6ac6bb10837cff",
+    "engine/v2/heat_queue_adapter.py": "eb092402a227c4f9258faa3af1b5c2ee609645d06d0c8f55105b4d35e0a89096",
+    "engine/v2/pool_adapter.py": "994ecb511e62fd550c64dc2b95016326934b7141730a90f1c8b69e7b7a5dff68",
+    "workbench/batch-workflow.mjs": "5e19bf18c30893044a617cbe61107e37361ca7b8b3f8d2d3c241093fb0ddebc0",
+    "workbench/batch-store.mjs": "93868bcc7630614edd7fd64cc257ebc2a7c7304bbd6298cd7d2c907a0517eebf",
+    "workbench/session-guard.mjs": "4d15ae4a780521f6f5b72dbb8675ead264d8ca27b99e151e6b506480e2320fba",
+    "workbench/browser-environment.mjs": "c59bd33aefcbd7eb777383bb1f91820d998cdff7d224f262278467b0f2c7f385",
+    "workbench/publishing-attributes.mjs": "9621c9909b0b19cc28798d4ca42967e6bb594b0c45d26e257a50e899a183c5d1",
+    "workbench/task-screenshot.mjs": "8ba331237f2a45001f42543254c0979fae0d844da95760ab6a55ec5ed1cb919c",
+    "workbench/result-reconciliation.mjs": "2252003521478e5180678d4ac4fa8cd9bdedf08733eac4a3de7ccafeea9b55c3",
+    "workbench/batch-policy.mjs": "0c719ae35ac9eaf922ad62e97ed64f7fe6e948882e127b7aae4acc8cb1e21df9",
+    "workbench/publishing-materials.mjs": "18ffd687614562a7b2493684e210f28461853cc4c3bb15087af4def95072dc7b"
+  },
+  "revision": "20261007-batch100-fault-stop",
+  "previousManifest": "docs/kernel-baselines/20261007-before-batch-recovery.json",
+  "authorization": "用户：检查最近一次批量上架所有异常，修复问题，并将一次数量改为100条，不能连续出现同类型异常。"
+}

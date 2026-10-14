@@ -1,5 +1,6 @@
 // Product-only adapter. Execution is delegated to the frozen engine and its V1 gates.
 import {join} from 'node:path';
+import {buildOperationsCatalog} from './operations-catalog.mjs';
 import {randomUUID} from 'node:crypto';
 import {TravelOsStore,geoKey,problem} from './travel-os-store.mjs';
 import {destinationCatalog} from './destination-catalog.mjs';
@@ -44,9 +45,18 @@ export class TravelOsApi {
  }
  async snapshot(){const p=await this.product(),{products,shops}=await this.catalog(),state=await p.snapshot();
  const safeShops=shops.filter(s=>!this.store.removed(s.id)).map(s=>({id:s.id,name:s.name,createdAt:s.createdAt,executionSupported:s.id===state.shop.id&&products.some(d=>d.shopId===s.id),browser:s.id===state.shop.id?state.browser:browserView(this.browser.sessions.get(s.id)?.last),products:products.filter(d=>d.shopId===s.id).length}));
- const attempts=p.source.store.list().map(r=>({id:r.id,shopId:r.task.shopId,destination:r.task.listing.city||r.task.listing.country,geoKey:geoKey(r.task.listing),title:r.task.listing.title,state:r.state,reason:redact(r.reason),batchId:p.source.store.db.prepare('SELECT batch FROM batch_items WHERE run_id=?').get(r.id)?.batch||null,step:r.checkpoint?.step||null,at:r.at,updated:r.updated,itemId:r.result?.itemId||r.checkpoint?.itemId||null}));
+ const holds=p.roundHolds(),attempts=p.source.store.list().map(r=>{
+    const queue=p.source.store.db.prepare('SELECT id,batch,attempts,max_attempts FROM batch_items WHERE run_id=?').get(r.id);
+  const old={id:r.id,shopId:r.task.shopId,destination:r.task.listing.city||r.task.listing.country,geoKey:geoKey(r.task.listing),title:r.task.listing.title,state:r.state,reason:redact(r.reason),batchId:queue?.batch||null,attempts:queue?.attempts,maxAttempts:queue?.max_attempts,screenshot:p.screenshot(r.checkpoint?.screenshot),step:r.checkpoint?.step||null,at:r.at,updated:r.updated,itemId:r.result?.itemId||r.checkpoint?.itemId||null};
+  const view=p.projectRoundHold(old,{key:r.key,task:r.task,runId:r.id,queueId:queue?.id},holds);return {...view,state:view.displayState||view.state};
+ });
  return {at:new Date().toISOString(),products,materials:await this.materials(products),shops:safeShops,quotes:this.store.quotes(),preparations:this.store.preparations(),attempts,engine:state,capabilities:{selectedDestinationExecution:true,multiShopExecution:false,automaticRetry:false,reason:'所选商品经原快照、已有任务、成功记录与资料检查后，可复用现有队列创建单项批次。新增店铺需完成执行适配。'}};}
  async handle(req,res,url,{body,json}){const action=url.pathname.slice('/api/os/'.length),p=await this.product();
+ if(action==='operations'&&req.method==='GET'){
+  const shopId=url.searchParams.get('shopId'),shops=await this.shops();
+  if(!shops.some(s=>s.id===shopId&&!this.store.removed(s.id)))throw problem('店铺不存在或已移除',404);
+  return json(res,200,buildOperationsCatalog(p.source.store,{shopId,importId:url.searchParams.get('importId')||undefined,round:p.round}));
+ }
  if(action==='material-audit'&&req.method==='GET')return json(res,200,await this.materialAudit(url.searchParams.get('shopId')));
  if(action==='material-audit'&&req.method==='POST'){
   const input=await body(req);if(Object.keys(input).some(k=>k!=='shopId'))throw problem('仅接受店铺标识，检索使用已配置资料目录',400);
