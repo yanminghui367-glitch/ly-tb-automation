@@ -2,6 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
+import {createMaterialReplacementSchema,applyMaterialReplacements} from './material-replacement.mjs';
 
 export const digest = value => createHash('sha256').update(typeof value === 'string' || Buffer.isBuffer(value) ? value : JSON.stringify(value)).digest('hex');
 export const destinationKey = t => digest([t.shopId, t.listing.type, t.listing.country, t.listing.city || '']);
@@ -19,9 +20,10 @@ export class SourceStore {
       CREATE TABLE IF NOT EXISTS runs(id TEXT PRIMARY KEY, key TEXT UNIQUE NOT NULL, batch TEXT NOT NULL, task TEXT NOT NULL, mode TEXT NOT NULL, target TEXT NOT NULL, state TEXT NOT NULL, checkpoint TEXT NOT NULL DEFAULT '{}', result TEXT, reason TEXT NOT NULL DEFAULT '', at TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS events(seq INTEGER PRIMARY KEY, run TEXT NOT NULL, at TEXT NOT NULL, kind TEXT NOT NULL, payload TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS history(key TEXT PRIMARY KEY, payload TEXT NOT NULL);`);
+    createMaterialReplacementSchema(this.db);
   }
   transaction(fn) { this.db.exec('BEGIN IMMEDIATE'); try { const r = fn(); this.db.exec('COMMIT'); return r; } catch (e) { this.db.exec('ROLLBACK'); throw e; } }
-  imported(payload) { const id = digest([payload.sourceHash, payload.tasks]).slice(0, 24); this.db.prepare('INSERT OR IGNORE INTO imports VALUES(?,?,?)').run(id, new Date().toISOString(), JSON.stringify(payload)); return id; }
+  imported(input) { const payload=applyMaterialReplacements(this.db,input),identity=[payload.sourceHash,payload.tasks];if(payload.materialRevisions?.length)identity.push(payload.materialRevisions);const id = digest(identity).slice(0, 24); this.db.prepare('INSERT OR IGNORE INTO imports VALUES(?,?,?)').run(id, new Date().toISOString(), JSON.stringify(payload)); return id; }
   batch(id) { const row = id ? this.db.prepare('SELECT * FROM imports WHERE id=?').get(id) : this.db.prepare('SELECT * FROM imports ORDER BY rowid DESC LIMIT 1').get(); return row ? { id: row.id, at: row.at, ...JSON.parse(row.payload) } : null; }
   history(task, result) { this.db.prepare('INSERT OR IGNORE INTO history VALUES(?,?)').run(destinationKey(task), JSON.stringify(result)); }
   completed(task) { const r = this.db.prepare('SELECT payload FROM history WHERE key=?').get(destinationKey(task)); return r ? JSON.parse(r.payload) : null; }

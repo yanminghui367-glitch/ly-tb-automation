@@ -79,15 +79,34 @@ test('legacy complete success is preserved once without recounting its run, queu
  const view=x.get();assert.equal(view.counts.VERIFIED,1);assert.equal(view.total,1);assert.equal(view.items[0].history.length,2);assert.equal(view.items[0].runId,'run1');assert.equal(view.items[0].result.evidenceComplete,true);
 });
 
-test('content isolation wins over round success, run success and successful history across imports',t=>{
- const x=fixture(t);const result=evidence(1);x.run(1,'VERIFIED',{result});x.store.history(x.tasks[0],result);x.addRound('old');x.item(1,{state:'RESULT_UNKNOWN',failure_stage:'content-review',reason:'原主图内容待核验',result,run_id:'run1'},'old');x.window('old-window','old');
+test('verified platform result with a content issue is not reported as an unknown publish result',t=>{
+ const x=fixture(t);const result=evidence(1);x.run(1,'VERIFIED',{result});x.store.history(x.tasks[0],result);x.addRound('old');x.item(1,{state:'RESULT_UNKNOWN',failure_stage:'content-review',reason:'原主图内容待核验',result,run_id:'run1',submitted:1,entered_publish:1},'old');x.window('old-window','old');
  x.imported('newer');x.addRound('new','newer');x.item(1,{state:'NEW_SUCCESS',result},'new');
- const row=x.one({importId:'newer'});assert.equal(row.status,'VERIFY');assert.equal(row.contentHold,true);assert.equal(row.roundId,'old');assert.equal(row.result.itemId,'900001');assert.deepEqual(row.detail,{roundId:'old',windowId:'old-window',key:destinationKey(x.tasks[0])});
+ const row=x.one({importId:'newer'});assert.equal(row.status,'PUBLISHED_CONTENT_REVIEW');assert.equal(row.statusLabel,'已上架·内容待整改');assert.equal(row.contentHold,true);assert.equal(row.submitted,true);assert.equal(row.retryEligible,false);assert.equal(row.roundId,'old');assert.equal(row.result.itemId,'900001');assert.deepEqual(row.detail,{roundId:'old',windowId:'old-window',key:destinationKey(x.tasks[0])});
+});
+
+test('unsubmitted duplicate candidate with exhausted old budget is not mislabeled as unknown submission',t=>{
+ const x=fixture(t);const runId=x.run(1,'PAUSED',{reason:'旧执行断点'}),queueId=x.queue(1,'FAILED',{runId,attempts:3,maxAttempts:3});x.addRound();x.item(1,{state:'RESULT_UNKNOWN',failure_stage:'existing-listing-check',reason:'后台存在同目的地候选；未提交',run_id:runId,queue_id:queueId});
+ const row=x.one();assert.equal(row.status,'UNSUBMITTED_BLOCKED');assert.equal(row.statusLabel,'未提交·处理受限');assert.equal(row.submitted,false);assert.equal(row.retryEligible,false);assert.match(row.reason,/未提交/);assert.match(row.reason,/记录次数已达常规上限/);assert.doesNotMatch(row.reason,/额度已耗尽|不再作为拦截/);
+});
+
+test('candidate with a partial result retains verification protection',async t=>{
+ for(const source of ['run','queue'])await t.test(source,t=>{
+  const x=fixture(t),runId=x.run(1,'PAUSED',source==='run'?{result:{itemId:'900001'}}:{});
+  const queueId=x.queue(1,'FAILED',{runId,attempts:3,...(source==='queue'?{result:{itemId:'900001'}}:{})});
+  x.addRound();x.item(1,{state:'RESULT_UNKNOWN',failure_stage:'existing-listing-check',run_id:runId,queue_id:queueId});
+  const row=x.one();assert.equal(row.status,'VERIFY');assert.equal(row.retryEligible,false);assert.doesNotMatch(row.reason,/确认未提交/);
+ });
+});
+
+test('historical completion keeps an unsubmitted-label claim in verification',t=>{
+ const x=fixture(t),runId=x.run(1,'PAUSED',{reason:'旧执行断点'}),queueId=x.queue(1,'FAILED',{runId,attempts:3,maxAttempts:3});x.store.history(x.tasks[0],{itemId:'900001'});x.addRound();x.item(1,{state:'RESULT_UNKNOWN',failure_stage:'existing-listing-check',run_id:runId,queue_id:queueId});
+ const row=x.one();assert.equal(row.status,'VERIFY');assert.equal(row.retryEligible,false);assert.doesNotMatch(row.reason,/确认未提交/);
 });
 
 test('candidate isolation overrides an unrelated stale run failure and its reason',t=>{
  const x=fixture(t);x.run(1,'PAUSED',{reason:'旧上传失败'});x.addRound();x.item(1,{state:'RESULT_UNKNOWN',failure_stage:'existing-listing-check',reason:'候选商品待核验',run_id:'run1'});
- const row=x.one();assert.equal(row.status,'VERIFY');assert.equal(row.reason,'候选商品待核验');assert.equal(row.stage,'existing-listing-check');assert.equal(row.retryEligible,false);assert.equal(row.history.find(h=>h.kind==='run').reason,'旧上传失败');
+ const row=x.one();assert.equal(row.status,'UNSUBMITTED_BLOCKED');assert.match(row.reason,/本轮确认未提交/);assert.equal(row.stage,'existing-listing-check');assert.equal(row.retryEligible,false);assert.equal(row.history.find(h=>h.kind==='run').reason,'旧上传失败');
 });
 
 test('unknown submission and submission evidence protect against preflight, manual skip and retries',async t=>{

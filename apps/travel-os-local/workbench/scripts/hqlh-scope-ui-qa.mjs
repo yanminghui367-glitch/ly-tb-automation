@@ -1,0 +1,37 @@
+import {createServer as createPortProbe} from 'node:net';
+import assert from 'node:assert/strict';
+import {mkdir,mkdtemp,writeFile} from 'node:fs/promises';
+import {join,resolve} from 'node:path';
+import {fork,execFileSync} from 'node:child_process';
+import {chromium} from 'playwright';
+const out=resolve('../output/hqlh-adaptation-20261015/scoped-ui');await mkdir(out,{recursive:true});
+const runtime=await mkdtemp(join(out,'fixture-')),root=join(runtime,'materials');
+await writeFile(join(runtime,'shops.json'),JSON.stringify([{id:'wuzhou-changyou',name:'五洲畅游',port:9222},{id:'shop-7949a469',name:'环球领航',port:9230}]));
+execFileSync('python',[resolve('scripts/setup-fixture.py'),root,'--count','2'],{windowsHide:true});
+execFileSync('python',['-c',"from zipfile import ZipFile;from pathlib import Path;import sys;p=Path(sys.argv[1]);z=ZipFile(p);d={n:z.read(n) for n in z.namelist()};z.close();z=ZipFile(p,'w');[z.writestr(n,v.replace('五洲畅游'.encode(),'环球领航'.encode())) for n,v in d.items()];z.close()",join(root,'商品资料.xlsx')],{windowsHide:true});
+const probe=createPortProbe();await new Promise(r=>probe.listen(0,'127.0.0.1',r));const fixturePort=probe.address().port;await new Promise(r=>probe.close(r));
+const child=fork(new URL('./shop-http-fixture.mjs',import.meta.url),[],{env:{...process.env,WORKBENCH_NO_LISTEN:'1',WORKBENCH_TEST_RUNTIME:runtime,WORKBENCH_PORT:String(fixturePort),SHOP_FIXTURE_PORT:String(fixturePort)},stdio:['ignore','ignore','pipe','ipc']});
+const port=await new Promise((r,j)=>{child.once('message',m=>r(m.port));child.once('exit',()=>j(Error('fixture closed')));}),base='http://127.0.0.1:'+port;
+const browser=await chromium.launch({channel:'chrome',headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();
+const errors=[],checks=[];page.on('pageerror',e=>errors.push(e.message));
+await context.route('**/*',route=>{if(new URL(route.request().url()).origin!==base)return route.abort();const headers={...route.request().headers()};return route.continue({headers});});
+page.setDefaultTimeout(15000);
+try{
+ await page.goto(base+'/travel-os.html#settings');await page.locator('#setupExecutionShop').waitFor();
+ await page.locator('#setupExecutionShop').selectOption('shop-7949a469');await page.waitForURL(/shop=shop-7949a469/);
+ await page.locator('#setupExecutionShop').waitFor();assert.equal(await page.locator('#setupExecutionShop').inputValue(),'shop-7949a469');checks.push('网站店铺选择绑定环球并保留在URL');
+ await page.locator('[data-setup=skip-storage]').click();await page.locator('#setupRoot').fill(root);await page.locator('[data-setup=import]').click();
+ await page.getByRole('heading',{name:'登录这次要执行的店铺'}).waitFor();assert.match(await page.locator('#page-settings').innerText(),/环球领航/);checks.push('通过按钮识别并保存环球标准资料，自动进入该店登录步骤');
+ const h=await (await page.request.get(base+'/api/v1/state?executionShop=shop-7949a469')).json(),w=await (await page.request.get(base+'/api/v1/state')).json();
+ assert(h.latestImport);assert.equal(h.settings.assets,root);assert.equal(w.latestImport,null);assert.notEqual(w.settings.assets,root);assert.equal(h.settings.executionEnabled,false);checks.push('环球资料独立保存，五洲无导入或路径改变，执行默认关闭');
+ await page.screenshot({path:join(out,'hqlh-imported.png'),fullPage:true});
+ await page.locator('#setupExecutionShop').selectOption('wuzhou-changyou');await page.waitForURL(/shop=wuzhou-changyou/);await page.locator('#setupExecutionShop').waitFor();
+ assert.equal(await page.locator('#setupExecutionShop').inputValue(),'wuzhou-changyou');assert.equal(await page.locator('#setupRoot').count(),0);checks.push('切回五洲不带入环球路径或报告');
+ await page.locator('#setupExecutionShop').selectOption('shop-7949a469');await page.waitForURL(/shop=shop-7949a469/);await page.locator('#setupExecutionShop').waitFor();
+ await page.getByRole('link',{name:'自动化任务',exact:true}).click();await page.locator('#taskShopSelector').waitFor();assert.equal(await page.locator('#taskShopSelector').inputValue(),'shop-7949a469');checks.push('任务页绑定环球且已解除待适配状态');
+ assert.equal(await page.getByText('该店铺尚未完成自动执行适配',{exact:false}).count(),0);
+ const materials=await page.locator('.material-summary').innerText();assert(!materials.includes('尚未识别店铺公共套图目录'));
+ assert.match(materials,/8 张/);assert.match(materials,/首页候选 2 张/);checks.push('标准目录副图双套与详情首页在任务页正确统计');
+ await page.setViewportSize({width:390,height:844});await page.goto(base+'/travel-os.html?shop=shop-7949a469#settings');await page.locator('#setupExecutionShop').waitFor();
+ assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:join(out,'hqlh-mobile.png'),fullPage:true});checks.push('390px资料选择无横向溢出');assert.deepEqual(errors,[]);
+}finally{await writeFile(join(out,'last-page.txt'),await page.locator('body').innerText());await page.screenshot({path:join(out,'last-page.png'),fullPage:true});await writeFile(join(out,'qa.json'),JSON.stringify({checks,errors,productionRequests:0},null,2));await browser.close();const exited=new Promise(r=>child.once('exit',r));child.kill();await exited;console.log(JSON.stringify({checks,errors}));}

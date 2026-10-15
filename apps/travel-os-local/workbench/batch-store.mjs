@@ -1,6 +1,7 @@
 import {randomUUID} from 'node:crypto';
 import {digest,destinationKey} from './source-store.mjs';
 import {MAX_BATCH_SIZE} from './batch-policy.mjs';
+import {verifiedContentPreflightCredit} from './content-preflight-budget.mjs';
 
 export const TASK_STATES=['PENDING','RUNNING','WAITING_HUMAN','SUCCEEDED','FAILED','RETRY','SKIPPED'];
 const terminal=new Set(['SUCCEEDED','FAILED','SKIPPED']);
@@ -10,7 +11,10 @@ export class BatchStore {
  constructor(source){this.source=source;this.db=source.db;this.db.exec(`
  CREATE TABLE IF NOT EXISTS batches(id TEXT PRIMARY KEY, imported TEXT NOT NULL, shop TEXT NOT NULL, mode TEXT NOT NULL, state TEXT NOT NULL, review TEXT NOT NULL, at TEXT NOT NULL, started TEXT, finished TEXT, elapsed_ms INTEGER NOT NULL DEFAULT 0, segment_started TEXT, reason TEXT NOT NULL DEFAULT '', consecutive INTEGER NOT NULL DEFAULT 0, max_consecutive INTEGER NOT NULL DEFAULT 0);
  CREATE TABLE IF NOT EXISTS batch_items(id TEXT PRIMARY KEY, batch TEXT NOT NULL, key TEXT NOT NULL UNIQUE, position INTEGER NOT NULL, task TEXT NOT NULL, state TEXT NOT NULL, run_id TEXT UNIQUE, attempts INTEGER NOT NULL DEFAULT 0, max_attempts INTEGER NOT NULL DEFAULT 3, reason TEXT NOT NULL DEFAULT '', started TEXT, finished TEXT, result TEXT);
- CREATE TABLE IF NOT EXISTS batch_events(seq INTEGER PRIMARY KEY, batch TEXT NOT NULL, task TEXT, at TEXT NOT NULL, kind TEXT NOT NULL, payload TEXT NOT NULL);`);}
+ CREATE TABLE IF NOT EXISTS batch_events(seq INTEGER PRIMARY KEY, batch TEXT NOT NULL, task TEXT, at TEXT NOT NULL, kind TEXT NOT NULL, payload TEXT NOT NULL);
+ CREATE TABLE IF NOT EXISTS content_preflight_credits(queue_id TEXT PRIMARY KEY,round_id TEXT NOT NULL,key TEXT NOT NULL,task_hash TEXT NOT NULL,run_id TEXT NOT NULL,raw_attempts INTEGER NOT NULL,credit INTEGER NOT NULL,event_count INTEGER NOT NULL,event_hash TEXT NOT NULL,at TEXT NOT NULL);
+ CREATE TRIGGER IF NOT EXISTS content_preflight_credits_no_update BEFORE UPDATE ON content_preflight_credits BEGIN SELECT RAISE(ABORT,'content preflight credits are append-only'); END;
+ CREATE TRIGGER IF NOT EXISTS content_preflight_credits_no_delete BEFORE DELETE ON content_preflight_credits BEGIN SELECT RAISE(ABORT,'content preflight credits are append-only'); END;`);}
  event(batch,task,kind,payload={}){this.db.prepare('INSERT INTO batch_events(batch,task,at,kind,payload) VALUES(?,?,?,?,?)').run(batch,task,new Date().toISOString(),kind,JSON.stringify(payload));}
  events(id){return this.db.prepare('SELECT * FROM batch_events WHERE batch=? ORDER BY seq').all(id).map(r=>({...r,payload:JSON.parse(r.payload)}));}
  item(id){const r=this.db.prepare('SELECT * FROM batch_items WHERE id=?').get(id);if(!r)throw Error('队列商品不存在');return {...r,task:JSON.parse(r.task),result:r.result?JSON.parse(r.result):null};}
@@ -69,16 +73,27 @@ export class BatchStore {
  // claim() still obtains its original RUNNING-round permit inside its transaction;
  // the item UI supplies only its already-validated original round/queue snapshot.
  assertClaimBudget(x,permit=null){
-  if(x.state!=='WAITING_HUMAN'&&x.attempts>=x.max_attempts){
+  const credit=verifiedContentPreflightCredit(this.source,x,permit),attempts=x.attempts-credit;
+  if(x.state!=='WAITING_HUMAN'&&attempts>=x.max_attempts){
    if(!permit)budgetFailure('ITEM_RETRY_BUDGET_EXHAUSTED','已达重试上限');
    const run=x.run_id?this.source.run(x.run_id):null;
-   const submitted=run&&this.db.prepare("SELECT seq FROM events WHERE run=? AND kind IN ('SUBMITTING','RESULT_UNKNOWN','VERIFIED') LIMIT 1").get(run.id);
+   const submitted=run&&this.db.prepare("SELECT seq FROM events WHERE run=? AND kind IN ('SUBMITTING','SUBMIT_CLICKED','SUBMIT_EVIDENCE','RESULT_UNKNOWN','VERIFIED') LIMIT 1").get(run.id);
+   // The credit removes only proven pre-form failures from consumed attempts.
+   // Keep the frozen legacy baseline: subtracting the same credit there again
+   // erases the original bounded system-repair allowance (3 - 3 became zero).
    const baseline=permit.entry.baseline_attempts;
-   if(!run||run.state!=='PAUSED'||submitted||!Number.isInteger(baseline)||baseline<=0||x.attempts>=Math.min(x.max_attempts+2,baseline+3)||permit.entry.extra_attempts>=2||/CAPTCHA|验证码|登录|店铺身份/.test(run.reason))budgetFailure('ITEM_RETRY_BUDGET_EXTRA_UNSAFE','原任务不具备额外安全恢复条件，保留原次数与断点');
+   if(!run||run.state!=='PAUSED'||submitted||!Number.isInteger(baseline)||baseline<=0||attempts>=Math.min(x.max_attempts+2,baseline+3)||permit.entry.extra_attempts>=2||/CAPTCHA|验证码|登录|店铺身份/.test(run.reason))budgetFailure('ITEM_RETRY_BUDGET_EXTRA_UNSAFE','原任务不具备额外安全恢复条件，保留原次数与断点');
    if(!/expect\(locator\)|MATERIAL_|ATTRIBUTE_|FORM_|Timeout|页面|控件/.test(run.reason))budgetFailure('ITEM_RETRY_BUDGET_SYSTEM_UNCONFIRMED','尚未证实是提交前系统故障，禁止额外恢复');
-   return {extra:true,run};
+   return {extra:true,run,credit,effectiveAttempts:attempts};
   }
-  return {extra:false,run:null};
+  return {extra:false,run:null,credit,effectiveAttempts:attempts};
+ }
+ preflightBudget(id){
+  const x=this.item(id),c=this.db.prepare('SELECT round_id FROM content_preflight_credits WHERE queue_id=?').get(id);
+  if(!c)return {preflightCredit:0,effectiveAttempts:x.attempts};
+  const round=this.db.prepare('SELECT * FROM rounds WHERE id=?').get(c.round_id),entry=this.db.prepare('SELECT * FROM round_items WHERE round_id=? AND queue_id=?').get(c.round_id,id);
+  const preflightCredit=round&&entry?verifiedContentPreflightCredit(this.source,x,{round,entry}):0;
+  return {preflightCredit,effectiveAttempts:x.attempts-preflightCredit};
  }
  claim(id,{roundId}={}){return this.source.transaction(()=>{const x=this.item(id);if(!['PENDING','RETRY','WAITING_HUMAN'].includes(x.state))throw Error('任务不能启动');
   const permit=roundId?this.roundPermit(roundId,x.task,id):null;
@@ -117,5 +132,5 @@ export class BatchStore {
    }),counts=Object.fromEntries(TASK_STATES.map(s=>[s,items.filter(x=>x.state===s).length]));
   const retryScope=this.retryScope(b.id),failureBlocked=items.some(x=>x.state==='FAILED'&&(!retryScope||retryScope.includes(x.id)));
   return {...b,review:undefined,total:items.length,counts,failureBlocked,elapsedMs:b.elapsed_ms+(b.segment_started?Math.max(0,Date.now()-Date.parse(b.segment_started)):0),current:items.find(x=>x.state==='RUNNING')?.id||items.find(x=>x.state==='WAITING_HUMAN')?.id||null,
-   items:items.map(x=>({id:x.id,position:x.position,rank:x.task.priority,destination:x.task.listing.city||x.task.listing.country,title:x.task.listing.title,state:x.state,attempts:x.attempts,maxAttempts:x.maxAttempts,reason:x.reason,runId:x.runId,runState:x.runState,result:x.result,started:x.started,finished:x.finished,checkpoint:x.checkpoint}))};}
+   items:items.map(x=>({id:x.id,position:x.position,rank:x.task.priority,destination:x.task.listing.city||x.task.listing.country,title:x.task.listing.title,state:x.state,attempts:x.attempts,maxAttempts:x.maxAttempts,...this.preflightBudget(x.id),reason:x.reason,runId:x.runId,runState:x.runState,result:x.result,started:x.started,finished:x.finished,checkpoint:x.checkpoint}))};}
 }

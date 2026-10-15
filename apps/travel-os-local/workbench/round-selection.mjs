@@ -13,7 +13,7 @@ const evidence=value=>{
   for(const key of ['item','run','queue','snapshot','checkpoint','reconciliation'])if(v[key])pending.push(v[key]);
  }return false;
 };
-const detail=x=>({key:x.key,position:x.position,taskHash:x.task_hash,destination:x.task.listing.city||x.task.listing.country,title:x.task.listing.title,state:x.state,resuming:!!x.run_id});
+const detail=(x,q=null)=>({key:x.key,position:x.position,taskHash:x.task_hash,destination:x.task.listing.city||x.task.listing.country,title:x.task.listing.title,state:x.state,resuming:!!x.run_id,...(q?{attempts:q.attempts,maxAttempts:q.max_attempts}: {})});
 
 // An immutable selection attached to existing windows. This is neither a second
 // executor nor an authorization grant. Creation never starts the coordinator.
@@ -28,12 +28,20 @@ export class RoundSelection {
    selection_id TEXT NOT NULL,key TEXT NOT NULL,ordinal INTEGER NOT NULL,task_hash TEXT NOT NULL,revision TEXT NOT NULL,baseline TEXT NOT NULL,
    window_id TEXT,PRIMARY KEY(selection_id,key),UNIQUE(selection_id,ordinal));
    CREATE TABLE IF NOT EXISTS round_window_selections(window_id TEXT PRIMARY KEY,selection_id TEXT NOT NULL);`);
+  if(!this.db.prepare('PRAGMA table_info(round_selections)').all().some(c=>c.name==='origin_window_id'))this.db.exec('ALTER TABLE round_selections ADD COLUMN origin_window_id TEXT');
  }
  config(input={}){
   const {keys,mode='start',limit=100,autoContinue=false}=input;
   if(!Array.isArray(keys)||!keys.length||keys.length>10000||!keys.every(text)||new Set(keys).size!==keys.length)fail('SELECTION_KEYS_INVALID','请选择固定清单内互不重复的商品');
-  if(!['start','retry'].includes(mode)||!Number.isInteger(limit)||limit<1||limit>100||typeof autoContinue!=='boolean')fail('SELECTION_CONFIG_INVALID','模式须为开始或重试，每轮数量须为 1—100，自动衔接须明确选择');
-  return {keys:[...keys].sort(),mode,limit,autoContinue};
+  if(!['start','retry','recheck'].includes(mode)||!Number.isInteger(limit)||limit<1||limit>100||typeof autoContinue!=='boolean')fail('SELECTION_CONFIG_INVALID','模式或数量不正确，每轮数量须为 1—100');
+  if(mode==='recheck'&&(!text(input.windowId)||keys.length>100||limit<keys.length||autoContinue))fail('SELECTION_RECHECK_SCOPE','重新检索须指定原批次，最多100条，不自动扩展范围');
+  return {keys:[...keys].sort(),mode,limit,autoContinue,...(mode==='recheck'?{windowId:input.windowId}:{})};
+ }
+ recheckScope(roundId,config){
+  if(config.mode!=='recheck')return;
+  const o=this.owner,w=o.windows.assert(config.windowId,roundId),view=o.windows.view(w.id,{items:true});
+  const candidates=new Set(view.items.filter(x=>['FAILED','MANUAL_SKIPPED','PREFLIGHT_SKIPPED','WAITING_HUMAN','RESULT_UNKNOWN','PAUSED'].includes(x.state)||x.state==='PENDING'&&x.reason&&(x.runId||x.stage)).map(x=>x.key));
+  if(config.keys.some(key=>!candidates.has(key)))fail('SELECTION_RECHECK_SCOPE','仅可重新检索所选原批次的异常或跳过商品；范围已变化请刷新');
  }
  // A fresh, synchronous read pass only. Never retained on the owner or across
  // an await: each preflight revision and final transaction rereads the DB.
@@ -58,26 +66,29 @@ export class RoundSelection {
   const hasSubmit=!!x.submitted||!!x.submission_uncertain||!!x.result||!!q?.result||!!history||['submit-once','verify-platform-result'].includes(x.failure_stage)||evidence(run)||events.some(e=>['SUBMITTING','SUBMIT_CLICKED','SUBMIT_EVIDENCE','RESULT_UNKNOWN','VERIFIED'].includes(e.kind))||attempts.some(a=>evidence(JSON.parse(a.before_snapshot)?.snapshot)||evidence(a.outcome_snapshot?JSON.parse(a.outcome_snapshot):null));
   return {x,q,run,hasSubmit,revision:digest({x,q,run,events,history,attempts})};
  }
- allowed(s,roundId,mode){
+ allowed(s,roundId,mode,{allowBudgetGrant=false}={}){
   const {x,q,run}=s,o=this.owner;
   if(s.hasSubmit)fail('SELECTION_SUBMISSION_PROTECTED','已有成功、提交或返回证据；须核验原商品，不能重发');
-  if(terminal.has(x.state)||!['PENDING','FAILED'].includes(x.state)||isolated(x))fail('SELECTION_STATE_PROTECTED','原状态受保护：'+x.state+'；请先处理原资料或核验记录');
+  const reopening=mode==='recheck'&&['MANUAL_SKIPPED','PREFLIGHT_SKIPPED'].includes(x.state);
+  if((!reopening&&(terminal.has(x.state)||!['PENDING','FAILED'].includes(x.state)))||(isolated(x)&&!(reopening&&x.failure_stage==='content-preflight')))fail('SELECTION_STATE_PROTECTED','原状态受保护：'+x.state+'；请先处理原资料或核验记录');
   const attempted=!!(run||q?.attempts||x.reason||x.started||x.entered_publish||x.state==='FAILED');
   if(mode==='start'&&attempted)fail('SELECTION_RETRY_REQUIRED','已有原任务或异常，请使用重试所选异常');
   if(mode==='retry'&&!attempted)fail('SELECTION_NOT_ATTEMPTED','商品尚未执行，请使用开始所选商品');
   if(run&&(!['QUEUED','PAUSED'].includes(run.state)||run.mode!=='LIVE'||human.test(run.reason||'')))fail('SELECTION_RUN_PROTECTED','原任务需人工处理或不支持恢复');
-  if(q&&!['PENDING','RETRY','FAILED','WAITING_HUMAN'].includes(q.state)||q?.state==='WAITING_HUMAN'&&run?.state!=='PAUSED')fail('SELECTION_QUEUE_PROTECTED','原队列状态不支持恢复');
+  if(q&&!['PENDING','RETRY','FAILED','WAITING_HUMAN',...(reopening?['SKIPPED']:[])].includes(q.state)||q?.state==='WAITING_HUMAN'&&run?.state!=='PAUSED')fail('SELECTION_QUEUE_PROTECTED','原队列状态不支持恢复');
   // A new selection must never opt into historical extra-repair authorization,
   // including WAITING_HUMAN's normal resume exemption at the standard limit.
-  if(q&&q.attempts>=q.max_attempts)fail('SELECTION_BUDGET_EXHAUSTED','已达原恢复次数上限；本批次不会增加额度');
+  if(q&&q.attempts>=q.max_attempts&&!allowBudgetGrant)fail('SELECTION_BUDGET_EXHAUSTED','已达原恢复次数上限；本批次不会增加额度');
   o.assertContentForTask(x.task,roundId);
   if(x.task.adapterIssues?.length)fail('SELECTION_DATA_INVALID','资料缺失：'+x.task.adapterIssues.join('；'));
  }
- blockers(roundId,eligible=[]){
+ blockers(roundId,eligible=[],config={}){
   const o=this.owner,r=o.assertManifest(roundId),out=[];
   const add=(code,reason)=>{if(!out.some(x=>x.code===code))out.push({code,reason});};
   if(o.active||o.batch.active||o.source.active||o.source.queueLease||o.creating||o.hasUnsettledExecution())add('SELECTION_EXECUTION_BUSY','现有执行任务尚未结束');
-  if(o.windows.open(roundId))add('SELECTION_OLD_WINDOW_OPEN','请先结束或处理原执行窗口；本操作不会停止原窗口');
+  const open=o.windows.open(roundId);
+  if(open&&!(config.mode==='recheck'&&open.id===config.windowId&&['READY','PAUSED','SYSTEM_BLOCKED'].includes(open.state)))add('SELECTION_OLD_WINDOW_OPEN','请先结束或处理原执行窗口；不能从另一批次抢占执行范围');
+  if(config.mode==='recheck'&&r.gate<5)add('SELECTION_RELEASE_GATE_REQUIRED','尚未通过原1条、5条发布验收，不能批量重新执行');
   if(!['READY','PAUSED','SYSTEM_BLOCKED','STOPPED','NEEDS_REVIEW','COMPLETED'].includes(r.state))add('SELECTION_PARENT_PROTECTED','请先处理原清单状态：'+r.state);
   if(this.db.prepare('SELECT id FROM round_item_attempts WHERE finished_at IS NULL LIMIT 1').get())add('SELECTION_ATTEMPT_OPEN','原处理记录尚未封存，请先恢复保存');
   const pass=this.readPass(roundId);
@@ -94,19 +105,59 @@ export class RoundSelection {
  async preview(roundId,input={}){
   const config=this.config(input),o=this.owner;
   if(!text(roundId)||!o.round(roundId))return {roundId:roundId||null,...config,eligible:[],items:[],excluded:[],blockers:[{code:'SELECTION_ROUND_REQUIRED',reason:'资料尚未进入固定清单；请先建立并审核固定清单及授权范围'}],count:0,windowCount:0,canCreate:false,expectedRevision:null,selectionHash:null};
+  this.recheckScope(roundId,config);
   const r=o.assertManifest(roundId),before=this.revision(roundId),byKey=new Map(o.items(roundId).map(x=>[x.key,x])),eligible=[],excluded=[],versions={};
   for(const key of config.keys){
    const x=byKey.get(key);if(!x){excluded.push({key,code:'SELECTION_KEY_NOT_IN_ROUND',reason:'商品不属于当前固定清单，不能混用新资料包'});continue;}
-   try{const s=this.snapshot(roundId,x);this.allowed(s,roundId,config.mode);await o.checkFiles(x.task);eligible.push(detail(x));versions[key]=s.revision;}
+   let s=null;try{s=this.snapshot(roundId,x);this.allowed(s,roundId,config.mode);await o.checkFiles(x.task);eligible.push(detail(x,s.q));versions[key]=s.revision;}
    catch(e){const kind=o.classifyFailure(e,{preflight:true}).kind;
     if(!/^SELECTION_/.test(e.code||'')&&!['CONTENT_MISMATCH','CONTENT_REVIEW_REQUIRED','CONTENT_REVIEW_HELD'].includes(e.code)&&!['PREFLIGHT','PRODUCT'].includes(kind))throw e;
-    excluded.push({...detail(x),code:e.code||'SELECTION_DATA_INVALID',reason:String(e.message).slice(0,400)});
+    excluded.push({...detail(x,s?.q),...(e.code==='SELECTION_BUDGET_EXHAUSTED'&&s?.q?{manualBudgetGrantAvailable:!s.hasSubmit&&s.q.state==='FAILED'&&this.manualBudgetUsed(s.q.id)<1,manualBudgetRemaining:Math.max(0,1-this.manualBudgetUsed(s.q.id))}:{}),code:e.code||'SELECTION_DATA_INVALID',reason:String(e.message).slice(0,400)});
    }
   }
   eligible.sort((a,b)=>a.position-b.position);excluded.sort((a,b)=>(a.position||Infinity)-(b.position||Infinity));
   if(this.revision(roundId)!==before)fail('SELECTION_STALE_REVISION','预检期间原状态已变化，请重新预检');
-  const blockers=this.blockers(roundId,eligible),selectionHash=digest({roundId,manifestHash:r.manifest_hash,authorizationHash:r.authorization_hash,...config,eligible:eligible.map(x=>({key:x.key,taskHash:x.taskHash,revision:versions[x.key]})),excluded});
+  const blockers=this.blockers(roundId,eligible,config),selectionHash=digest({roundId,manifestHash:r.manifest_hash,authorizationHash:r.authorization_hash,...config,eligible:eligible.map(x=>({key:x.key,taskHash:x.taskHash,revision:versions[x.key]})),excluded});
   return {roundId,manifestHash:r.manifest_hash,shop:r.shop,...config,eligible,items:eligible,excluded,blockers,expectedRevision:before,selectionHash,count:eligible.length,windowCount:Math.min(config.limit,eligible.length),canCreate:eligible.length>0&&!blockers.length};
+ }
+ manualBudgetUsed(queueId){
+  return this.db.prepare("SELECT payload FROM batch_events WHERE task=? AND kind='MANUAL_RETRY_BUDGET_GRANTED' ORDER BY seq").all(queueId).reduce((n,row)=>{try{return n+Number(JSON.parse(row.payload).addAttempts||0);}catch{return n;}},0);
+ }
+ async grantRetryBudget(input={}){
+  const {roundId,windowId,keys,addAttempts,reason,requestId,expectedRevision}=input;
+  if(!text(roundId)||!text(windowId)||!Array.isArray(keys)||!keys.length||keys.length>100||!keys.every(text)||new Set(keys).size!==keys.length||addAttempts!==1||typeof reason!=='string'||reason.trim().length<5||reason.trim().length>400||!/^[a-f0-9-]{36}$/i.test(requestId||'')||!/^([a-f0-9]{64})$/i.test(expectedRevision||''))fail('SELECTION_BUDGET_REQUEST_INVALID','请检查商品、增加次数和操作说明');
+  const sorted=[...keys].sort(),requestHash=digest({roundId,windowId,keys:sorted,addAttempts,reason:reason.trim()});
+  const prior=this.db.prepare("SELECT batch,task,payload FROM batch_events WHERE kind='MANUAL_RETRY_BUDGET_GRANTED' ORDER BY seq").all().map(x=>({...x,payload:JSON.parse(x.payload)})).filter(x=>x.payload.requestId===requestId);
+  if(prior.length){if(prior.some(x=>x.payload.requestHash!==requestHash))fail('SELECTION_BUDGET_REQUEST_CONFLICT','操作编号已用于不同的额度调整');return {accepted:true,replayed:true,granted:prior.map(x=>({key:x.payload.key,attempts:x.payload.attempts,maxAttempts:x.payload.newLimit,addAttempts:x.payload.addAttempts}))};}
+  const config=this.config({keys:sorted,mode:'recheck',windowId,limit:100,autoContinue:false}),o=this.owner,r=o.assertManifest(roundId);
+  this.recheckScope(roundId,config);o.assertIdle();if(o.hasUnsettledExecution?.()||this.db.prepare('SELECT id FROM round_item_attempts WHERE finished_at IS NULL LIMIT 1').get())fail('SELECTION_BUDGET_BUSY','现有执行或处理记录尚未结束，不能调整额度');
+  if(!['READY','PAUSED','SYSTEM_BLOCKED','STOPPED','NEEDS_REVIEW'].includes(r.state))fail('SELECTION_BUDGET_ROUND_PROTECTED','固定清单状态不允许调整额度');
+  const before=this.revision(roundId);if(before!==expectedRevision)fail('SELECTION_BUDGET_STALE','商品或执行记录已变化，请重新检查');
+  const prepared=sorted.map(key=>{
+   const x=o.item(roundId,key),s=this.snapshot(roundId,x);this.allowed(s,roundId,'recheck',{allowBudgetGrant:true});
+   if(!s.q||!['FAILED','RETRY'].includes(s.q.state)||s.q.attempts<s.q.max_attempts)fail('SELECTION_BUDGET_NOT_EXHAUSTED','只能为已达次数上限的原异常商品增加额度');
+   if(this.manualBudgetUsed(s.q.id)+addAttempts>1)fail('SELECTION_BUDGET_MANUAL_CAP','每个商品最多手动增加1次额度');
+   return {x,q:s.q,s};
+   });
+   // Files may change after preview; verify the frozen task inputs again
+   // before any quota or audit write. Failure leaves the batch untouched.
+   for(const {x} of prepared){try{await o.checkFiles(x.task);}catch(error){fail('SELECTION_BUDGET_FILES',`额度未增加：冻结资料复核失败。${String(error?.message||error).slice(0,300)}`);}}
+   if(this.revision(roundId)!==expectedRevision)fail('SELECTION_BUDGET_STALE','商品或执行记录已变化，请重新检查');
+   o.windows.assert(windowId,roundId);
+  return o.source.store.transaction(()=>{
+   o.assertIdle();if(o.hasUnsettledExecution?.()||this.db.prepare('SELECT id FROM round_item_attempts WHERE finished_at IS NULL LIMIT 1').get())fail('SELECTION_BUDGET_BUSY','现有执行或处理记录尚未结束，不能调整额度');if(this.revision(roundId)!==expectedRevision)fail('SELECTION_BUDGET_STALE','商品或执行记录已变化，请重新检查');
+   const now=new Date().toISOString(),granted=[];
+   for(const {x,q} of prepared){
+    const current=this.snapshot(roundId,o.item(roundId,x.key));this.allowed(current,roundId,'recheck',{allowBudgetGrant:true});
+    if(current.q.id!==q.id||current.q.attempts<current.q.max_attempts||this.manualBudgetUsed(q.id)+addAttempts>1)fail('SELECTION_BUDGET_STALE','额度条件已变化，请重新检查');
+    const updated=this.db.prepare('UPDATE batch_items SET max_attempts=max_attempts+? WHERE id=? AND attempts>=max_attempts AND state IN (\'FAILED\',\'RETRY\')').run(addAttempts,q.id);
+    if(updated.changes!==1)fail('SELECTION_BUDGET_STALE','原队列记录已变化，请重新检查');
+    const payload={requestId,requestHash,roundId,windowId,key:x.key,attempts:q.attempts,oldLimit:q.max_attempts,newLimit:q.max_attempts+addAttempts,addAttempts,reason:reason.trim(),at:now};
+    o.batch.store.event(q.batch,q.id,'MANUAL_RETRY_BUDGET_GRANTED',payload);o.event(roundId,x.key,'MANUAL_RETRY_BUDGET_GRANTED',payload);
+    granted.push({key:x.key,attempts:q.attempts,maxAttempts:q.max_attempts+addAttempts,addAttempts});
+   }
+   return {accepted:true,replayed:false,roundId,windowId,granted};
+  });
  }
  request(input){const config=this.config(input);if(![input.roundId,input.expectedRevision,input.selectionHash,input.requestId].every(text)||input.requestId.length>96)fail('SELECTION_REQUEST_INVALID','缺少原预检版本或幂等请求编号');return {roundId:input.roundId,...config,expectedRevision:input.expectedRevision,selectionHash:input.selectionHash,requestId:input.requestId};}
  replay(req){const prior=this.db.prepare('SELECT * FROM round_selections WHERE request_id=?').get(req.requestId);if(!prior)return null;if(prior.intent_hash!==digest(req))fail('SELECTION_REQUEST_CONFLICT','同一请求编号不能改变选择范围');return {selection:this.byId(prior.id),window:this.owner.windows.view(this.db.prepare('SELECT window_id FROM round_selection_items WHERE selection_id=? AND window_id IS NOT NULL ORDER BY ordinal LIMIT 1').get(prior.id)?.window_id),replayed:true};}
@@ -120,7 +171,10 @@ export class RoundSelection {
   return o.source.store.transaction(()=>{
    o.assertIdle();if(this.revision(req.roundId)!==req.expectedRevision)fail('SELECTION_STALE_REVISION','原状态已变化');
    const r=o.assertManifest(req.roundId),id=randomUUID(),at=new Date().toISOString();
+   this.recheckScope(r.id,req);
+   if(req.mode==='recheck'&&o.windows.open(r.id))o.windows.close(req.windowId,'STOPPED','操作者确认重新检索本批异常与跳过项；原批次结果封存，其余未执行商品保留');
    this.db.prepare('INSERT INTO round_selections(id,round_id,request_id,intent_hash,selection_hash,revision,manifest_hash,authorization_hash,keys_json,excluded_json,mode,limit_count,auto_continue,at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(id,r.id,req.requestId,digest(req),p.selectionHash,p.expectedRevision,r.manifest_hash,r.authorization_hash,JSON.stringify(req.keys),JSON.stringify(p.excluded),req.mode,req.limit,Number(req.autoContinue),at);
+   if(req.mode==='recheck')this.db.prepare('UPDATE round_selections SET origin_window_id=? WHERE id=?').run(req.windowId,id);
    const insert=this.db.prepare('INSERT INTO round_selection_items(selection_id,key,ordinal,task_hash,revision,baseline) VALUES(?,?,?,?,?,?)');
    p.eligible.forEach((e,i)=>{const x=o.item(r.id,e.key);insert.run(id,e.key,i+1,x.task_hash,this.snapshot(r.id,x).revision,JSON.stringify(o.windows.observation(x)));});
    const window=this.createWindow(id);
@@ -135,7 +189,7 @@ export class RoundSelection {
  byId(id){const s=this.row(id);if(!s)return null;const entries=this.entries(id),windows=this.db.prepare('SELECT window_id FROM round_window_selections WHERE selection_id=? ORDER BY rowid').all(id);return {id:s.id,roundId:s.round_id,selectionHash:s.selection_hash,expectedRevision:s.revision,keys:entries.map(e=>e.key),requestedKeys:JSON.parse(s.keys_json),excluded:JSON.parse(s.excluded_json),mode:s.mode,limit:s.limit_count,autoContinue:!!s.auto_continue,total:entries.length,remaining:entries.filter(e=>!e.window_id).length,at:s.at,windowIds:windows.map(w=>w.window_id)};}
  view(roundId){return this.byId(this.db.prepare('SELECT id FROM round_selections WHERE round_id=? ORDER BY rowid DESC LIMIT 1').get(roundId)?.id);}
  validate(id){const s=this.row(id);if(!s)fail('SELECTION_NOT_FOUND');const r=this.owner.assertManifest(s.round_id);if(s.manifest_hash!==r.manifest_hash||s.authorization_hash!==r.authorization_hash)fail('SELECTION_MANIFEST_CHANGED','固定资料或授权版本已变化');
-  const entries=this.entries(id),config=this.config({keys:JSON.parse(s.keys_json),mode:s.mode,limit:s.limit_count,autoContinue:!!s.auto_continue});
+  const entries=this.entries(id),config=this.config({keys:JSON.parse(s.keys_json),mode:s.mode,limit:s.limit_count,autoContinue:!!s.auto_continue,windowId:s.origin_window_id});
   if(entries.some((e,i)=>e.ordinal!==i+1)||digest({roundId:s.round_id,manifestHash:r.manifest_hash,authorizationHash:r.authorization_hash,...config,eligible:entries.map(e=>({key:e.key,taskHash:e.task_hash,revision:e.revision})),excluded:JSON.parse(s.excluded_json)})!==s.selection_hash)fail('SELECTION_INTEGRITY_CHANGED','冻结选择清单已变化');return s;}
  createWindow(id){
   const s=this.validate(id),o=this.owner,rows=this.entries(id).filter(e=>!e.window_id).slice(0,s.limit_count).map(e=>{
@@ -152,9 +206,19 @@ export class RoundSelection {
   rows.forEach((x,i)=>{const snapshot=this.snapshot(s.round_id,x);if(snapshot.revision!==expected[i].revision||x.task_hash!==expected[i].task_hash)fail('SELECTION_STALE_REVISION');this.allowed(snapshot,s.round_id,s.mode);});
  }
  bindWindow(id,windowId,rows){
+  const selection=this.validate(id);
   this.db.prepare('INSERT INTO round_window_selections(window_id,selection_id) VALUES(?,?)').run(windowId,id);
   for(const x of rows){this.db.prepare('UPDATE round_selection_items SET window_id=? WHERE selection_id=? AND key=? AND window_id IS NULL').run(windowId,id,x.key);
    if(x.state==='FAILED')this.owner.update(x.round_id,x.key,{state:'PENDING',finished:null,reason:'选中商品恢复已排队；原失败、任务和次数保留'});
+   if(selection.mode==='recheck'&&['MANUAL_SKIPPED','PREFLIGHT_SKIPPED'].includes(x.state)){
+    const q=x.queue_id?this.owner.batch.store.item(x.queue_id):null;
+    if(q?.state==='SKIPPED'){
+     this.db.prepare("UPDATE batch_items SET state='RETRY',reason=?,finished=NULL WHERE id=? AND state='SKIPPED'").run('操作者确认重新检索原跳过商品；原次数和记录保留',q.id);
+     this.owner.batch.store.event(q.batch,q.id,'RECHECK_SKIPPED_REOPENED',{selectionId:id,originWindowId:selection.origin_window_id,windowId});
+    }
+    this.owner.update(x.round_id,x.key,{state:'PENDING',finished:null,failure_stage:'',reason:'操作者确认重新检索；原跳过记录保留在来源批次'});
+    this.owner.event(x.round_id,x.key,'RECHECK_SKIPPED_REOPENED',{selectionId:id,originWindowId:selection.origin_window_id,windowId,previousState:x.state,previousReason:x.reason});
+   }
   }
  }
  assertWindow(window,rows){const id=this.forWindow(window.id);if(!id)return;const s=this.validate(id),entries=this.entries(id).filter(e=>e.window_id===window.id);if(s.round_id!==window.round_id||s.limit_count!==window.limit_count||!!s.auto_continue!==!!window.auto_continue||digest(rows.map(x=>({key:x.key,hash:x.task_hash})))!==digest(entries.map(e=>({key:e.key,hash:e.task_hash}))))fail('SELECTION_WINDOW_SCOPE_CHANGED','执行窗口偏离冻结选择');}

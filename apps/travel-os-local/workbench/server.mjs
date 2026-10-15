@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 import { BrowserEnvironment, projectProfile } from "./browser-environment.mjs";
 import { SourceWorkflow } from "./source-workflow.mjs";
 import { BatchWorkflow } from "./batch-workflow.mjs";
+import {ShopExecutions} from "./shop-execution.mjs";
+import {assertShopInput} from "./shop-identity.mjs";
 import { ProductApi, executionRoute } from "./product-api.mjs";
 import { TravelOsApi } from "./travel-os-api.mjs";
 import {redact} from "./product-state.mjs";
@@ -16,19 +18,17 @@ import { createStaticHandler } from "./static-files.mjs";
 import { networkAccess } from "./network-access.mjs";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
-const PORT = Number(process.env.WORKBENCH_PORT || 4318), RUNTIME = join(ROOT, ".runtime"), STATE_FILE = join(RUNTIME, "jobs.json"), SHOPS_FILE = join(RUNTIME, "shops.json"), TASK_ARTIFACTS = join(ROOT, "output", "tasks"), MAPPING_ARTIFACTS = join(ROOT, "output", "mapping-evidence"), STAGED_IMPORTS = join(RUNTIME, "imports");
+const PORT = Number(process.env.WORKBENCH_PORT || 4318), RUNTIME = process.env.WORKBENCH_TEST_RUNTIME && process.env.WORKBENCH_NO_LISTEN === "1" ? resolve(process.env.WORKBENCH_TEST_RUNTIME) : join(ROOT, ".runtime"), STATE_FILE = join(RUNTIME, "jobs.json"), SHOPS_FILE = join(RUNTIME, "shops.json"), TASK_ARTIFACTS = join(ROOT, "output", "tasks"), MAPPING_ARTIFACTS = join(ROOT, "output", "mapping-evidence"), STAGED_IMPORTS = join(RUNTIME, "imports");
 const DEFAULT_FOLDER = resolve(ROOT, "..", "output", "batch-001-first-20"), SELLER_HOME = "https://myseller.taobao.com/home.htm/QnworkbenchHome/";
 const network = networkAccess({port:PORT,address:process.env.WORKBENCH_LAN_ADDRESS||''});
 const chromeCandidates = ["C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"];
 const defaultShop = { id: "wuzhou-changyou", name: "五洲畅游", port: 9222, profileDir: projectProfile("wuzhou-changyou"), loginHint: "", createdAt: "2026-08-30T00:00:00.000Z" };
 const browserEnvironment = new BrowserEnvironment({ portAvailable: assertPortAvailable });
 const sessionGuard = createSessionGuard({ connector: shop => browserEnvironment.browser(shop), risk: page => pageRisk(page, true) });
-  let sourceWorkflow;
-  let batchWorkflow;
-  const sources = () => sourceWorkflow ||= new SourceWorkflow(browserEnvironment);
-  const batches = () => batchWorkflow ||= new BatchWorkflow(sources());
-  let productApi;
-  const product = () => productApi ||= context().then(({shop})=>new ProductApi({batch:batches(),source:sources(),owner:browserEnvironment,shop,launch:launchChrome,runtime:RUNTIME,isShopRemoved:id=>travelOs().store.removed(id)}));
+  const executions=new ShopExecutions({runtime:RUNTIME,artifacts:TASK_ARTIFACTS,owner:browserEnvironment,shops:loadShops,launch:launchChrome,isShopRemoved:id=>travelOs().store.removed(id)});
+  const sources=()=>executions.current().source;
+  const batches=()=>executions.current().batch;
+  const product=id=>executions.product(id);
   let travelOsApi;
   const travelOs = () => travelOsApi ||= new TravelOsApi({product,shops:loadShops,browser:browserEnvironment,launch:launchChrome,runtime:RUNTIME,addShop:async name=>{
     const shops=await loadShops(),id=`shop-${randomUUID().slice(0,8)}`;
@@ -48,7 +48,13 @@ class ClientInputError extends Error { constructor(message) { super(message); th
 function json(res, code, payload) { res.writeHead(code, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" }); res.end(JSON.stringify(payload)); }
 function text(res, code, value, type = "text/plain; charset=utf-8") { res.writeHead(code, { "content-type": type }); res.end(value); }
 function downloadJson(res, filename, payload) { res.writeHead(200, { "content-type": "application/json; charset=utf-8", "content-disposition": `attachment; filename="${filename}"`, "cache-control": "no-store" }); res.end(JSON.stringify(payload, null, 2)); }
-async function body(req) { const chunks = []; let size = 0; for await (const chunk of req) { size += chunk.length; if (size > MAX_REQUEST_BYTES) throw new ClientInputError("本次上传超过 110MB，请拆分商品包和素材后重试。"); chunks.push(chunk); } try { return chunks.length ? JSON.parse(Buffer.concat(chunks).toString("utf8")) : {}; } catch { throw new ClientInputError("请求内容不是有效 JSON。") } }
+async function body(req) {
+ const chunks=[];let size=0;for await(const chunk of req){size+=chunk.length;if(size>MAX_REQUEST_BYTES)throw new ClientInputError("本次上传超过 110MB，请拆分商品包和素材后重试。");chunks.push(chunk);}
+ let input;try{input=chunks.length?JSON.parse(Buffer.concat(chunks).toString('utf8')):{};}catch{throw new ClientInputError('请求内容不是有效 JSON。');}
+ if(!input||typeof input!=='object'||Array.isArray(input))throw new ClientInputError('请求内容必须是 JSON 对象。');
+ if(/^\/api\/(v1|source|batch)\//.test(new URL(req.url,`http://127.0.0.1:${PORT}`).pathname))assertShopInput(input,executions.id());
+ return input;
+}
 function chromePath() { return chromeCandidates.find(existsSync) || null; }
 function cdpUrl(shop) { return `http://127.0.0.1:${shop.port}`; }
 function isTaobaoUrl(value) { try { const url = new URL(String(value || "")); return url.protocol === "https:" && (url.hostname === "taobao.com" || url.hostname.endsWith(".taobao.com")); } catch { return false; } }
@@ -653,16 +659,21 @@ export async function assertPortAvailable(port) {
 export function nextShopPort(shops) { const used = new Set(shops.map(shop => Number(shop.port))); let port = 9222; while (used.has(port) && port < 65535) port++; if (used.has(port)) throw new ClientInputError("没有可分配的调试端口。"); return port; }
 async function launchChrome(shop) { const executable = chromePath(); if (!executable) throw new Error("未找到 Google Chrome，请安装后重试。"); return browserEnvironment.start(shop, executable); }
 const serveFile = createStaticHandler(ROOT);
-async function context() { const state = await loadState(), shops = await loadShops(); return { state, shops, shop: activeShop(state, shops) }; }
+async function context() { const state = await loadState(), shops = await loadShops(); return { state, shops, shop: executions.scope.getStore()?shops.find(s=>s.id===executions.id()):activeShop(state, shops) }; }
 
 let mutationBusy = false;
-export const workbenchServer = createServer(async (req, res) => {
+export const workbenchServer = createServer((req,res)=>executions.run(new URL(req.url,`http://127.0.0.1:${PORT}`).searchParams.get('executionShop'),async () => {
   let holdsMutation = false;
   try {
     const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
     if (!network.allowed(req)) return json(res,403,{error:'仅允许本机或指定内部局域网访问'});
     if (!url.pathname.startsWith("/api/")) return await serveFile(req, res);
+    if(url.searchParams.has('executionShop')&&(!url.searchParams.get('executionShop')||url.searchParams.getAll('executionShop').length!==1))return json(res,409,{error:'执行店铺为空或重复，请重新选择对应店铺'});
     if (req.method === 'POST' && !network.originAllowed(req.headers.origin)) return json(res,403,{error:'仅允许本机或指定局域网工作台发起操作'});
+    if(executions.id()!=='wuzhou-changyou'&&!/^\/api\/(v1|os|source|batch)\//.test(url.pathname))return json(res,409,{error:'此入口仅适用于原版五洲畅游操作台'});
+    if(executions.id()!=='wuzhou-changyou'&&req.method==='POST'&&['/api/source/import','/api/batch/import'].includes(url.pathname))return json(res,409,{error:'本店请使用资料设置的标准模板导入'});
+    const currentProduct=await product();
+    const sourceWorkflow=currentProduct.source,batchWorkflow=currentProduct.batch;
     // Pausing cannot be discarded behind a slow product status/configuration request.
     if(req.method==='POST'&&url.pathname==='/api/v1/pause'){req.resume();return json(res,200,(await product()).pause());}
     if(req.method==='POST'&&url.pathname==='/api/source/pause'&&batchWorkflow?.round?.active){req.resume();return json(res,200,batchWorkflow.round.pause());}
@@ -671,7 +682,7 @@ export const workbenchServer = createServer(async (req, res) => {
     // Body identity, execution permission and shop checks still run below.
     const recordOwner=batchWorkflow?.round;
     const recordRecoveryRoute=req.method==='POST'&&url.pathname==='/api/v1/rounds/resume'&&!sourceWorkflow?.active&&recordOwner?.executionAttempts?.coordinatorSettled===true&&!!recordOwner.executionAttempts.recoveryView(recordOwner.active)&&!recordOwner.hasUnsettledExecution();
-    if (req.method === 'POST' && !recordRecoveryRoute && (sourceWorkflow?.active||batchWorkflow?.active) && !/^\/api\/os\/(quotes\/|preparations\/|shops\/add$)/.test(url.pathname) && !['/api/source/pause','/api/batch/pause','/api/v1/pause','/api/v1/check','/api/v1/recovery-check','/api/program/shutdown','/api/v1/rounds/item-verify'].includes(url.pathname)) return json(res,409,{error:'商品执行中，请先暂停任务'});
+    if (req.method === 'POST' && !recordRecoveryRoute && executions.active() && !/^\/api\/os\/(quotes\/|preparations\/|shops\/add$)/.test(url.pathname) && !['/api/source/pause','/api/batch/pause','/api/v1/pause','/api/v1/check','/api/v1/recovery-check','/api/program/shutdown','/api/v1/rounds/item-verify'].includes(url.pathname)) return json(res,409,{error:'商品执行中，请先暂停任务'});
     if (req.method === "POST") {
       if (mutationBusy) {
         const stopRequested = /^\/api\/tasks\/[^/]+\/(pause|cancel)$/.test(url.pathname);
@@ -683,12 +694,12 @@ export const workbenchServer = createServer(async (req, res) => {
     if(req.method==='POST'&&executionRoute(url.pathname))await (await product()).assertExecution({legacy:true});
     if(url.pathname.startsWith('/api/os/'))return await travelOs().handle(req,res,url,{body,json});
     if(url.pathname.startsWith('/api/v1/')){
-      if(req.method==='POST'&&['start','continue','retry','resume-single','reconcile','create','rounds/create','rounds/start','rounds/resume','rounds/window-create'].includes(url.pathname.slice(8))&&travelOs().store.removed((await product()).shop.id))return json(res,409,{error:'执行店铺已从管理中移除，禁止创建或启动任务'});
+      if(req.method==='POST'&&['start','continue','retry','resume-single','reconcile','create','rounds/create','rounds/start','rounds/resume','rounds/window-create','content-preparation/create','content-preparation/review','content-preparation/repair'].includes(url.pathname.slice(8))&&travelOs().store.removed((await product()).shop.id))return json(res,409,{error:'执行店铺已从管理中移除，禁止创建或启动任务'});
       return await (await product()).handle(req,res,url,{body,json});
     }
     if (req.method === "GET" && url.pathname === "/api/browser/status") { const { shop } = await context(); return json(res, 200, { shop: { id: shop.id, name: shop.name, port: shop.port }, browser: await browserEnvironment.status(shop) }); }
     if(url.pathname.startsWith('/api/batch/')) {
-      const flow=batches(), {shop}=await context();
+      const flow=batches(),shop=currentProduct.shop;
       if(req.method==='GET'&&url.pathname==='/api/batch/state')return json(res,200,flow.state(url.searchParams.get('id')));
       if(req.method==='GET'&&url.pathname==='/api/batch/preview')return json(res,200,flow.preview(url.searchParams.get('import'),Number(url.searchParams.get('limit')||20)));
       if(req.method==='GET'&&url.pathname==='/api/batch/report')return json(res,200,await flow.report(url.searchParams.get('id')));
@@ -705,7 +716,7 @@ export const workbenchServer = createServer(async (req, res) => {
       return json(res,404,{error:'未知批量操作'});
     }
     if (url.pathname.startsWith('/api/source/')) {
-      const flow=sources(), {shop}=await context();
+      const flow=sources(),shop=currentProduct.shop;
       if(req.method==='GET' && url.pathname==='/api/source/state')return json(res,200,flow.state());
       if(req.method==='GET' && url.pathname==='/api/source/preview')return json(res,200,flow.preview(url.searchParams.get('batch'),url.searchParams.get('order')));
       if(req.method==='GET' && url.pathname==='/api/source/events')return json(res,200,{events:flow.store.events(url.searchParams.get('id'))});
@@ -747,15 +758,14 @@ export const workbenchServer = createServer(async (req, res) => {
     return json(res, 404, { error: "Unknown API" });
   } catch (error) { return json(res, error.statusCode || 500, { error: /^\/api\/(v1|os)\//.test(req.url) ? redact(error.message||String(error)) : error.message || String(error) }); }
   finally { if (holdsMutation) mutationBusy = false; }
-});
+}));
 if (process.env.WORKBENCH_NO_LISTEN !== "1") workbenchServer.listen(PORT, network.bind, async () => { console.log(`旅行上架工作台：http://127.0.0.1:${PORT}${process.env.WORKBENCH_LAN_ADDRESS ? ' 局域网：http://'+process.env.WORKBENCH_LAN_ADDRESS+':'+PORT : ''}`); try { const { shop } = await context(); await launchChrome(shop); } catch { console.error("专用 Chrome 未启动，请在工作台查看浏览器状态后重试。"); } });
 
 let stopping = false;
 async function shutdownProgram() {
   if (stopping) return; stopping = true;
   sessionGuard.invalidateAll("程序关闭，任务停留在断点。");
-  if(batchWorkflow)await batchWorkflow.shutdown();
-  if(sourceWorkflow)await sourceWorkflow.shutdown();
+  await executions.shutdown();
   const state = await loadState();
   for (const task of state.tasks || []) if (task.state === 'RUNNING') {
     task.state = 'PAUSED'; task.currentStep = 'SESSION_REVALIDATION_FAILED';
@@ -763,7 +773,7 @@ async function shutdownProgram() {
   }
   await saveState(state);
   await browserEnvironment.closeAll();
-  if(productApi)(await productApi).closeStreams();
+
   workbenchServer.close(() => { if (process.env.WORKBENCH_NO_LISTEN !== '1') process.exit(0); });
 }
 if (process.env.WORKBENCH_NO_LISTEN !== "1") {

@@ -70,6 +70,32 @@ export function parseTableResponse(payload,metadata={}){
  if(metadata.expectedPage!==undefined&&metadata.expectedPage!==null&&pagination.current!==metadata.expectedPage)fail('page-number',result);
  return {ids,total:pagination.total,page:pagination.current,pageSize:pagination.pageSize};
 }
+// Close only the observed SKU-management announcement through its native close
+// control. Unknown dialogs, input forms and verification challenges stay intact.
+export async function dismissSellerTablePromotion(page,checked){
+ await checked(page);
+ const wrappers=page.locator('.next-overlay-wrapper.opened'),blocking=[];
+ for(let i=0;i<await wrappers.count();i++){
+  const wrapper=wrappers.nth(i);
+  if(await wrapper.locator('.next-overlay-backdrop').isVisible())blocking.push(wrapper);
+ }
+ if(!blocking.length)return {dismissed:false};
+ const blocked=()=>Object.assign(Error('后台商品核验页有未识别弹窗，请在执行 Chrome 处理弹窗后重新核验；原商品不会重复发布。'),{code:'TABLE_UI_OVERLAY_BLOCKED',tableDiagnostic:{schemaVersion:1,stage:'ui-overlay',code:'TABLE_UI_OVERLAY_BLOCKED',blockingOverlayCount:blocking.length}});
+ if(blocking.length!==1)throw blocked();
+ const wrapper=blocking[0],dialog=wrapper.locator('.next-dialog[role="dialog"]');
+ const close=dialog.locator('button[type="button"][class*="closeHotspot--"][aria-label="关闭"]');
+ const experience=dialog.locator('button[type="button"][class*="buttonHotspot--"][aria-label="立即体验，跳转SKU管理页"]');
+ if(await dialog.count()!==1||await close.count()!==1||await experience.count()!==1||await dialog.locator('button').count()!==2||await dialog.locator('input,textarea,select,iframe,[contenteditable="true"],a[href],[role="button"]').count()||!await close.isVisible()||!await experience.isVisible())throw blocked();
+ await checked(page);
+ try{
+  await close.click({timeout:5000});
+  await expect(experience).toBeHidden({timeout:5000});
+ }catch{
+  throw Object.assign(Error('后台 SKU 管理介绍弹窗未能正常关闭，请在执行 Chrome 关闭后重新核验；原商品不会重复发布。'),{code:'TABLE_PROMOTION_CLOSE_FAILED',tableDiagnostic:{schemaVersion:1,stage:'ui-overlay',code:'TABLE_PROMOTION_CLOSE_FAILED'}});
+ }
+ await checked(page);
+ return {dismissed:true,kind:'sku-management-announcement'};
+}
 export async function sellerTable(context,task,guard,{onFailure}={}){
  const checked=async page=>{
   await guard(page);if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');
@@ -78,11 +104,16 @@ export async function sellerTable(context,task,guard,{onFailure}={}){
   assertAuxiliaryPage(page,'verification');
  };
  const page=await getAuxiliaryPage(context,{role:'verification',shopId:task.shopId,url:'https://qn.taobao.com/home.htm/SellManage/all',guard:checked});
+ const prepare=async()=>{
+  try{return await dismissSellerTablePromotion(page,checked);}
+  catch(error){if(error.tableDiagnostic){try{await onFailure?.(error.tableDiagnostic);}catch{}}throw error;}
+ };
+ await prepare();
  const all=page.getByRole('tab',{name:/^全部\(/});
- if(await all.getAttribute('aria-selected')!=='true'){await checked(page);await all.click();await expect(all).toHaveAttribute('aria-selected','true');}
+ if(await all.getAttribute('aria-selected')!=='true'){await prepare();await all.click();await expect(all).toHaveAttribute('aria-selected','true');}
  const rows=()=>page.locator('tr').filter({has:page.locator('a.title-link')});
  async function action(expected,click){
-  await checked(page);
+  await prepare();
   const start=Date.now();
   const responsePromise=page.waitForResponse(r=>matchesTableRequest(r.request(),expected)&&r.request().timing().startTime>=start,{timeout:25000});
   // Attach a rejection handler before any click/guard can throw.
@@ -108,7 +139,7 @@ export async function sellerTable(context,task,guard,{onFailure}={}){
   await expect(all).toHaveAttribute('aria-selected','true');return {...current,records};
  }
  async function search({title='',itemId=''}={}){
-  await checked(page);await page.locator('#queryTitle').fill(title);await page.locator('#queryItemId').fill(itemId);
+  await prepare();await page.locator('#queryTitle').fill(title);await page.locator('#queryItemId').fill(itemId);
   const outer=page.locator('#queryOuterId');if(await outer.count())await outer.fill('');
   await page.locator('#queryItemId').press('Tab');
   let current=await action({title,itemId,page:1},()=>page.getByRole('button',{name:'搜索',exact:true}).click()),records=[...current.records];

@@ -3,6 +3,7 @@ import {readFile,readdir,realpath} from 'node:fs/promises';
 import {resolve,relative,isAbsolute,sep,basename,extname} from 'node:path';
 import {digest} from './source-store.mjs';
 import {ATTRIBUTE_FIELDS,NO_BRAND} from './publishing-attributes.mjs';
+import {materialReplacements} from './material-replacement.mjs';
 
 const fail=message=>{throw Object.assign(new Error(message),{statusCode:409});};
 const inside=(root,file)=>{const p=relative(root,file);return p===''||(!isAbsolute(p)&&p!=='..'&&!p.startsWith('..'+sep));};
@@ -39,7 +40,7 @@ export class PublishingRules {
     try{return await promise;}catch(e){this.materialIndex.delete(key);throw e;}
   }
   async scanMaterials(base,shop){
-    const result=[];
+    const result=[],replacements=materialReplacements(this.db,shop);
     const walk=async(dir,depth)=>{
       if(depth>5)return;
       for(const item of await readdir(dir,{withFileTypes:true})){
@@ -49,7 +50,9 @@ export class PublishingRules {
         const physical=await realpath(path);if(!inside(base,physical))continue;
         if(item.isDirectory())await walk(path,depth+1);
         else if(item.isFile()&&image(path)){
-          result.push({id:digest([shop,physical]),name:item.name,relative:relative(base,path),path:physical,url:'/api/v1/publishing-image?assetId='+digest([shop,physical])});
+          const replacement=replacements.get(physical),actual=replacement?.asset.path||physical;
+          if(!inside(base,actual)||await realpath(actual)!==actual)fail('图片版本位置无效，请重新核对');
+          result.push({id:digest([shop,physical]),name:basename(actual),relative:relative(base,path),path:actual,...(replacement?{originalPath:physical}:{}),url:'/api/v1/publishing-image?assetId='+digest([shop,physical])});
           if(result.length>5000)fail('图片超过 5000 张，请配置具体店铺素材目录');
         }
       }

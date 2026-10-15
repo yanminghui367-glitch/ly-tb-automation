@@ -6,15 +6,26 @@ const issue=(message,code='SELECTION_INVALID')=>Object.assign(Error(message),{co
 // Saving a selection does not grant execution permission or start a browser.
 export async function handleOperationsSelection(product,req,res,url,{body,json}) {
  const action=url.pathname;
- if(![prefix,prefix+'-preview',prefix+'-create'].includes(action))return false;
+ if(![prefix,prefix+'-preview',prefix+'-create',prefix+'-capabilities',prefix+'-budget'].includes(action))return false;
  let committed=false;
  try {
   const owner=product.round;
+  if(req.method==='GET'&&action===prefix+'-capabilities'){json(res,200,{batchRecheck:true,manualRetryBudget:true});return true;}
   if(req.method==='GET'&&action===prefix){const id=url.searchParams.get('roundId');owner.assertManifest(id);json(res,200,owner.selections.view(id));return true;}
-  if(req.method!=='POST'||action===prefix){json(res,405,{error:'此操作不支持当前请求方法',retainRequest:false});return true;}
+  if(action===prefix+'-budget'){
+   if(req.method!=='POST'){json(res,405,{error:'此操作不支持当前请求方法',retainRequest:false});return true;}
+   const input=await body(req),allowed=new Set(['id','manifestHash','windowId','keys','addAttempts','reason','requestId','expectedRevision']);
+   if(!input||Array.isArray(input)||Object.keys(input).some(k=>!allowed.has(k))||typeof input.id!=='string'||typeof input.manifestHash!=='string')throw issue('额度调整范围或固定版本不正确');
+   const row=owner.assertManifest(input.id);if(row.manifest_hash!==input.manifestHash)throw issue('固定清单版本已变化，请重新检查','SELECTION_STALE');
+   if(!product.roundItems?.host)throw issue('当前店铺尚未接入额度调整安全检查','SELECTION_HOST_REQUIRED');
+   await product.roundItems.host.assert();if(product.round!==owner)throw issue('执行器归属已变化，请刷新','SELECTION_OWNER_CHANGED');
+   product.capturing=true;try{const result=await owner.selections.grantRetryBudget({roundId:input.id,windowId:input.windowId,keys:input.keys,addAttempts:input.addAttempts,reason:input.reason,requestId:input.requestId,expectedRevision:input.expectedRevision});committed=true;json(res,200,result);}finally{product.capturing=false;}
+   return true;
+  }
+  if(req.method!=='POST'||action===prefix||action===prefix+'-capabilities'){json(res,405,{error:'此操作不支持当前请求方法',retainRequest:false});return true;}
   const input=await body(req),creating=action===prefix+'-create';
-  const allowed=new Set(['id','manifestHash','keys','mode','limit','autoContinue','requestId',...(creating?['selectionHash','expectedRevision']:[])]);
-  if(!input||Array.isArray(input)||Object.keys(input).some(k=>!allowed.has(k))||typeof input.id!=='string'||!input.id||!Array.isArray(input.keys)||!input.keys.length||input.keys.length>10000||!['start','retry'].includes(input.mode)||!Number.isInteger(input.limit)||input.limit<1||input.limit>100||typeof input.autoContinue!=='boolean'||!/^[a-f0-9-]{36}$/i.test(input.requestId||''))throw issue('执行范围格式不正确，请重新勾选并检查。');
+  const allowed=new Set(['id','manifestHash','keys','mode','limit','autoContinue','requestId','windowId',...(creating?['selectionHash','expectedRevision']:[])]);
+  if(!input||Array.isArray(input)||Object.keys(input).some(k=>!allowed.has(k))||typeof input.id!=='string'||!input.id||!Array.isArray(input.keys)||!input.keys.length||input.keys.length>10000||!['start','retry','recheck'].includes(input.mode)||!Number.isInteger(input.limit)||input.limit<1||input.limit>100||typeof input.autoContinue!=='boolean'||!/^[a-f0-9-]{36}$/i.test(input.requestId||''))throw issue('执行范围格式不正确，请重新勾选并检查。');
   const row=owner.assertManifest(input.id);
   if(row.manifest_hash!==input.manifestHash)throw issue('资料包版本已变化，请刷新并重新检查。','SELECTION_STALE');
   // Replaying a committed create only reads its original durable receipt. It
@@ -23,7 +34,7 @@ export async function handleOperationsSelection(product,req,res,url,{body,json})
   if(!product.roundItems?.host)throw issue('当前店铺尚未接入执行范围检查，请先完成店铺设置。','SELECTION_HOST_REQUIRED');
   await product.roundItems.host.assert();
   if(product.round!==owner)throw issue('执行器归属已变化，请刷新。','SELECTION_OWNER_CHANGED');
-  const config={keys:input.keys,mode:input.mode,limit:input.limit,autoContinue:input.autoContinue};
+  const config={keys:input.keys,mode:input.mode,limit:input.limit,autoContinue:input.autoContinue,...(input.mode==='recheck'?{windowId:input.windowId}:{})};
   product.capturing=true;
   try {
    if(!creating){const result=await owner.selections.preview(row.id,config);json(res,200,{...result,mode:input.mode});}

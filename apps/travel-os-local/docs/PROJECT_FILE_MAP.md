@@ -1,5 +1,17 @@
 # 项目文件导航｜标准化第 1 步
 
+## 2026-10-15 公共素材单张换图
+
+`workbench/material-replacement.mjs` 管理本店图片版本、完整解码、幂等和未来导入映射；`material-editor.js` 为选图/预览/保存交互，`travel-os.js` 在公共素材卡片接入。`material-library.mjs` 保持原目录分组，`source-store.mjs` 保留旧导入并创建派生资料版本，`publishing-rules.mjs` 接续新素材配置。使用范围与限制见 [单图替换](MATERIAL_REPLACEMENT_20261015.md)；临时合成测试位于 `scripts/material-replacement*.mjs`，验收/维护证据在 `output/material-replacement-20261015/`，不替换原700条固定快照。
+
+## 2026-10-15 新店铺通用接入与防错店
+
+`workbench/shop-identity.mjs` 统一ID与输入归属校验；`shop-execution.mjs` 按登记店铺提供隔离环境；`setup-files.js` 过滤标准上传正式源文件。接入流程见 `SHOP_ONBOARDING_20261015.md`，回归为 `scripts/shop-onboarding-http.test.mjs`、`shop-onboarding-independent.test.mjs` 与 `shop-onboarding-ui-qa.mjs`。生产保全、隔离UI和独立QA证据在 `output/shop-onboarding-20261015/`，不进入代码基线。
+
+## 2026-10-15 总负责人 Persona 与可调用Skill
+
+`docs/operations/DIRECTOR_PERSONA_20261015.md` 保存当前阶段盘点、负责人能力及后续交接规划；`tools/skills/travel-os-director/` 是可版本化Skill源码，包含角色指令、模块地图、交接模板和只读快照脚本。本机安装在Codex skills目录；验证及隔离演练位于 `output/director-persona-20261015/`。原 `operations/DIRECTOR.md`、`TASK_BOARD.md` 继续作为职责和管理入口，不新增淘宝执行队列或修改根AGENTS。
+
 ## 2026-10-14 局域网商品资料识别同步
 
 `workbench/setup-adapter.py` 识别 v2 标准 Excel 的固定发货时效选项；`workbench/scripts/setup-current-label.test.mjs` 覆盖该选项的隔离导入回归。用户工作簿结构、识别范围与未完成资料边界见 [同步记录](SETUP_IMPORT_STANDARD_SYNC_20261014.md)。
@@ -179,4 +191,11 @@ docs/ROUND_SKIP_CONTINUE_20261013.md记录范围、保护和隔离验收；工�
 ## 2026-10-13 成功页活动标签误拦截修复
 
 workbench/publishing-pages.mjs调整仅本轮新建且已核验成功页的活动标签误判；workbench/scripts/publishing-pages.test.mjs覆盖选中成功页继续关闭，其他保护保持。证据、安装状态和边界见docs/ACTIVE_TAB_CLEANUP_20261013.md。
+
+## 2026-10-15 环球领航独立资料与执行范围
+
+- `workbench/shop-execution.mjs`：按店铺隔离服务端执行上下文、数据库与设置；`shop-scope.js`：网页请求及切换的店铺归属。
+- `workbench/material-library.mjs`：同时识别原套图结构和标准模板的副图/A、B、详情正文、详情首页；不混入归档候选。
+- `workbench/scripts/shop-execution.test.mjs`、`shop-http.test.mjs`、`hqlh-independent.test.mjs`、`hqlh-scope-ui-qa.mjs`：隔离、反例、HTTP 与界面验证。
+- `docs/HQLH_EXECUTION_ADAPTATION_20261015.md`：实现和实际验收边界。证据位于 `output/hqlh-adaptation-20261015/` 与 `output/toni-hqlh-20261015/`；实际业务数据和登录信息不进入代码基线。
 

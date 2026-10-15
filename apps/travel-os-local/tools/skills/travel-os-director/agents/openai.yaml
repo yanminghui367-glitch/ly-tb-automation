@@ -1,0 +1,4 @@
+interface:
+  display_name: "星途旅游上架总负责人"
+  short_description: "接管星途项目状态、故障修复、子代理交接与版本整合，按证据推动验收闭环"
+  default_prompt: "使用 $travel-os-director 接管星途旅游上架自动化项目，先核对当前状态与各项交接，再直接推进本轮范围内的修复和验收。"

@@ -32,9 +32,9 @@ export function classifyRoundFailure(error,{run,preflight=false}={}){
 // A persistent coordinator of the existing BatchWorkflow/SourceWorkflow owner.
 // It owns no browser, worker process, alternative submitter, or separate DB.
 export class ListingRound {
- constructor({batch,source=batch?.flow,shop,rules,assertExecution,verifyExisting,checkFiles,contentReviews,artifacts,classifyFailure=classifyRoundFailure,onGate}={}){
+ constructor({batch,source=batch?.flow,shop,rules,assertExecution,verifyExisting,checkFiles,contentReviews,artifacts,classifyFailure=classifyRoundFailure,onGate,getListingDefaults=async()=>null}={}){
   if(!batch||!source||!shop||typeof assertExecution!=='function'||typeof verifyExisting!=='function')fail('轮次缺少现有执行器、店铺或检查依赖');
-  Object.assign(this,{batch,source,shop,rules,assertExecution,verifyExisting,classifyFailure,onGate,contentReviews});
+  Object.assign(this,{batch,source,shop,rules,assertExecution,verifyExisting,classifyFailure,onGate,contentReviews,getListingDefaults});
   this.db=source.store.db;this.artifacts=artifacts||join(source.artifacts,'rounds');this.reporting=new Map();
   this.checkFiles=checkFiles||((task)=>source.preflight([task]));this.active=null;this.creating=false;this.pauseRequested=false;this.stopRequested=false;
   this.db.exec(`CREATE TABLE IF NOT EXISTS rounds(id TEXT PRIMARY KEY,shop TEXT NOT NULL,import_id TEXT NOT NULL,manifest_hash TEXT NOT NULL,authorization_hash TEXT NOT NULL,authorization TEXT NOT NULL,repair_version TEXT NOT NULL,state TEXT NOT NULL,gate INTEGER NOT NULL DEFAULT 0,current_item TEXT,reason TEXT NOT NULL DEFAULT '',at TEXT NOT NULL,updated TEXT NOT NULL,stopped INTEGER NOT NULL DEFAULT 0,system_fingerprint TEXT NOT NULL DEFAULT '',system_count INTEGER NOT NULL DEFAULT 0);
@@ -149,6 +149,16 @@ export class ListingRound {
   else if(rows.some(contentHeld))this.state(id,'PAUSED','存在已发布商品的主图内容待核验，已隔离且禁止重发；其余商品通过逐图审核后才能继续');
   else if(contentUnblocked&&this.round(id).state==='NEEDS_REVIEW')this.state(id,'PAUSED','待核对主图已确认；保留原断点，检查并继续原轮次后才执行');
  }
+ applyDefaultImageApproval(id=this.round()?.id,{transaction=true}={}){
+  if(!id||typeof this.contentReviews?.prepareUserBatch!=='function')return 0;
+  this.assertIdle();const r=this.assertManifest(id),prepared=this.contentReviews.prepareUserBatch(r,this.items(id));
+  if(!prepared.length)return 0;
+  const commit=()=>{
+   this.contentReviews.save(prepared);this.applyContentReviews(id,prepared);
+   this.event(id,null,'USER_BATCH_IMAGES_CONFIRMED',{method:'user-batch-confirmation',reviewer:'用户',count:prepared.length,manifestHash:r.manifest_hash,policyVersion:prepared[0].policyVersion,source:prepared[0].authorizationSource,notVisuallyReviewed:true,executionStarted:false});
+  };
+  if(transaction)this.source.store.transaction(commit);else commit();return prepared.length;
+ }
  async create({importId,heatImportId,authorization,repairVersion,expectedCount=700}={}){
   this.assertIdle();if(this.creating)fail('轮次清单正在生成');
   if(authorization?.allowLive!==true||authorization?.maxSafeRecoveries!==2||authorization?.confirmedShop!==this.shop.name||authorization?.expectedCount!==expectedCount||!repairVersion)fail('缺少固定范围授权、目标店铺或修复版本');
@@ -168,6 +178,8 @@ export class ListingRound {
   });
   this.creating=true;
   try{
+   const defaults=await this.getListingDefaults();
+   if(defaults?.ignoreExternalDestinationProducts===true&&(defaults.shopId!==this.shop.id||defaults.scope!==undefined&&!['SHOP_DEFAULT','WEBSITE_DEFAULT'].includes(defaults.scope)||!Number.isInteger(defaults.revision)||defaults.revision<1||typeof defaults.confirmedAt!=='string'||!Number.isFinite(Date.parse(defaults.confirmedAt))))fail('默认发布规则归属或版本无效');
    const newEntries=entries.filter(x=>!x.run&&!x.queue&&!this.source.store.completed(x.task)&&!x.task.adapterIssues?.length);
    if(newEntries.length&&this.rules){const prepared=await this.rules.prepare({importId,tasks:newEntries.map(x=>x.task),selectionHash:digest(newEntries.map(x=>x.task)),limit:newEntries.length},this.shop.id,'round');if(prepared.tasks.length!==newEntries.length)fail('发布规则改变了商品范围');prepared.tasks.forEach((t,i)=>{if(destinationKey(t)!==newEntries[i].key)fail('发布规则改变了商品身份');newEntries[i].task=t;});}
    this.assertIdle();
@@ -179,6 +191,13 @@ export class ListingRound {
     const insert=this.db.prepare('INSERT INTO round_items(round_id,key,position,task,task_hash,queue_id,batch_id,run_id,baseline_attempts,updated) VALUES(?,?,?,?,?,?,?,?,?,?)');
     for(const x of entries)insert.run(id,x.key,x.position,JSON.stringify(x.task),digest(x.task),x.queue?.id||null,x.queue?.batch||null,x.run?.id||x.queue?.run_id||null,x.queue?.attempts||0,at);
     this.event(id,null,'MANIFEST_FROZEN',{count:entries.length,importId,heatImportId:heatImportId||null,sourceHash:base.sourceHash,manifestHash,authorizationHash:digest(authorization),repairVersion});
+    this.applyDefaultImageApproval(id,{transaction:false});
+    if(defaults?.ignoreExternalDestinationProducts===true){
+     const website=defaults.scope==='WEBSITE_DEFAULT';
+     const payload={enabled:true,scope:'THIS_ROUND_ONLY',manifestHash,shop:this.shop.id,confirmedBy:website?'用户确认的网站默认规则':'用户确认的店铺默认规则',at,inheritedFrom:{scope:website?'WEBSITE_DEFAULT':'SHOP_DEFAULT',revision:defaults.revision,confirmedAt:defaults.confirmedAt},meaning:'按导入清单发布；店内其他同目的地商品不阻止；本系统原商品ID、提交结果、资料与平台验证保护保持'};
+     this.db.prepare('INSERT INTO round_policy_overrides(round_id,policy,payload,at) VALUES(?,?,?,?)').run(id,'ignore-destination-duplicates',JSON.stringify(payload),at);
+     this.event(id,null,website?'WEBSITE_DEFAULT_POLICY_INHERITED':'SHOP_DEFAULT_POLICY_INHERITED',{policy:'ignore-destination-duplicates',...payload});
+    }
    });
    await this.report(id);return this.view(id);
   }finally{this.creating=false;}
@@ -260,7 +279,14 @@ export class ListingRound {
   const checked=proof?.source==='fresh-browser-check'&&this.verifyClearedCaptcha(id,{running:true,loggedIn:true,loginState:'LOGGED_IN',checkedAt:proof.checkedAt});
   const captchaCleared=!!checked&&JSON.stringify(checked.keys)===JSON.stringify(proof.keys);
   if(human.length&&options.humanVerified!==true&&!captchaCleared)fail('请先人工处理登录或验证码，并确认后恢复');
-  if(options.repairVersion&&options.repairVersion!==r.repair_version){if(!['SYSTEM_BLOCKED','PAUSED','WAITING_HUMAN','RESULT_UNKNOWN'].includes(r.state))fail('只能在暂停后核验新修复版本');this.db.prepare('UPDATE rounds SET repair_version=? WHERE id=?').run(options.repairVersion,id);this.event(id,null,'REPAIR_VERSION_UPDATED',{from:r.repair_version,to:options.repairVersion,authorizationHash:r.authorization_hash,attemptsPreserved:true});}
+  if(options.repairVersion&&options.repairVersion!==r.repair_version){
+   // An idle manifest can predate a deployment before its first start or after
+   // an explicit stop. Neither state needs an artificial pause to adopt it.
+   if(!['READY','STOPPED','SYSTEM_BLOCKED','PAUSED','WAITING_HUMAN','RESULT_UNKNOWN'].includes(r.state))fail('只能在任务未运行时核验新修复版本');
+   this.db.prepare('UPDATE rounds SET repair_version=? WHERE id=?').run(options.repairVersion,id);
+   this.event(id,null,'REPAIR_VERSION_UPDATED',{from:r.repair_version,to:options.repairVersion,authorizationHash:r.authorization_hash,attemptsPreserved:true});
+   r.repair_version=options.repairVersion;
+  }
   this.active=id;this.batch.active='round:'+id;this.source.queueLease='round:'+id;this.pauseRequested=false;this.stopRequested=false;
   this.executionAttempts.coordinatorSettled=false;this.executionAttempts.automaticParent=null;
   this.source.store.transaction(()=>{this.db.prepare('UPDATE rounds SET stopped=? WHERE id=?').run(options.finishCurrentOnly||options.finalizeStopOnly?1:0,id);this.state(id,'RUNNING',options.finishCurrentOnly?'仅核验原商品，完成后停止':'从固定清单继续，终态商品不重复');this.event(id,null,'START_ACCEPTED',{humanVerified:options.humanVerified===true,captchaVerification:captchaCleared?checked:null,repairVersion:r.repair_version,previousState:r.state,finishCurrentOnly:options.finishCurrentOnly===true});});

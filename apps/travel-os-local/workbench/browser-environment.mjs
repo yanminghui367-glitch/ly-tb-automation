@@ -4,6 +4,7 @@ import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { isAbsolute } from 'node:path';
+import {readPageProtection} from './page-protection.mjs';
 
 const require = createRequire(import.meta.url);
 const ownedLaunchRuntime = () => ({
@@ -12,9 +13,9 @@ const ownedLaunchRuntime = () => ({
   platform: process.platform, env: process.env
 });
 // Exact Windows/headful/no-proxy Playwright 1.62.1 argv, observed with a new
-// empty profile and checked against that installed version. The full 45-argument
-// packet (including owner args, profile, pipe, blank page) has normalized SHA256
-// e2eb7879ea6fea609387eef3b1426a2137b41c7280c4566d14ef58d6c3ca1b1d.
+// empty profile and checked against that installed version. The owner packet
+// retains these defaults but does not request an extra blank startup tab:
+// --restore-last-session already restores the previous seller page.
 // Retaining the defaults while using the PUBLIC ignoreDefaultArgs:true avoids
 // only Playwright's extra wait for the first restored page's complete load.
 // Native persistent-context/page initialization, ownership and cleanup remain.
@@ -72,7 +73,7 @@ export function ownedPersistentLaunchOptions(profileDir, options, runtime = owne
   if (!Number.isInteger(port) || port < 1024 || port > 65535 || args[0] !== `--remote-debugging-port=${port}`) throw Error('OWNED_BROWSER_INVALID_PORT');
   if ('timeout' in options && (!Number.isFinite(options.timeout) || options.timeout <= 0)) throw Error('OWNED_BROWSER_INVALID_TIMEOUT');
   return { ...options, timeout: options.timeout ?? 180000, ignoreDefaultArgs: true,
-    args: [...ownedChromiumDefaults, ...args, `--user-data-dir=${resolve(profileDir)}`, '--remote-debugging-pipe', 'about:blank'] };
+    args: [...ownedChromiumDefaults, ...args, `--user-data-dir=${resolve(profileDir)}`, '--remote-debugging-pipe'] };
 }
 
 export function launchOwnedPersistentContext(profileDir, options) {
@@ -81,6 +82,23 @@ export function launchOwnedPersistentContext(profileDir, options) {
 
 export const PROJECT_ROOT = fileURLToPath(new URL('../', import.meta.url));
 export const SELLER_HOME = 'https://myseller.taobao.com/home.htm/QnworkbenchHome/';
+function sellerHome(page){
+  try{
+    const u=new URL(page.url());if(u.protocol!=='https:'||u.username||u.password)return false;
+    return u.hostname==='myseller.taobao.com'&&/^\/home\.htm(?:\/QnworkbenchHome)?\/?$/.test(u.pathname);
+  }catch{return false;}
+}
+function sellerList(page){
+  try{
+    const u=new URL(page.url());return ['https://myseller.taobao.com','https://qn.taobao.com'].includes(u.origin)&&!u.username&&!u.password&&/^\/home\.htm\/SellManage\/(?:all|on_sale|sold_out|warehouse)\/?$/.test(u.pathname);
+  }catch{return false;}
+}
+function sellerEntry(page){
+  if(sellerHome(page))return true;
+  try{
+    const u=new URL(page.url());return u.protocol==='https:'&&!u.username&&!u.password&&['loginmyseller.taobao.com','login.taobao.com','login.tmall.com'].includes(u.hostname);
+  }catch{return false;}
+}
 export function projectProfile(shopId) {
   if (!/^[a-z0-9-]+$/.test(shopId)) throw new Error('INVALID_SHOP_ID');
   return resolve(PROJECT_ROOT, 'browser-profile', shopId);
@@ -136,10 +154,11 @@ export async function inspectLogin(pages, shop) {
 // This owner lives with the workbench, never with a product task. No storageState,
 // cookies or credentials are read/exported; Chrome manages its own profile.
 export class BrowserEnvironment {
-  constructor({ launch = launchOwnedPersistentContext, portAvailable, checkpointRoot = resolve(PROJECT_ROOT, 'workbench/.runtime/browser-checkpoints'), profilePath = projectProfile } = {}) {
+  constructor({ launch = launchOwnedPersistentContext, portAvailable, checkpointRoot = resolve(PROJECT_ROOT, 'workbench/.runtime/browser-checkpoints'), profilePath = projectProfile, readProtection = readPageProtection } = {}) {
     this.launch = launch; this.portAvailable = portAvailable; this.checkpointRoot = checkpointRoot;
     this.sessions = new Map(); this.pending = new Map(); this.closing = false;
     this.profilePath = profilePath;
+    this.readProtection = readProtection;
   }
   async start(shop, executablePath) {
     if (this.closing) throw new Error('BROWSER_OWNER_SHUTTING_DOWN');
@@ -165,11 +184,25 @@ export class BrowserEnvironment {
     context.on('close', () => { clearInterval(session.timer); if (this.sessions.get(shop.id) === session) this.sessions.delete(shop.id); });
     const check = () => this.status(shop).catch(() => {});
     session.timer = setInterval(check, 5000); session.timer.unref();
-    // Preserve any restored publishing tab. A separate seller home provides a
-    // fresh login check and leaves task recovery to its checkpoint verifier.
+    // Reuse the restored home/login entry. Native restore already opened it;
+    // opening another blank and navigating it caused duplicate seller pages.
+    // Publishing/material/result pages remain untouched for task recovery.
     const pages = context.pages();
-    const page = pages.find(p => p.url().startsWith(SELLER_HOME)) || pages.find(p => p.url() === 'about:blank') || await context.newPage();
-    await page.goto(SELLER_HOME, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {});
+    const restored = pages.find(sellerList) || pages.find(sellerEntry);
+    const page = restored || pages.find(p => ['about:blank','chrome://newtab/','chrome://new-tab-page/'].includes(p.url())) || await context.newPage();
+    if(!restored)await page.goto(SELLER_HOME, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {});
+    // Old sessions may already contain duplicate homes. Close only another
+    // exact home after BOTH pages independently prove this shop and no challenge.
+    // Login, unknown identity and task/material/result pages are never closed.
+    if(sellerHome(page)||sellerList(page))for(const duplicate of pages.filter(p=>p!==page&&sellerHome(p))){
+      try{
+        const other=await inspectLogin([duplicate],shop),primary=await inspectLogin([page],shop);
+        if(other.loggedIn&&primary.loggedIn){
+          const protection=await this.readProtection(duplicate);
+          if(protection.status==='unpinned'&&(sellerHome(page)||sellerList(page))&&sellerHome(duplicate))await duplicate.close({runBeforeUnload:false});
+        }
+      }catch{ /* Preserve any unreadable page for the normal status checker. */ }
+    }
     await page.bringToFront();
     return this.status(shop);
   }
@@ -223,7 +256,7 @@ export class BrowserEnvironment {
     const pages=s.context.pages().filter(p=>!p.isClosed() && /^https:\/\/[^/]*\.(taobao|tmall)\.com\//.test(p.url()));
     let target=pages.find(p=>/login|passport/.test(new URL(p.url()).hostname));
     if(!target)for(const p of pages){if(await visibleChallenge(p)){target=p;break;}}
-    target ||= pages.find(p=>p.url().startsWith(SELLER_HOME));
+    target ||= pages.find(sellerList) || pages.find(sellerEntry);
     if(target)await target.bringToFront();
   }
   async closeAll() { this.closing = true; await Promise.allSettled([...this.pending.values()]); for (const s of [...this.sessions.values()]) { clearInterval(s.timer); await s.context.close(); } this.sessions.clear(); }

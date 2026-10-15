@@ -2,7 +2,7 @@ import test,{before,after,beforeEach} from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 const {chromium}=createRequire(new URL('../package.json',import.meta.url))('playwright');
-import {clickMainImageAndVerify,closeMainImageActionMenu} from '../taobao-publisher.mjs';
+import {clickMainImageAndVerify,closeMainImageActionMenu,reconcileMainImages} from '../taobao-publisher.mjs';
 let browser,context,page,events,clicks;
 const urls=[1,2,3].map(i=>'https://img.alicdn.com/imgextra/i1/2215038760087/test'+i+'.png');
 before(async()=>{browser=await chromium.launch({channel:'chrome',headless:true});});
@@ -12,6 +12,31 @@ const set=async values=>page.locator('#sell-field-mainImagesGroup').evaluate((e,
 const timeout=()=>Object.assign(new Error('click action done; waiting for scheduled navigations to finish'),{name:'TimeoutError'});
 const card=fn=>({locator:()=>({click:async()=>{clicks++;await fn();}})});
 const guard=async()=>{},opts={onEvent:async e=>events.push(e)};
+for(const seller of ['2215038760087','3997268470','new-shop-assets'])test('five images reconcile in order for seller '+seller+' without reselecting the first image',async()=>{
+ const assets=Array.from({length:5},(_,i)=>({path:'frozen/main-'+i+'.png',sha256:String(i).repeat(64)}));
+ const receipts=assets.map((source,i)=>({source,url:`https://img.alicdn.com/imgextra/i1/${seller}/main-${i}.png_320x320?t=1792068318000`}));
+ await set([receipts[0].url.replace('.png_320x320?t=1792068318000','.png_320x320q80_.webp')]);
+ assert.equal((await reconcileMainImages(page,receipts,assets)).length,1);
+ for(let i=1;i<5;i++){
+  const prefix=receipts.slice(0,i+1).map(r=>r.url);
+  await clickMainImageAndVerify(page,card(()=>set(prefix)),prefix,guard,opts);
+  assert.equal((await reconcileMainImages(page,receipts,assets)).length,i+1);
+ }
+ assert.equal(clicks,4);assert.deepEqual(events,[]);
+});
+
+test('resume rejects wrong order, foreign seller, missing receipt, changed source and unaccounted images',async()=>{
+ const assets=urls.map((_,i)=>({path:'frozen-'+i,sha256:String(i).repeat(64)}));
+ const receipts=assets.map((source,i)=>({source,url:urls[i]}));
+ for(const actual of [[urls[1],urls[0]],[urls[0].replace('2215038760087','3997268470')],[...urls,urls[0]]]){
+  await set(actual);await assert.rejects(reconcileMainImages(page,receipts,assets),/MAIN_IMAGE_ORDER|MAIN_IMAGE_COUNT_CHANGED/);
+ }
+ await set([urls[0]]);
+ await assert.rejects(reconcileMainImages(page,[],assets),/UNRECONCILED_EXISTING_IMAGE/);
+ await assert.rejects(reconcileMainImages(page,[{...receipts[0],source:{...assets[0],sha256:'changed'}}],assets),/UNRECONCILED_EXISTING_IMAGE/);
+ assert.equal(clicks,0);
+});
+
 test('successful click validates entire prefix and does not create recovery event',async()=>{
  await set(urls.slice(0,2));await clickMainImageAndVerify(page,card(()=>set(urls)),urls,guard,opts);assert.equal(clicks,1);assert.deepEqual(events,[]);
 });

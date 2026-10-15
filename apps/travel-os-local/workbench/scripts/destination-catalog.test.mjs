@@ -22,6 +22,16 @@ test('repeated import never duplicates rows and catalogue GET does not mutate th
  for(let i=0;i<3;i++)assert.equal(destinationCatalog(store,shop).total,1);
  assert.equal(store.db.prepare('SELECT total_changes() n').get().n,before);assert.equal(store.list().length,0);
 });
+test('identical repeated heat rows use the first clean source row instead of a later duplicate warning',async t=>{
+ const store=await fixture(t),first=task('法明顿',{priority:543,source:{sheet:'境外城市热度',row:548}}),duplicate={...structuredClone(first),priority:5198,source:{sheet:'境外城市热度',row:5203},adapterIssues:['热度表国家城市重复']};
+ store.imported({sourceHash:'heat-duplicates',workbook:'heat.xlsx',sheet:'境外城市热度',tasks:[first,duplicate]});
+ const row=destinationCatalog(store,shop).items[0];assert.equal(row.state,'AVAILABLE');assert.deepEqual(row.issues,[]);assert.equal(row.rank,543);assert.equal(row.source.row,548);
+});
+test('conflicting repeated heat rows remain blocked for review',async t=>{
+ const store=await fixture(t),first=task('法明顿',{priority:543,source:{sheet:'境外城市热度',row:548}}),duplicate=structuredClone(first);duplicate.priority=5198;duplicate.source={sheet:'境外城市热度',row:5203};duplicate.listing.title='冲突标题';
+ store.imported({sourceHash:'heat-conflict',workbook:'heat.xlsx',sheet:'境外城市热度',tasks:[first,duplicate]});
+ const row=destinationCatalog(store,shop).items[0];assert.equal(row.state,'NEEDS_DATA');assert(row.issues.includes('同一资料包内目的地资料存在冲突'));
+});
 test('verified destinations route to records and cannot be offered as a new publish action',async t=>{
  const store=await fixture(t),a=task('东京');store.imported({sourceHash:'x',workbook:'pool.xlsx',tasks:[a]});store.history(a,{itemId:'987654321',status:'仓库中'});
  const row=destinationCatalog(store,shop).items[0];assert.equal(row.state,'VERIFIED');assert.equal(row.duplicateBlocked,true);assert.equal(row.next.label,'查看上架记录');assert.match(row.next.href,/#records$/);assert.equal(row.itemId,'987654321');

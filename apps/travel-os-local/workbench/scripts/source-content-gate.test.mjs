@@ -70,6 +70,7 @@ test('unchanged approved source follows one intent and one click through origina
 });
 test('DRY_RUN remains inspectable, but conversion to LIVE rechecks missing content',async t=>{
  const x=await fixture(t,{mode:'DRY_RUN',approved:false}),dry=await x.execute();assert.equal(dry.state,'DRY_RUN_COMPLETE');assert.equal(x.checks(),0);noSubmit(x);
- await x.flow.resume({id:x.run.id,publish:true},{id:x.task.shopId,name:x.task.business.shop_name});await x.flow.pending;
- assert.equal(x.store.run(x.run.id).checkpoint.errorCode,'CONTENT_REVIEW_REQUIRED');assert.equal(x.state.opens,1);assert.equal(x.store.list()[0].id,x.run.id);noSubmit(x);
+ const before=x.store.run(x.run.id),events=x.store.events(x.run.id);
+ await assert.rejects(x.flow.resume({id:x.run.id,publish:true},{id:x.task.shopId,name:x.task.business.shop_name}),/CONTENT_REVIEW_REQUIRED/);
+ assert.deepEqual(x.store.run(x.run.id),before);assert.deepEqual(x.store.events(x.run.id),events);assert.equal(x.store.run(x.run.id).mode,'DRY_RUN');assert.equal(x.state.opens,1);assert.equal(x.store.list()[0].id,x.run.id);noSubmit(x);
 });

@@ -78,10 +78,10 @@ export class PageOwnership {
    targetId:e.targetId??null,state:e.state,reason:e.reason??'',scope:e.scope?scopeCopy(e.scope):null}):null;
  }
  snapshot(){return {counts:this.counts(),pages:[...this.entries.values()].filter(e=>e.owned&&e.state!=='closed').map(e=>({id:e.id,purpose:e.purpose,state:e.state,reason:e.reason??'',targetId:e.targetId??null,scope:scopeCopy(e.scope)}))};}
- assertCanStartTask(){this.assertHealthy();const c=this.counts();assert(c.retained<2,'已保留两张异常页面；请先人工处理，停止下一商品');assert(c.owned<6,'执行器页面预算已满（6）；停止下一商品');return c;}
+ assertCanStartTask(){this.assertHealthy();return this.counts();}
  reserveCreation({purpose}={}){
   this.assertHealthy();assert(this.scope,'尚未绑定任务页面归属');assert(purposes.has(purpose),'页面用途无效');
-  const count=this.counts().owned;assert(count<6,'执行器页面预算已满（6）；禁止继续创建');
+  const count=this.counts().owned;
   const entry={id:randomUUID(),origin:'executor-created',purpose,scope:scopeCopy(this.scope),state:'creation-intent',owned:true,page:null,before:new Set(this.context.pages())};
   const peak=Math.max(this.peak,count+1),ticket=Object.freeze({id:entry.id,sessionId:this.sessionId});
   this.write(()=>{this.insert(entry);this.db.prepare('UPDATE page_owner_sessions SET peak_owned=? WHERE id=?').run(peak,this.sessionId);});

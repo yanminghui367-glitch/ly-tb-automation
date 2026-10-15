@@ -3,8 +3,8 @@ import {basename} from 'node:path';
 import {destinationKey} from './source-store.mjs';
 import {redact} from './product-state.mjs';
 
-export const OPERATIONS_STATUSES=Object.freeze(['AVAILABLE','WAITING','RUNNING','VERIFIED','RETRYABLE','HUMAN','VERIFY','SKIPPED','NEEDS_DATA']);
-const labels={AVAILABLE:'尚未生成任务',WAITING:'等待执行',RUNNING:'执行中',VERIFIED:'平台已核验',RETRYABLE:'执行异常',HUMAN:'需人工处理',VERIFY:'待核验',SKIPPED:'人工跳过',NEEDS_DATA:'资料待处理'};
+export const OPERATIONS_STATUSES=Object.freeze(['AVAILABLE','WAITING','RUNNING','VERIFIED','PUBLISHED_CONTENT_REVIEW','RETRYABLE','UNSUBMITTED_BLOCKED','HUMAN','VERIFY','SKIPPED','NEEDS_DATA']);
+const labels={AVAILABLE:'尚未生成任务',WAITING:'等待执行',RUNNING:'执行中',VERIFIED:'平台已核验',PUBLISHED_CONTENT_REVIEW:'已上架·内容待整改',RETRYABLE:'执行异常',UNSUBMITTED_BLOCKED:'未提交·处理受限',HUMAN:'需人工处理',VERIFY:'待核验',SKIPPED:'人工跳过',NEEDS_DATA:'资料待处理'};
 const parse=value=>{if(value===null||value===undefined)return null;if(typeof value==='object')return value;try{return JSON.parse(value);}catch{return null;}};
 const clean=value=>redact(typeof value==='string'?value:String(value??''));
 const array=value=>Array.isArray(value)?value:[];
@@ -25,7 +25,8 @@ function grouped(rows,key){const map=new Map();for(const row of rows){const k=ke
 // endpoint must recheck scope, submission protection, content review and budget.
 function classify({item,run,queue,history,held,issues,submitted,active}){
  const reason=clean(held?.reason||item?.reason||run?.reason||queue?.reason||'');
- if(held)return {status:'VERIFY',reason:reason||'原商品内容仍待核验；保留原商品，禁止重发'};
+ if(held)return evidence(held.result)?{status:'PUBLISHED_CONTENT_REVIEW',reason:'淘宝已核验商品ID及出售状态；主图内容需整改，保留原商品并禁止重发'}:{status:'VERIFY',reason:reason||'原商品内容仍待核验；保留原商品，禁止重发'};
+ if(item?.state==='RESULT_UNKNOWN'&&item.failure_stage==='existing-listing-check'&&!submitted&&!history&&!item.submission_uncertain&&!item.result&&!run?.result&&!queue?.result&&!unknown(run?.state)&&!unknown(queue?.state)&&!['VERIFIED','SUCCEEDED'].includes(run?.state)&&queue?.state!=='SUCCEEDED')return {status:'UNSUBMITTED_BLOCKED',reason:'本轮确认未提交；'+(Number.isInteger(queue?.attempts)&&Number.isInteger(queue?.max_attempts)&&queue.max_attempts>0&&queue.attempts>=queue.max_attempts?'原队列记录次数已达常规上限；':'')+'保留断点，请查看原任务处理条件'};
  if(item?.state==='RESULT_UNKNOWN'||item?.submission_uncertain||unknown(run?.state)||unknown(queue?.state))return {status:'VERIFY',reason:reason||'原商品或提交结果待核验，禁止再次提交'};
  if(['NEW_SUCCESS','EXISTING_VERIFIED'].includes(item?.state))return evidence(item.result)?{status:'VERIFIED',reason}:{status:'VERIFY',reason:'轮次标记成功，但完整平台核验证据缺失；请核对原记录'};
  if(submitted&&!evidence(run?.result)&&!evidence(history))return {status:'VERIFY',reason:reason||'存在提交记录，尚无完整平台核验结果'};
@@ -121,7 +122,7 @@ export function buildOperationsCatalog(store,{shopId,importId,round=null}={}){
   if(source.positions.length>1)issues.push('同一资料包内商品身份重复，已合并显示；请核对原始行 '+source.positions.join('、'));
   if(item?.state==='PREFLIGHT_SKIPPED'&&item.reason&&!issues.includes(clean(item.reason)))issues.push(clean(item.reason));
   const associationMismatch=!!(item&&(keyOf(item.task)!==source.key||item.run_id&&(!run||run.key!==source.key)||item.queue_id&&(!queue||queue.key!==source.key)))||!!(queue?.run_id&&(!run||run.key!==source.key));
-  const submitted=!!(item?.submitted||item?.submission_uncertain||submittedRuns.has(run?.id)||run?.checkpoint?.itemId||unknown(run?.state));
+  const submitted=!!(item?.submitted||item?.submission_uncertain||submittedRuns.has(run?.id)||run?.checkpoint?.itemId||unknown(run?.state)||evidence(item?.result)||evidence(run?.result)||evidence(queue?.result));
   const active=!!(parent&&round?.active===parent.id&&parent.current_item===source.key);
   let state=classify({item,run,queue,history:completed,held,issues,submitted,active});
   if(associationMismatch)state={status:'VERIFY',reason:'商品与原轮次、队列或执行记录的身份映射不一致；请先核对原记录'};

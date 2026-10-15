@@ -71,13 +71,20 @@ test('unknown/pinned protection and explicit manual hold never close a verified 
  for(const input of [{},{unpinnedConfirmed:false,guardPassed:true},{unpinnedConfirmed:true,guardPassed:false},{unpinnedConfirmed:true,guardPassed:true,manualPreserve:true}])assert.throws(()=>x.ledger.beginClose(page,{...input,itemId:'123'}),/未确认/);
  x.ledger.retain(page,{reason:'MANUAL_PRESERVE'});x.verify(page);assert.throws(()=>x.ledger.beginClose(page,{unpinnedConfirmed:true,guardPassed:true,itemId:'123'}),/明确保留/);assert(!page.isClosed());
 });
-test('budget reserves before creation, uncertain creates retain capacity, sixth is final slot',t=>{
- const x=fixture(t);for(let i=0;i<6;i++){const ticket=x.ledger.reserveCreation({purpose:'publish-form'});x.ledger.creationFailed(ticket,{reason:'CREATE_OR_BIND_UNCERTAIN'});}
- assert.equal(x.ledger.counts().owned,6);assert.equal(x.ledger.counts().retained,6);assert.throws(()=>x.ledger.reserveCreation({purpose:'publish-form'}),/预算已满/);
+test('uncertain creations remain recorded beyond six without a page-count stop',t=>{
+ const x=fixture(t);for(let i=0;i<8;i++){const ticket=x.ledger.reserveCreation({purpose:'publish-form'});x.ledger.creationFailed(ticket,{reason:'CREATE_OR_BIND_UNCERTAIN'});assert.doesNotThrow(()=>x.ledger.assertCanStartTask());}
+ assert.equal(x.ledger.counts().owned,8);assert.equal(x.ledger.counts().retained,8);assert.equal(x.ledger.counts().peak,8);
+ assert.equal(x.db.prepare("SELECT count(*) n FROM page_owner_pages WHERE state='orphaned'").get().n,8);
 });
-test('two retained pages block next task but existing verification helper can still be leased',t=>{
+test('retained pages preserve evidence and closing protection beyond six owned pages',t=>{
  const x=fixture(t),helper=x.create('verification-helper');for(let i=0;i<2;i++)x.ledger.retain(x.create(),{reason:'RESULT_UNKNOWN'});
- assert.throws(()=>x.ledger.assertCanStartTask(),/两张异常/);assert.doesNotThrow(()=>x.ledger.lease(helper,{purpose:'verification-helper'}));
+ assert.equal(x.ledger.assertCanStartTask().retained,2);
+ assert.equal(x.db.prepare("SELECT count(*) n FROM page_owner_pages WHERE state='retained'").get().n,2);
+ for(let i=0;i<2;i++){x.ledger.retain(x.create(),{reason:'MANUAL_PRESERVE'});assert.doesNotThrow(()=>x.ledger.assertCanStartTask());}
+ assert.equal(x.ledger.counts().retained,4);assert.equal(x.ledger.counts().owned,5);
+ for(let i=0;i<3;i++){const page=x.create();x.ledger.retain(page,{reason:'MANUAL_PRESERVE'});assert.doesNotThrow(()=>x.ledger.assertCanStartTask());x.verify(page);assert.throws(()=>x.ledger.beginClose(page,{unpinnedConfirmed:true,guardPassed:true,itemId:'123'}),/明确保留/);assert(!page.isClosed());}
+ assert.equal(x.ledger.counts().owned,8);assert.equal(x.ledger.counts().retained,7);
+ assert.doesNotThrow(()=>x.ledger.lease(helper,{purpose:'verification-helper'}));
 });
 test('created binding failure leaves reserved uncertainty and latches next task without closing page',t=>{
  const x=fixture(t),ticket=x.ledger.reserveCreation({purpose:'publish-form'}),page=x.context.add();

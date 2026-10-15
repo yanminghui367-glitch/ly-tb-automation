@@ -46,7 +46,7 @@ def prepare(root, shop_id, shop_name):
                 raise ValueError('店铺设置不能使用公式：' + label)
             config[label] = value
     if config.get('店铺名称') != shop_name:
-        raise ValueError('模板店铺名称与当前执行店铺不一致，请核对店铺设置')
+        raise ValueError(f'模板店铺名称“{config.get("店铺名称", "未填写")}”与当前执行店铺“{shop_name}”不一致，请选择对应店铺或核对Excel店铺设置')
     business = {key: config.get(label, '') for label, key in spec['settings'].items()}
     # The current Taobao fixed template uses this full UI label for the same
     # verified 24-hour setting. Accept only the exact option; do not infer a

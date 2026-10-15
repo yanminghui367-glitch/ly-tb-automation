@@ -6,16 +6,17 @@ import {ProductApi,executionRoute} from '../product-api.mjs';
 import {createHostedRoundItemApi} from '../round-item-host-api.mjs';
 import {networkAccess} from '../network-access.mjs';
 import {redact} from '../product-state.mjs';
+import {assertShopInput} from '../shop-identity.mjs';
 import {setup} from './skip-independent-fixture.mjs';
 // Exercise the actual server dispatch, network/Origin and mutation guards on an
 // isolated random port; imported modules never initialize production resources.
 const source=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
-const start=source.indexOf('export const workbenchServer = createServer('),last=source.indexOf('\n});',start);
+const start=source.indexOf('export const workbenchServer = createServer('),last=source.indexOf('\n}));',start);
 assert(start>0&&last>start);
-const callback=source.slice(start+'export const workbenchServer = createServer('.length,last+2);
+const callback=source.slice(start+'export const workbenchServer = createServer('.length,last+3);
 const helper=source.slice(source.indexOf('class ClientInputError'),source.indexOf('function chromePath'));
 const byteLimit=source.match(/const MAX_REQUEST_BYTES\s*=\s*([^;]+);/)[1];
-const {json,body}=new Function('Buffer',`const MAX_REQUEST_BYTES=${byteLimit};${helper};return {json,body};`)(Buffer);
+const helpers=(PORT,executions)=>new Function('Buffer','PORT','executions','assertShopInput',`const MAX_REQUEST_BYTES=${byteLimit};${helper};return {json,body};`)(Buffer,PORT,executions,assertShopInput);
 async function fixture(t){
  const f=await setup(t),api=Object.create(ProductApi.prototype);f.batch.round=f.round;
  let removed=false,handler;
@@ -25,8 +26,9 @@ async function fixture(t){
  const request=()=>({...f.scope(),expectedRevision:api.roundItems.retry.retry.reader.read(f.scope()).revision,requestId:'http-retry'});
  const server=createServer((req,res)=>handler(req,res));await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>server.close(r)));
  const port=server.address().port,base='http://127.0.0.1:'+port;assert.notEqual(port,4318);
+ const {json,body}=helpers(port,{id:()=>f.round.shop.id});
  const network=networkAccess({port,address:'192.168.77.2',interfaces:{fixture:[{address:'192.168.77.2',family:'IPv4',internal:false,netmask:'255.255.255.0'}]}});
- handler=new Function('deps',`const {PORT,network,json,body,serveFile,product,travelOs,sourceWorkflow,batchWorkflow,executionRoute,redact}=deps;let mutationBusy=false;return ${callback};`)({PORT:port,network,json,body,serveFile:()=>{throw Error('not a static test');},product:async()=>api,travelOs:()=>({store:{removed:()=>removed}}),sourceWorkflow:f.flow,batchWorkflow:f.batch,executionRoute,redact});
+ handler=new Function('deps',`const {PORT,network,json,body,serveFile,product,travelOs,sourceWorkflow,batchWorkflow,executionRoute,redact,executions}=deps;let mutationBusy=false;return ${callback};`)({PORT:port,network,json,body,serveFile:()=>{throw Error('not a static test');},product:async()=>api,travelOs:()=>({store:{removed:()=>removed}}),sourceWorkflow:f.flow,batchWorkflow:f.batch,executionRoute,redact,executions:{run:(_id,fn)=>fn(),id:()=>f.round.shop.id,active:()=>f.flow.active||f.batch.active}});
  const send=(value,{method='POST',headers={},path='/api/v1/rounds/item-retry'}={})=>new Promise((resolve,reject)=>{const req=httpRequest(base+path,{method,headers:{'content-type':'application/json',Origin:base,...headers}},res=>{let text='';res.on('data',b=>text+=b);res.on('end',()=>resolve({status:res.statusCode,data:JSON.parse(text)}));});req.on('error',reject);req.end(method==='POST'?JSON.stringify(value):undefined);});
  return {...f,api,request,send,remove:()=>removed=true};
 }

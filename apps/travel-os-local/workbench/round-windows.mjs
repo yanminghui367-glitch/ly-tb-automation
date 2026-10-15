@@ -71,7 +71,9 @@ export class RoundWindows {
     o.assertContentForTask(x.task,roundId);
     if(x.task.adapterIssues?.length)fail('资料缺失：'+x.task.adapterIssues.join('；'));
     if(run&&(!['QUEUED','PAUSED'].includes(run.state)||run.mode!=='LIVE'))fail('原任务不支持本轮执行，请先处理原任务');
-    await o.checkFiles(x.task);
+    // Source and image contents are checked during setup/import. Assignment
+    // only selects the original queue; do not reread shared images per item.
+    // The existing executor still verifies its own item before filling it.
    }catch(e){
     // Known per-product data issues can be excluded. Unknown/shared faults do
     // not silently produce a smaller or empty supposedly healthy assignment.
@@ -95,7 +97,8 @@ export class RoundWindows {
   const o=this.owner,r=o.assertManifest(preview.roundId);
   if(this.open(r.id))fail('已有未结束的执行轮次');
   const config=this.config(r.id,preview),rows=preview.items.map(x=>o.item(r.id,x.key));
-  if(!rows.length||rows.length>config.limit||new Set(rows.map(x=>x.key)).size!==rows.length||rows.some(x=>(preview.selectionId?!['PENDING','FAILED'].includes(x.state):x.state!=='PENDING')||x.position<config.startPosition||x.position>config.endPosition))fail('预检范围失效，请重新检查');
+  const selectionStates=['PENDING','FAILED',...(preview.selectionId&&o.selections.row(preview.selectionId)?.mode==='recheck'?['MANUAL_SKIPPED','PREFLIGHT_SKIPPED']:[])];
+  if(!rows.length||rows.length>config.limit||new Set(rows.map(x=>x.key)).size!==rows.length||rows.some(x=>(preview.selectionId?!selectionStates.includes(x.state):x.state!=='PENDING')||x.position<config.startPosition||x.position>config.endPosition))fail('预检范围失效，请重新检查');
   if(preview.selectionId)o.selections.validateWindowPreview(preview,rows);
   if(preview.manifestHash!==r.manifest_hash||this.assignmentHash(r,config,rows)!==preview.selectionHash)fail('执行轮次清单或资料版本已变化');
   const id=randomUUID(),at=now(),sequence=(this.latest(r.id)?.sequence||0)+1;

@@ -645,6 +645,15 @@ body:has(#page-quotes:not([hidden])) .topbar{min-height:67px;padding-top:11px;pa
 #page-products .shared-material-card figcaption{display:flex;align-items:baseline;gap:8px;padding:12px;font-size:12px;line-height:1.6;color:#334155}
 #page-products .shared-material-card figcaption span{color:#64748b;font-variant-numeric:tabular-nums}
 #page-products .shared-material-card figcaption strong{font-weight:500;overflow-wrap:anywhere}
+#page-products .material-card-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:0 12px 12px}
+#page-products .material-card-actions small{margin-right:auto;color:#22755a}
+#page-products .material-card-actions button{min-height:34px;padding:6px 12px;color:#2563eb;border-color:#cbdcff;background:#f8faff;white-space:nowrap}
+.material-image-editor{display:grid;gap:14px}.material-editor-name{margin:0;font-weight:600;overflow-wrap:anywhere}
+.material-editor-previews{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.material-editor-previews figure{margin:0;min-width:0}
+.material-editor-previews figcaption{font-size:13px;color:#64748b;margin:0 0 8px}.material-editor-previews img,.material-editor-placeholder{width:100%;height:240px;object-fit:contain;border:1px solid #e1e9f4;border-radius:8px;background:#f6f8fc}
+.material-editor-placeholder{display:grid;place-items:center;color:#64748b;font-size:13px}.material-editor-previews [hidden]{display:none}
+.material-editor-file{display:grid;gap:8px;font-weight:550}.material-editor-file input{max-width:100%;font-weight:400}.material-editor-actions{display:flex;justify-content:flex-end;gap:10px;padding-top:6px}
+@media(max-width:620px){.material-editor-previews{grid-template-columns:1fr}.material-editor-previews img,.material-editor-placeholder{height:190px}#page-products .material-card-actions{padding:0 9px 10px}}
 #page-products .shared-material-unavailable{aspect-ratio:1;display:grid;place-items:center;color:#64748b;background:#f5f8fc}
 @media(max-width:1000px){#page-products .shared-material-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){#page-products .shared-material-library{padding:14px}#page-products .shared-material-grid{gap:10px}#page-products .shared-material-card figcaption{padding:9px;font-size:12px}}
