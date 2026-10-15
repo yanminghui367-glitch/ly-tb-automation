@@ -55,6 +55,9 @@ export class BatchWorkflow {
   const b=this.store.batch(id);
   const scope=this.store.retryScope(id),inScope=x=>!scope||scope.includes(x.id);
   try{
+   // Missing review is a preparation problem. Detect it before claim() consumes
+   // a product attempt, including callers using the original batch endpoint.
+   if(b.mode==='LIVE'&&typeof this.flow.checkLiveContent==='function')for(const item of this.store.items(id).filter(x=>inScope(x)&&['PENDING','RETRY','WAITING_HUMAN'].includes(x.state)))await this.flow.checkLiveContent(item.task);
    if(this.flow.preflight)await this.flow.preflight(this.store.items(id).filter(x=>inScope(x)&&['PENDING','RETRY','WAITING_HUMAN'].includes(x.state)).map(x=>x.task),()=>{if(this.stopping)throw Error('操作者暂停');});
   }catch(e){this.store.event(id,null,'BATCH_PREFLIGHT_FAILED',{reason:e.message});this.store.setBatch(id,'PAUSED','执行前资料检查未通过：'+e.message);return;}
   while(!this.stopping){

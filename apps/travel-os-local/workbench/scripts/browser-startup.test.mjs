@@ -9,15 +9,16 @@ const options = () => ({ executablePath: resolve('test-chrome.exe'), headless: f
   args: ['--remote-debugging-port=19991', '--remote-debugging-address=127.0.0.1', '--restore-last-session', '--enable-automation'] });
 const runtime = overrides => ({ playwrightVersion: '1.62.1', coreVersion: '1.62.1', platform: 'win32', env: {}, ...overrides });
 
-test('pinned public launch preserves complete original 45-argument packet in order', () => {
+test('pinned public launch preserves defaults and ownership without a second startup tab', () => {
   const input = options(), before = structuredClone(input), actual = ownedPersistentLaunchOptions(profile, input, runtime());
   assert.deepEqual(input, before);
   assert.equal(actual.ignoreDefaultArgs, true);
   assert.equal(actual.timeout, 180000);
-  assert.equal(actual.args.length, 45);
+  assert.equal(actual.args.length, 44);
   const normalized = actual.args.map(a => a === `--user-data-dir=${profile}` ? '--user-data-dir={{PROFILE}}' : a === '--remote-debugging-port=19991' ? '--remote-debugging-port={{PORT}}' : a);
-  assert.equal(createHash('sha256').update(JSON.stringify(normalized)).digest('hex'), 'e2eb7879ea6fea609387eef3b1426a2137b41c7280c4566d14ef58d6c3ca1b1d');
-  assert.deepEqual(actual.args.slice(-7), [...input.args, `--user-data-dir=${profile}`, '--remote-debugging-pipe', 'about:blank']);
+  assert.equal(createHash('sha256').update(JSON.stringify(normalized)).digest('hex'), '4843a0ca92ffed6503916f2fb3b4c5f6f1ad990aa5edd6657e7f5f6c63a8806e');
+  assert.deepEqual(actual.args.slice(-6), [...input.args, `--user-data-dir=${profile}`, '--remote-debugging-pipe']);
+  assert(!actual.args.includes('about:blank'));
   assert.equal(actual.args.filter(a => a.startsWith('--user-data-dir=')).length, 1);
   assert.equal(actual.args.filter(a => a === '--remote-debugging-pipe').length, 1);
   assert.equal(actual.storageState, undefined);

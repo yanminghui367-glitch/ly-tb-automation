@@ -5,6 +5,7 @@ import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {fileURLToPath} from 'node:url';
 import {digest} from './source-store.mjs';
+import {assertShopInput} from './shop-identity.mjs';
 const exec=promisify(execFile),here=dirname(fileURLToPath(import.meta.url));
 const fail=(message,statusCode=409)=>{throw Object.assign(new Error(message),{statusCode});};
 const inside=(root,file)=>{const r=relative(root,file);return !isAbsolute(r)&&r!=='..'&&!r.startsWith('..'+sep);};
@@ -23,25 +24,31 @@ async function plainDirectory(path,{create=false}={}){
 export class SetupFlow {
  constructor(product){this.p=product;this.file=join(product.runtime,'product-v1','setup.json');this.sessions=join(product.runtime,'product-v1','setup-uploads');}
  idle(){this.p.assertRulesIdle();if(this.p.reconciling)fail('原商品核验中，请稍后配置');}
+ checkShop(input){assertShopInput(input,this.p.shop.id);}
+ async uploadSession(id){
+  if(!/^[a-f0-9-]{36}$/.test(id||''))fail('上传编号无效',400);
+  let session;try{session=JSON.parse(await readFile(join(this.sessions,id+'.json'),'utf8'));}catch{fail('本店上传记录不存在，请重新选择资料');}
+  if(session.id!==id||session.shopId!==this.p.shop.id)fail('上传资料与当前店铺不一致，请在原店铺重新选择资料');
+  return session;
+ }
  async config(){try{return JSON.parse(await readFile(this.file,'utf8'));}catch(e){if(e.code!=='ENOENT')fail('首次配置记录无法读取，请检查主机文件');return {version:1,storageRoot:'',format:'legacy',report:null};}}
  async save(patch){const value={...await this.config(),...patch,updatedAt:new Date().toISOString()};await atomic(this.file,value);return value;}
  fingerprint(s,id){return digest([s.heat,s.pool,s.assets,s.sheet,id]);}
- async state(){const c=await this.config(),s=await this.p.settings(),imported=this.p.source.store.batch(),same=this.matches(imported,s);return {...c,report:c.report?{...c.report,stale:c.report.fingerprint!==this.fingerprint(s,imported?.id)||!same}:null,source:same?{id:imported.id,summary:imported.summary,at:imported.at,format:imported.format||'legacy'}:null,shop:this.p.shop.name};}
+ async state(){const c=await this.config(),s=await this.p.settings(),imported=this.p.source.store.batch(),same=this.matches(imported,s);return {...c,report:c.report?{...c.report,stale:c.report.fingerprint!==this.fingerprint(s,imported?.id)||!same}:null,source:same?{id:imported.id,summary:imported.summary,at:imported.at,format:imported.format||'legacy',binding:imported.sourceBinding||null}:null,shop:this.p.shop.name,shopId:this.p.shop.id};}
  matches(batch,s){return !!batch&&resolve(batch.poolWorkbook||batch.workbook||'')===resolve(s.pool||'')&&resolve(batch.assetRoot||'')===resolve(s.assets||'')&&resolve(batch.workbook||'')===resolve(s.heat||'');}
  async folders(path){
   if(!path){const roots=process.platform==='win32'?['D:\\','E:\\','F:\\','C:\\']:['/'];const items=[];for(const root of roots){try{const fs=await statfs(root);items.push({name:root,path:root,freeBytes:fs.bavail*fs.bsize});}catch{}}return {path:'',parent:'',items};}
   const base=await plainDirectory(path);const entries=await readdir(base,{withFileTypes:true});
   return {path:base,parent:dirname(base)===base?'':dirname(base),items:entries.filter(e=>e.isDirectory()&&!e.isSymbolicLink()&&!blocked(e.name)).slice(0,300).map(e=>({name:e.name,path:join(base,e.name)}))};
  }
- async storage(input){this.idle();const selected=String(input.path||'').trim();if(resolve(selected)===parse(resolve(selected)).root)fail('请选择磁盘下的专用资料文件夹，不要直接使用磁盘根目录');const root=await plainDirectory(selected,{create:true});
+ async storage(input){this.checkShop(input);this.idle();const selected=String(input.path||'').trim();if(resolve(selected)===parse(resolve(selected)).root)fail('请选择磁盘下的专用资料文件夹，不要直接使用磁盘根目录');const root=await plainDirectory(selected,{create:true});
   const probe=join(root,'.travel-os-write-'+randomUUID());try{await writeFile(probe,'',{flag:'wx'});await unlink(probe);}catch{fail('此目录无法写入，请选择有写入权限的资料目录');}
   const fs=await statfs(root);if(fs.bavail*fs.bsize<32*1024*1024)fail('目录所在磁盘剩余空间不足32MB，请更换位置');
   await this.save({storageRoot:root,report:null});return {root,freeBytes:fs.bavail*fs.bsize};
  }
- async upload(input){this.idle();
-  if(input.begin){const c=await this.config();if(!c.storageRoot)fail('请先选择上传存放位置');const base=await plainDirectory(c.storageRoot);const id=randomUUID(),root=join(base,'导入批次',id);await plainDirectory(root,{create:true});await atomic(join(this.sessions,id+'.json'),{id,root,files:[],complete:false});return {id,root};}
-  if(!/^[a-f0-9-]{36}$/.test(input.id||''))fail('上传编号无效',400);
-  let session;try{session=JSON.parse(await readFile(join(this.sessions,input.id+'.json'),'utf8'));}catch{fail('上传记录不存在，请重新选择资料');}
+ async upload(input){this.checkShop(input);this.idle();
+  if(input.begin){const c=await this.config();if(!c.storageRoot)fail('请先选择上传存放位置');const base=await plainDirectory(c.storageRoot);const id=randomUUID(),root=join(base,'导入批次',id);await plainDirectory(root,{create:true});await atomic(join(this.sessions,id+'.json'),{id,shopId:this.p.shop.id,root,files:[],complete:false});return {id,root,shopId:this.p.shop.id};}
+  const session=await this.uploadSession(input.id);
   if(session.complete)fail('该次上传已结束，请重新选择资料');
   const parts=String(input.name||'').replaceAll('\\','/').split('/');
   if(parts.some(p=>!cleanName(p))||!extensions.has(extname(parts.at(-1)).toLowerCase())||parts.length>8)fail('仅接受 Excel 与图片，文件名或目录层级无效',400);
@@ -54,18 +61,19 @@ export class SetupFlow {
   try{await writeFile(file,bytes,{flag:'wx'});}catch(e){if(e.code==='EEXIST')fail('同名文件已存在，请重新上传整套资料');throw e;}
   session.files.push({name,bytes:bytes.length});await atomic(join(this.sessions,input.id+'.json'),session);return {root,path:file,count:session.files.length};
  }
- async importSource(input){this.idle();const format=input.format==='standard'?'standard':input.format==='legacy'?'legacy':null;if(!format)fail('请选择标准模板或原有Excel资料',400);
+ async importSource(input){this.checkShop(input);this.idle();const format=input.format==='standard'?'standard':input.format==='legacy'?'legacy':null;if(!format)fail('请选择标准模板或原有Excel资料',400);
   let session,root=input.root;
-  if(input.uploadId){if(!/^[a-f0-9-]{36}$/.test(input.uploadId))fail('上传编号无效',400);session=JSON.parse(await readFile(join(this.sessions,input.uploadId+'.json'),'utf8'));if(!session.files.length)fail('还没有上传文件');root=session.root;}
+  if(input.uploadId){session=await this.uploadSession(input.uploadId);if(session.complete)fail('该次上传已结束，请重新选择资料');if(!session.files.length)fail('还没有上传文件');root=session.root;}
   let result,paths;
   if(format==='standard'){
    const base=await plainDirectory(root),workbook=join(base,'商品资料.xlsx');
    const s=await lstat(workbook).catch(()=>null);if(!s?.isFile()||s.isSymbolicLink()||s.size>16*1024*1024)fail('未找到有效的商品资料.xlsx，请选择模板所在文件夹');
    try{const output=await exec(process.env.PYTHON||'python',[join(here,'setup-adapter.py'),'--root',base,'--shop-id',this.p.shop.id,'--shop-name',this.p.shop.name],{windowsHide:true,timeout:120000,maxBuffer:20*1024*1024,env:{...process.env,PYTHONIOENCODING:'utf-8'}});result=JSON.parse(output.stdout);}catch(e){fail(String(e.stderr||e.message).trim().slice(-1800));}
-   // Existing executor is not generalized by adding a new import format.
-   if(this.p.shop.id!=='wuzhou-changyou')for(const t of result.tasks)t.adapterIssues.push('此店铺尚未完成执行适配');
+   // Compatibility for ProductApi callers outside the registered-shop manager.
+   if(!this.p.executionAdapterSupported&&this.p.shop.id!=='wuzhou-changyou')for(const t of result.tasks)t.adapterIssues.push('此店铺尚未完成执行适配');
    paths={pool:workbook,heat:workbook,assets:base,sheet:'境外城市热度'};
   }else{
+   if(this.p.shop.id!=='wuzhou-changyou')fail('本店请使用标准模板导入，旧版资料仅适用于原店铺');
    paths=Object.fromEntries(['heat','pool','assets','sheet'].map(k=>[k,String(input[k]||'').trim()]));
    if(session){paths.heat=join(root,'热度.xlsx');paths.pool=join(root,'商品.xlsx');paths.assets=join(root,'图片');}
    if(Object.values(paths).some(v=>!v))fail('原有Excel需要热度表、商品表、图片目录和工作表名称');
@@ -75,9 +83,11 @@ export class SetupFlow {
   // Each explicit re-identification is a new selection, even A -> B -> A.
   // Preserve old imports/tasks; destinationKey still provides business deduplication.
   const selection={id:randomUUID(),materials:digest(result.templateMaterials||{})};
-  result={...result,tasks:result.tasks.map(t=>({...t,setupSelection:selection}))};delete result.id;delete result.at;
+  if(result.tasks.some(t=>t.shopId!==this.p.shop.id))fail('商品资料含其他店铺任务，未绑定或保存');
+  result={...result,sourceBinding:{shopId:this.p.shop.id,shopName:this.p.shop.name,shopCode:result.tasks[0]?.business?.shop_code||null,format:result.format||'legacy'},tasks:result.tasks.map(t=>({...t,setupSelection:selection}))};delete result.id;delete result.at;
   const id=this.p.source.store.imported(result);await this.p.saveSettings(paths);
-  await this.save({format,report:null,lastImport:id});if(session){session.complete=true;await atomic(join(this.sessions,input.uploadId+'.json'),session);}
+  const sourceValidation={importId:id,shopId:this.p.shop.id,checkedAt:new Date().toISOString(),ready:result.tasks.every(t=>!t.adapterIssues.length),stage:'import',total:result.tasks.length};
+  await this.save({format,report:null,lastImport:id,sourceValidation});if(session){session.complete=true;await atomic(join(this.sessions,input.uploadId+'.json'),session);}
   return {importId:id,summary:result.summary,issues:result.tasks.filter(t=>t.adapterIssues.length).map(t=>({row:t.source.row,destination:t.listing.city||t.listing.country,issues:t.adapterIssues})),paths,preview:this.p.preview(id,20)};
  }
  async check(){this.idle();const env=await this.p.checkConfiguration(),settings=await this.p.settings(),batch=this.p.source.store.batch(),c=await this.config(),checks=[];
@@ -86,6 +96,8 @@ export class SetupFlow {
   if(c.storageRoot){try{await plainDirectory(c.storageRoot);const fs=await statfs(c.storageRoot);add('资料位置','上传存放目录',fs.bavail*fs.bsize>=32*1024*1024,c.storageRoot,1);}catch(e){add('资料位置','上传存放目录',false,e.message,1);}}
   const same=this.matches(batch,settings);add('资料内容','已识别当前资料',same,same?`已识别 ${batch.summary?.total??batch.tasks.length} 条商品`:'资料位置已变化或尚未导入，请回到第2步识别资料',2);
   if(same){
+   const correctShop=batch.tasks.every(t=>t.shopId===this.p.shop.id)&&(!batch.sourceBinding||batch.sourceBinding.shopId===this.p.shop.id);
+   add('资料内容','资料与店铺对应',correctShop,correctShop?this.p.shop.name+' · 商品资料属于当前店铺':'资料中有其他店铺的商品，请在对应店铺重新导入',2);
    const invalid=batch.tasks.filter(t=>t.adapterIssues.length);add('资料内容','字段与图片',invalid.length===0,invalid.length?invalid.slice(0,12).map(t=>`${t.listing.city||t.listing.country}（第${t.source.row}行）：${t.adapterIssues.join('；')}`).join('\n'):'本次已导入商品的字段与图片数量检查通过；内容真实性仍需人工核对',2);
    const files=new Map();for(const t of batch.tasks)for(const f of [t.source,...t.sourceReferences||[],...Object.values(t.assets).flat()])files.set(f.workbook||f.path,f.sha256);
    for(const f of [...batch.templateMaterials?.secondary?.B||[],...(batch.templateMaterials?.covers||[])])files.set(f.path,f.sha256);
@@ -93,7 +105,7 @@ export class SetupFlow {
    add('资料内容','识别后文件未变化',changed.length===0,changed.length?changed.slice(0,12).join('\n'):`已核对 ${files.size} 个源文件`,2);
    const preset=this.p.rules.preset(this.p.shop.id);if(preset.enabled){try{await this.p.rules.checkPreset(preset);const selected=[...preset.secondary.A,...preset.secondary.B,...preset.covers];if(batch.format&&selected.some(f=>!inside(resolve(settings.assets),resolve(f.path))))throw Error('图片目录已换，随机规则仍引用旧资料，请重新选择图片并确认');add('资料内容','发布随机规则',true,'当前规则图片存在且未变化',2);}catch(e){add('资料内容','发布随机规则',false,e.message,2);}}
   }
-  add('运行环境','店铺执行适配',this.p.shop.id==='wuzhou-changyou',this.p.shop.id==='wuzhou-changyou'?'当前店铺使用已有执行适配':'新增店铺需完成执行适配后才能运行',3);
+  add('运行环境','店铺执行适配',(this.p.executionAdapterSupported||this.p.shop.id==='wuzhou-changyou'),(this.p.executionAdapterSupported||this.p.shop.id==='wuzhou-changyou')?'当前店铺使用已有执行适配':'新增店铺需完成执行适配后才能运行',3);
   const report={at:new Date().toISOString(),checks,ready:checks.every(c=>c.ok===true),fingerprint:this.fingerprint(settings,batch?.id)};await this.save({report});return report;
  }
  async handle(req,res,url,{body,json}){
@@ -103,7 +115,7 @@ export class SetupFlow {
    if(action==='folders')return json(res,200,await this.folders(url.searchParams.get('path')));
    if(action==='template'){const data=await readFile(join(here,'templates','travel-os-template-v2.zip'));res.writeHead(200,{'content-type':'application/zip','content-disposition':'attachment; filename="XingTu-product-template-v2.zip"','cache-control':'no-store'});return res.end(data);}
   }
-  if(req.method==='POST'){const input=await body(req);let result;
+  if(req.method==='POST'){const input=await body(req);this.checkShop(input);let result;
    if(action==='storage')result=await this.storage(input);
    else if(action==='upload')result=await this.upload(input);
    else if(action==='import')result=await this.importSource(input);

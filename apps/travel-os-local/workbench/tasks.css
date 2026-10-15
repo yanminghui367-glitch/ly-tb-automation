@@ -76,6 +76,12 @@
 #page-tasks .material-main progress::-webkit-progress-value{background:#22b383}#page-tasks .material-details progress::-webkit-progress-value{background:#8654eb}
 #page-tasks .queue-panel{padding:16px 20px;margin:0}
 .task-queue-toolbar{display:flex;align-items:center;gap:15px;margin-bottom:13px;flex-wrap:wrap}
+.task-batch-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.task-recheck-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}.task-recheck-actions span{font-size:12px;color:#65768f}
+.task-history-selector{display:flex;align-items:center;gap:12px;color:#65768f;font-size:13px;max-width:100%}
+.task-history-selector select{min-height:38px;width:265px;max-width:100%;border:1px solid #dce6f3;border-radius:7px;padding:7px 10px;background:#fff;color:#294564;font:inherit}
+.task-history-selector select:focus-visible{outline:2px solid #287bfa;outline-offset:2px}
+@media(max-width:620px){.task-history-selector{width:100%;align-items:stretch;flex-direction:column;gap:7px}.task-history-selector select{width:100%;font-size:16px;min-height:44px}}
 .task-queue-toolbar h2{white-space:nowrap}.task-queue-toolbar .tabs{gap:5px}
 #page-tasks .task-queue-toolbar .tabs button{font-size:12px;gap:5px;padding:7px 10px;border:0;color:#65768f;border-radius:6px;min-height:36px;white-space:nowrap}
 #page-tasks .task-queue-toolbar .tabs button[aria-pressed=true]{color:#2176f5;background:#eff6ff;box-shadow:inset 0 -2px #287bfa}
@@ -109,6 +115,12 @@
 #page-tasks .execution-monitor{padding:22px 24px}
 .monitor-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;padding-bottom:18px;border-bottom:1px solid #e7eef7}
 .monitor-heading h2{font-size:20px!important}.monitor-heading p{margin:7px 0 0;color:#5b7191;font-size:13px}.monitor-heading p span{display:inline-block;margin-left:20px;color:#65758b;font-size:12px}
+.monitor-heading-identity{display:flex;align-items:center;gap:30px;min-width:0}
+.execution-orb{position:relative;isolation:isolate;width:110px;height:110px;flex:0 0 110px;pointer-events:none}
+.execution-orb::before{content:"";position:absolute;inset:20px;border-radius:50%;background:radial-gradient(circle at 32% 26%,#f9d875 0,#46b9de 35%,#6674cb 70%,#293d73 100%);box-shadow:0 5px 16px #4266a323;z-index:-1}
+.execution-orb:has([data-renderer="webgl"])::before{display:none}
+.execution-orb-canvas,.execution-orb canvas{display:block;width:110px!important;height:110px!important}
+@media(max-width:760px){.monitor-heading-identity{gap:8px;flex:1}.execution-orb{margin-left:auto}.monitor-heading:has(.execution-orb){align-items:center}.monitor-heading-identity>div:first-child{min-width:0}}
 .monitor-status{display:inline-flex;align-items:center;gap:8px;border-radius:20px;padding:8px 13px;font-size:13px;font-weight:600;white-space:nowrap;background:#f1f4f8;color:#52657c}.monitor-status i{width:8px;height:8px;border-radius:50%;background:currentColor}
 .monitor-status.attention{background:#fff5df;color:#956016}.monitor-status.error{background:#fff0ee;color:#b34231}.monitor-status.running{background:#eaf3ff;color:#1c65cc}.monitor-status.complete{background:#e9f8f1;color:#18704d}
 .monitor-layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:28px;padding:22px 0 8px}.monitor-layout>div{min-width:0}.monitor-current{border-left:1px solid #e7eef7;padding-left:28px}.monitor-current>small{color:#687a94;font-size:12px}.monitor-current h3{font-size:25px!important;line-height:1.35;margin:8px 0}.monitor-current>.round-current{font-size:14px;color:#425d80;margin:0 0 14px}
@@ -119,3 +131,9 @@
 #page-tasks .task-history-panel{margin:0 0 18px;padding:14px 22px}.task-history-panel .task-summary-grid{margin:14px 0 0}.task-history-panel .task-state-hero strong{font-size:24px}.task-history-panel .task-state-dot{display:none}
 @media(max-width:1100px){.monitor-layout{gap:18px}.monitor-current{padding-left:18px}.monitor-heading p span{display:block;margin:5px 0 0}.monitor-steps{gap:7px}.monitor-steps li{font-size:12px;gap:5px}}
 @media(max-width:760px){#page-tasks .execution-monitor{padding:18px 16px}.monitor-layout{grid-template-columns:1fr;gap:18px}.monitor-current{border-left:0;border-top:1px solid #e7eef7;padding:18px 0 0}.monitor-heading{gap:10px;flex-wrap:wrap}.monitor-status{white-space:normal}.execution-monitor .round-counts{grid-template-columns:repeat(2,minmax(0,1fr))}.monitor-actions>a{margin-left:0}.monitor-steps{grid-template-columns:1fr;gap:10px}.monitor-actions button{min-height:44px}.monitor-actions .primary{flex-basis:100%}#page-tasks .task-history-panel{padding:14px 16px}.monitor-current h3{font-size:23px!important}}
+
+/* Keep execution status beside its heading, before the existing state orb. */
+.monitor-title-row{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.monitor-title-row h2{margin:0!important}
+.monitor-title-row .monitor-status{flex:0 0 auto}
+@media(max-width:760px){.monitor-title-row{gap:8px 12px}.monitor-title-row .monitor-status{flex-shrink:1}}

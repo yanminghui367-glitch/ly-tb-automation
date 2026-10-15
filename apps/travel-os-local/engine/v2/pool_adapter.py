@@ -13,6 +13,18 @@ def known_destination_mismatch(image_hash, country, city):
         return city is not None or country not in {'圣皮埃尔和密克隆', '圣皮埃尔和密克隆群岛'}
     if image_hash == '03c61e32e18abcf40a998dd05d38d79d6bae0c30cb9984afe2982f36833fdb8c':
         return (country, city) != ('德国', '柏林')
+    # Visual audit of the Wuzhou Changyou legacy asset set, 2026-10-14.
+    # Black main images, a duplicated Milwaukee image on Albuquerque, and the
+    # Dedham spelling mismatch must remain blocked until a matching source is found.
+    if image_hash in {
+        'cf40c7414f260cd7897c431735c2bf414bcac2f1a7794b6f756fc96e13ccab27',
+        '7a0119049de1064ada58e2cb811f404a5a5cecbd0d56e1d3b14f30c63e41c334',
+    }:
+        return True
+    if image_hash == 'ae7f3acbdc626f3d3be4d66a28317d5d3180efeac43b47c52f5f31b0bbfaf3b3':
+        return (country, city) != ('美国', '密尔沃基')
+    if image_hash == 'fd7122554ac665b770625e7e9ae4b109b01924f1380eb45f4583094dcbb2064c':
+        return True
     return False
 
 

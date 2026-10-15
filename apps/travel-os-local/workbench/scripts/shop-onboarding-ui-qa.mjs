@@ -1,0 +1,47 @@
+import {createServer as probeServer} from 'node:net';
+import assert from 'node:assert/strict';
+import {mkdir,mkdtemp,writeFile,readFile} from 'node:fs/promises';
+import {join,resolve} from 'node:path';
+import {fork,execFileSync} from 'node:child_process';
+import {chromium} from 'playwright';
+const out=resolve('../output/shop-onboarding-20261015/ui');await mkdir(out,{recursive:true});
+const runtime=await mkdtemp(join(out,'fixture-')),root=join(runtime,'标准店铺套图');
+await writeFile(join(runtime,'shops.json'),JSON.stringify([{id:'wuzhou-changyou',name:'五洲畅游',port:9222},{id:'shop-7949a469',name:'环球领航',port:9230}]));
+execFileSync('python',[resolve('scripts/setup-fixture.py'),root,'--count','2','--version','2'],{windowsHide:true});
+execFileSync('python',['-c',"from zipfile import ZipFile;from pathlib import Path;import sys;p=Path(sys.argv[1]);z=ZipFile(p);d={n:z.read(n) for n in z.namelist()};z.close();z=ZipFile(p,'w');[z.writestr(n,v.replace('五洲畅游'.encode(),'隔离新店UI'.encode())) for n,v in d.items()];z.close()",join(root,'商品资料.xlsx')],{windowsHide:true});
+await mkdir(join(root,'_交接/主图'),{recursive:true});await writeFile(join(root,'_交接/主图/旧图.png'),'archive');
+await mkdir(join(root,'主图/候选'),{recursive:true});await writeFile(join(root,'主图/候选/候选.png'),'candidate');
+const probe=probeServer();await new Promise(r=>probe.listen(0,'127.0.0.1',r));const port=probe.address().port;await new Promise(r=>probe.close(r));
+const child=fork(new URL('./shop-http-fixture.mjs',import.meta.url),[],{env:{...process.env,WORKBENCH_NO_LISTEN:'1',WORKBENCH_TEST_RUNTIME:runtime,WORKBENCH_PORT:String(port),SHOP_FIXTURE_PORT:String(port)},stdio:['ignore','ignore','pipe','ipc']});
+await new Promise((r,j)=>{child.once('message',r);child.once('exit',()=>j(Error('fixture closed')));});const base='http://127.0.0.1:'+port;
+const browser=await chromium.launch({channel:'chrome',headless:true}),page=await browser.newPage({viewport:{width:1440,height:1000}});
+const errors=[],checks=[],uploads=[];page.on('pageerror',e=>errors.push(e.message));
+page.on('request',req=>{if(req.method()==='POST'&&req.url().includes('/setup/upload')){const data=req.postDataJSON();if(data.name)uploads.push({name:data.name,shopId:data.shopId,scope:new URL(req.url()).searchParams.get('executionShop')});}});
+await page.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());page.setDefaultTimeout(20000);
+try{
+ await page.goto(base+'/travel-os.html#shops');await page.locator('[data-action=add-shop]').click();
+ await page.locator('#shopForm input[name=name]').fill('隔离新店UI');await page.locator('#shopForm button[type=submit]').click();
+ await page.waitForURL(/shop=shop-/);await page.locator('#setupExecutionShop').waitFor();
+ const id=new URL(page.url()).searchParams.get('shop');assert(id&&!['wuzhou-changyou','shop-7949a469'].includes(id));assert.equal(await page.locator('#setupExecutionShop').inputValue(),id);checks.push('网站新增任意店铺后自动进入其资料设置，不停留原店');
+ const options=await page.locator('#setupExecutionShop option').allTextContents();assert.equal(options.length,3);checks.push('既有和新增店铺均可直接选择，无特定店铺名单');
+ await page.locator('#setupStorage').fill(join(runtime,'upload-storage'));await page.locator('[data-setup=save-storage]').click();
+ await page.locator('[data-setup=upload]').click();await page.locator('#setupFolder').setInputFiles(root);
+ assert.match(await page.locator('#page-settings').innerText(),/已选择 20 个正式/);checks.push('整套上传自动排除归档和嵌套候选，仅20个正式源文件');
+ assert.equal(await page.locator('#setupFormat option[value=legacy]').count(),0);
+ await page.locator('[data-setup=import]').click();await page.getByRole('heading',{name:'登录这次要执行的店铺'}).waitFor();
+ assert.equal(uploads.length,20);assert(uploads.every(x=>x.shopId===id&&x.scope===id&&!x.name.includes('_交接')&&!x.name.includes('候选')));checks.push('每个上传请求和上传记录均绑定新店，识别成功后进入该店登录步骤');
+ const s=await (await page.request.get(base+'/api/v1/state?executionShop='+id)).json();assert.equal(s.settings.executionEnabled,false);assert.equal(s.latestImport?.length,24);assert.equal(s.batch,null);
+ const setup=await (await page.request.get(base+'/api/v1/setup/state?executionShop='+id)).json();assert.equal(setup.source.binding.shopId,id);assert.equal(setup.source.summary.total,2);checks.push('资料冻结店铺ID，默认未开执行许可且未创建任务');
+ await page.getByRole('link',{name:'自动化任务',exact:true}).click();await page.locator('.material-summary').waitFor();
+ const materials=await page.locator('.material-summary').innerText();assert.match(materials,/首页候选 2 张/);assert.match(materials,/副图\s+8 张/);checks.push('新店任务页按标准目录显示副图8、正文7、首页2');
+ await page.screenshot({path:join(out,'new-shop-task.png'),fullPage:true});
+ await page.getByRole('link',{name:'资料设置',exact:true}).click();await page.locator('#setupExecutionShop').waitFor();
+ await page.locator('#setupExecutionShop').selectOption('wuzhou-changyou');await page.waitForURL(/shop=wuzhou-changyou/);await page.locator('#setupExecutionShop').waitFor();
+ const w=await (await page.request.get(base+'/api/v1/state')).json();assert.equal(w.latestImport,null);assert.equal(await page.locator('#setupStorage').inputValue(),'');checks.push('切回原店资料与上传目录保持空白，未带入新店内容');
+ await page.locator('#setupExecutionShop').selectOption(id);await page.waitForURL(new RegExp('shop='+id));await page.locator('#setupExecutionShop').waitFor();assert.equal(await page.locator('#setupExecutionShop').inputValue(),id);
+ await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:join(out,'new-shop-mobile.png'),fullPage:true});checks.push('切回新店并在390px宽度仍保留正确店铺及资料');
+ assert.deepEqual(errors,[]);
+}finally{
+ await writeFile(join(out,'last-page.txt'),await page.locator('body').innerText());await page.screenshot({path:join(out,'last-page.png'),fullPage:true});await writeFile(join(out,'qa.json'),JSON.stringify({checks,errors,uploadedNames:uploads,productionRequests:0},null,2));
+ await browser.close();const exited=new Promise(r=>child.once('exit',r));child.kill();await exited;console.log(JSON.stringify({checks,errors}));
+}

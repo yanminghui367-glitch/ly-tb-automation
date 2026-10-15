@@ -13,8 +13,29 @@ export function destinationCatalog(store,shopId){
   for(const row of imports){const data=JSON.parse(row.payload);if(!data.tasks?.some(t=>t.shopId===shopId))continue;
     const source={...data,id:row.id,at:row.at};if(data.sheet==='境外城市热度'){heat||=source;}else{pool||=source;}if(pool&&heat)break;
   }
-  const byKey=new Map();
-  for(const source of [pool,heat].filter(Boolean))for(const task of source.tasks){if(task.shopId!==shopId)continue;byKey.set(destinationKey(task),{task,source});}
+    const byKey=new Map();
+    for(const source of [pool,heat].filter(Boolean)){
+      const withinSource=new Map();
+      for(const task of source.tasks){
+        if(task.shopId!==shopId)continue;
+        const key=destinationKey(task),previous=withinSource.get(key);
+        if(previous){
+          const comparable=value=>{
+            const stable=(item)=>Array.isArray(item)?item.map(stable):item&&typeof item==='object'?Object.fromEntries(Object.keys(item).sort().map(key=>[key,stable(item[key])])):item;
+            const copy={...value};delete copy.priority;delete copy.source;delete copy.adapterIssues;return JSON.stringify(stable(copy));
+          };
+          if(comparable(previous.task)!==comparable(task)){
+            const retained={...previous.task,adapterIssues:[...new Set([...(previous.task.adapterIssues||[]),...(task.adapterIssues||[]),'同一资料包内目的地资料存在冲突'])]};
+            withinSource.set(key,{task:retained,source});
+          }else if((previous.task.adapterIssues||[]).length&&(task.adapterIssues||[]).length===0){
+            withinSource.set(key,{task,source});
+          }
+          continue;
+        }
+        withinSource.set(key,{task,source});
+      }
+      for(const [key,value] of withinSource)byKey.set(key,value);
+    }
   const runs=new Map(store.list().map(r=>[r.key,r]));
   const history=new Map(store.db.prepare('SELECT key,payload FROM history').all().map(r=>[r.key,JSON.parse(r.payload)]));
   const queue=new Map(store.db.prepare('SELECT id,batch,key,state,reason,run_id FROM batch_items').all().map(r=>[r.key,r]));
@@ -24,7 +45,7 @@ export function destinationCatalog(store,shopId){
     const run=runs.get(key),completed=history.get(key),queued=queue.get(key),issues=(t.adapterIssues||[]).map(redact);
     const held=contentHolds.get(key),state=held?'RESULT_UNKNOWN':completed?'VERIFIED':run?.state||queued?.state||(issues.length?'NEEDS_DATA':'AVAILABLE');
     const destination=t.listing.city||t.listing.country,counts=Object.fromEntries(['main','secondary','details'].map(k=>[k,t.assets?.[k]?.length||0]));
-    const materials=Object.entries(t.assets||{}).filter(([g])=>['main','secondary','details'].includes(g)).flatMap(([group,files])=>files.map((a,index)=>({group,index,name:basename(a.path),url:'/api/source/asset?'+new URLSearchParams({batch:source.id,order:t.priority,group,index})})));
+    const materials=Object.entries(t.assets||{}).filter(([g])=>['main','secondary','details'].includes(g)).flatMap(([group,files])=>files.map((a,index)=>({group,index,name:basename(a.path),url:'/api/source/asset?'+new URLSearchParams({batch:source.id,order:t.priority,group,index,...(t.shopId!=='wuzhou-changyou'?{executionShop:t.shopId}:{})})})));
     const batchId=queued?.batch||null;
     const next=completed?{label:'查看上架记录',href:workbench('records',{destination})}:
       run||queued?{label:['RESULT_UNKNOWN','SUBMITTING','PAUSED_CAPTCHA','PAUSED','WAITING_HUMAN','FAILED'].includes(state)?'查看处理条件':'查看任务',href:workbench(['RESULT_UNKNOWN','SUBMITTING','PAUSED_CAPTCHA','PAUSED','WAITING_HUMAN','FAILED'].includes(state)?'exceptions':'tasks',{destination,...(batchId?{batch:batchId}:{})})}:

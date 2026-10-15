@@ -97,9 +97,12 @@ test('cleanup DOM failure is retained in the exception budget without changing t
  assert.equal(r.state,'VERIFIED');assert(x.store.completed(r.task));assert.equal(x.state.publish.closeCalls,0);
  assert.equal(x.ledger().counts().retained,1,'logging cleanup failure must still record the preserved abnormal page');
 });
-test('two cleanup read failures stop the following source before creating a third page',async t=>{
+test('cleanup read failures retain evidence and allow sources beyond six owned pages',async t=>{
  const x=await fixture(t);x.state.bodyRead=async()=>{throw Error('cleanup DOM timeout fixture');};assert.equal((await x.execute(x.run)).state,'VERIFIED');assert.equal((await x.execute(x.create(2))).state,'VERIFIED');
- const third=await x.execute(x.create(3));assert.equal(third.state,'PAUSED');assert.match(third.reason,/两张异常/);assert.equal(x.state.creates,2);assert.equal(x.state.clicks,2);
+ assert.equal(x.ledger().counts().retained,2);
+ const third=await x.execute(x.create(3));assert.equal(third.state,'VERIFIED');assert.equal(x.state.creates,3);assert.equal(x.state.clicks,3);assert.equal(x.ledger().counts().retained,3);
+ for(let i=4;i<=8;i++){const r=await x.execute(x.create(i));assert.equal(r.state,'VERIFIED');assert(x.store.completed(r.task));}
+ assert.equal(x.state.creates,8);assert.equal(x.state.clicks,8);assert.equal(x.ledger().counts().owned,8);assert.equal(x.ledger().counts().retained,8);
 });
 test('post-VERIFIED result artifact failure also retains its page in the exception budget',async t=>{
  const x=await fixture(t);x.state.duringVerify=async()=>mkdir(join(x.dir,'artifacts',x.run.id,'result.json'));
@@ -116,10 +119,11 @@ test('RESULT_UNKNOWN recovery continues read-only verification despite an alread
  await x.flow.resume({id:x.run.id},{id:x.run.task.shopId,name:'隔离店'});await x.flow.pending;
  assert.equal(x.store.run(x.run.id).state,'VERIFIED');assert.equal(x.state.clicks,1);assert.equal(x.state.checks,1);assert.equal(x.state.creates,1);assert.equal(x.state.publish.closeCalls,0);assert.throws(()=>x.ledger().assertCanStartTask(),/落盘失败/);
 });
-test('two result artifact failures stop the following task while preserving both successes',async t=>{
+test('two result artifact failures preserve successes and allow the following task',async t=>{
  const x=await fixture(t);x.state.duringVerify=async()=>mkdir(join(x.dir,'artifacts',x.flow.active,'result.json'));
  assert.equal((await x.execute(x.run)).state,'VERIFIED');const second=x.create(2);assert.equal((await x.execute(second)).state,'VERIFIED');
- const third=await x.execute(x.create(3));assert.equal(third.state,'PAUSED');assert.match(third.reason,/两张异常/);assert.equal(x.state.creates,2);assert.equal(x.state.clicks,2);assert(x.store.completed(x.run.task));assert(x.store.completed(second.task));
+ assert.equal(x.ledger().counts().retained,2);
+ const third=await x.execute(x.create(3));assert.equal(third.state,'VERIFIED');assert.equal(x.state.creates,3);assert.equal(x.state.clicks,3);assert.equal(x.ledger().counts().retained,3);assert(x.store.completed(x.run.task));assert(x.store.completed(second.task));assert(x.store.completed(third.task));
 });
 test('artifact failure followed by failed retention persistence keeps the next-task fault latch',async t=>{
  const x=await fixture(t);x.state.duringVerify=async()=>{

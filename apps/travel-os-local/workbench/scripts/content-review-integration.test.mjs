@@ -27,7 +27,7 @@ async function fixture(t,n=3){
   async resume({id}){store.move(id,'QUEUED');this.launch(id);}
  };
  const batch=new BatchWorkflow(source),owner={sessions:new Map(),status:async()=>({running:true,loggedIn:true,loginState:'LOGGED_IN',checkedAt:new Date().toISOString()})};
- const params={batch,source,owner,shop,runtime:dir,launch:async()=>{},checkFiles:async()=>{},integrity:async()=>({ok:true,revision:'content-test'})};
+ const params={batch,source,owner,shop,runtime:dir,imageReviewPolicy:{enabled:false},launch:async()=>{},checkFiles:async()=>{},integrity:async()=>({ok:true,revision:'content-test'})};
  let api=new ProductApi(params);
  const wire=()=>{api.round.verifyExisting=async({history})=>{lookups++;return history||null;};};wire();
  const create=()=>api.round.create({importId,expectedCount:n,repairVersion:'content-test',authorization:{allowLive:true,maxSafeRecoveries:2,confirmedShop:shop.name,expectedCount:n}});

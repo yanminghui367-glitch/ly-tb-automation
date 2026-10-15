@@ -8,6 +8,13 @@ test('display state governs grouping, including dry run and uncertain results',(
  assert.equal(taskGroup({state:'SUBMITTING'}),'running');
  assert.equal(taskGroup({state:'QUEUED'}),'waiting');
 });
+test('skipped is a separate searchable facet without counting successful links as skipped',()=>{
+ const items=[{name:'跳过城市',state:'MANUAL_SKIPPED',displayState:'SKIPPED'},{name:'资料跳过',state:'PREFLIGHT_SKIPPED',displayState:'SKIPPED'},{name:'旧跳过',state:'SKIPPED'},{name:'成功城市',state:'VERIFIED'},{name:'异常城市',state:'FAILED'}];
+ assert.equal(taskListView(items,{filter:'skipped'}).total,3);
+ assert.equal(taskListView(items,{filter:'skipped',search:'资料'}).total,1);
+ assert.equal(taskListView(items).counts.skipped,3);
+ assert.equal(taskListView(items).counts.done,4);
+});
 test('search and category intersect; paging clamps; category counts remain global',()=>{
  const items=Array.from({length:23},(_,i)=>({name:i<21?'东京':'巴黎',title:'旅行 '+i,state:i===22?'FAILED':'SUCCEEDED'}));
  const result=taskListView(items,{search:'东京',filter:'done',page:3});

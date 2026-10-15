@@ -40,6 +40,14 @@ test('CAPTCHA still blocks resume while the manual skip remains recorded',async(
  const f=uiFixture({resumeBlocked:true}),ui=f.create();await ui.run(scope);
  assert.equal(f.round.current.state,'MANUAL_SKIPPED');assert.match(ui.view(f.round).notice,/已跳过.*继续本轮未通过检查.*验证码/);assert.equal(ui.view(f.round).label,'已跳过此条');
 });
+test('confirmed skip feedback clears from the current-action area after the next product becomes current',async()=>{
+ const f=uiFixture({resumeBlocked:true}),ui=f.create();await ui.run(scope);
+ assert.match(ui.view(f.round).notice,/继续本轮未通过检查.*验证码/);
+ f.round.current={key:'spain-key',state:'NEW_SUCCESS',destination:'西班牙',submitted:true,submissionUncertain:false};
+ const current=ui.view(f.round);
+ assert.equal(current.notice,'');assert.equal(current.error,false);assert.equal(current.key,'spain-key');
+ assert.equal(f.counts().decisions,1,'历史跳过决定仍只记录一次');
+});
 test('a completed or changed window can reconcile its saved receipt without starting a new window',async()=>{
  for(const changed of [false,true]){
   const f=uiFixture({responseLost:true});await f.create().run(scope);

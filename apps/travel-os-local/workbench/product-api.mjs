@@ -6,6 +6,7 @@ import {destinationKey,digest} from './source-store.mjs';
 import {verifyKernel} from './kernel-integrity.mjs';
 import {redact,classify,roundHoldIssue,browserView,pauseView} from './product-state.mjs';
 import {assertTaskFiles} from './taobao-publisher.mjs';
+import {readMaterialBinding} from './round-material-binding.mjs';
 import {destinationCatalog,searchDestinations} from './destination-catalog.mjs';
 import {globeCatalog} from './globe-catalog.mjs';
 import {retryPlan} from './task-view-model.mjs';
@@ -15,11 +16,13 @@ import {visibleChallenge} from './browser-environment.mjs';
 import {newForm} from './taobao-publisher.mjs';
 import {ResultReconciliation} from './result-reconciliation.mjs';
 import {SetupFlow} from './setup-flow.mjs';
+import {assertShopInput} from './shop-identity.mjs';
 import {MAX_BATCH_SIZE,DEFAULT_BATCH_SIZE} from './batch-policy.mjs';
 import {createHostedRoundItemApi} from './round-item-host-api.mjs';
 import {ListingRound} from './listing-round.mjs';
 import {RoundVerification} from './round-verification.mjs';
 import {PublishingContentReviews} from './publishing-content-review.mjs';
+import {ContentPreparation} from './content-preparation.mjs';
 import {setPageScope,getPageLedger} from './page-ownership.mjs';
 
 export const executionRoute=path=>/^\/api\/batch\/(start|continue|retry)$/.test(path)||/^\/api\/source\/(start|resume)$/.test(path)||/^\/api\/tasks\/[^/]+\/(start|resume|acknowledge-manual|complete-dry-run)$/.test(path);
@@ -33,13 +36,14 @@ export function stepName(value='') {
 }
 export const reasonText=value=>redact(value).slice(0,600);
 export class ProductApi {
-  constructor({batch,source,owner,shop,launch,runtime,integrity=verifyKernel,checkFiles=assertTaskFiles,isShopRemoved=null}) {
+  constructor({batch,source,owner,shop,launch,runtime,integrity=verifyKernel,checkFiles=assertTaskFiles,isShopRemoved=null,imageReviewPolicy}) {
+    if(checkFiles===assertTaskFiles)checkFiles=task=>assertTaskFiles(task,{materialBinding:readMaterialBinding(source.store.db,task)});
     Object.assign(this,{batch,source,owner,shop,launch,runtime,integrity,checkFiles});
-    this.settingsFile=join(runtime,'product-v1','settings.json');this.frozen=integrity();this.catalog=new Map();this.catalogCount=-1;this.validationCache=null;this.streams=new Set();this.startedAt=new Date().toISOString();this.checkResult=null;
+    this.settingsFile=join(runtime,'product-v1','settings.json');this.catalog=new Map();this.catalogCount=-1;this.validationCache=null;this.streams=new Set();this.startedAt=new Date().toISOString();this.checkResult=null;
     source.store.db.exec('CREATE TABLE IF NOT EXISTS product_actions(id TEXT PRIMARY KEY, action TEXT NOT NULL, target TEXT NOT NULL, at TEXT NOT NULL, result TEXT NOT NULL)');
     this.rules=new PublishingRules(source.store);this.capturing=false;this.reconciling=false;this.reconciliation=new ResultReconciliation(this);this.setup=new SetupFlow(this);
-    this.contentReviews=new PublishingContentReviews(source.store);
-    this.round=new ListingRound({batch,source,shop,rules:this.rules,checkFiles,contentReviews:this.contentReviews,
+    this.contentReviews=new PublishingContentReviews(source.store,{policy:imageReviewPolicy});
+    this.round=new ListingRound({batch,source,shop,rules:this.rules,checkFiles,contentReviews:this.contentReviews,getListingDefaults:async()=>(await this.settings()).listingDefaults,
       assertExecution:async()=>{await this.assertExecution();const state=await this.owner.status(this.shop);if(!state.running||!state.loggedIn)throw Error(state.loginState==='PAUSED_CAPTCHA'?'PAUSED_CAPTCHA':state.reason||'请人工登录目标店铺');},
       verifyExisting:input=>{
         const context=this.owner.sessions.get(this.shop.id)?.context;
@@ -76,17 +80,27 @@ export class ProductApi {
     batch.round=this.round;
     this.roundItems=typeof isShopRemoved==='function'?createHostedRoundItemApi(this,{isShopRemoved}):null;
     this.round.verificationControl=id=>this.roundItems?.verification?.verifier?.controlView(id)||null;
+    this.contentPreparation=new ContentPreparation(this);
     source.assertContentForLive=async task=>{const round=this.round.round();if(!round)throw err('CONTENT_REVIEW_REQUIRED: 缺少固定清单与主图内容审核');const review=this.round.assertContentForTask(task,round.id);await this.contentReviews.verifyEvidence(review,task);return review;};
     source.beforeVerified=(run,result)=>this.round.active?this.round.assertResultIdentity(this.round.active,run.key,result):undefined;
     this.roundVerifier=new RoundVerification({context:()=>{const context=this.owner.sessions.get(this.shop.id)?.context;if(!context)throw Error('专用浏览器未运行');return context;},
       guard:async(page)=>{this.round.assertLease(this.round.active);await this.assertExecution();const state=await this.owner.status(this.shop);if(state.loginState==='PAUSED_CAPTCHA'||page&&await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');if(!state.running||!state.loggedIn)throw Error(state.reason||'请人工登录目标店铺');},
       round:()=>({round:this.round.round(this.round.active),items:this.round.items(this.round.active)}),artifacts:this.round.artifacts});
+    if(!source.active&&!batch.active){
+      try{this.round.applyDefaultImageApproval();}
+      catch(e){const r=this.round.round();this.imageReviewPolicyError=reasonText(e.message);if(r&&r.state!=='SYSTEM_BLOCKED')this.round.state(r.id,'SYSTEM_BLOCKED','图片批量确认检查未通过：'+this.imageReviewPolicyError);}
+    }
   }
   async handleRound(req,res,url,{body,json}){
     if(await handleOperationsSelection(this,req,res,url,{body,json}))return true;
     if(['/api/v1/rounds/item','/api/v1/rounds/item-skip','/api/v1/rounds/item-verify','/api/v1/rounds/item-retry'].includes(url.pathname)){
       if(!this.roundItems){json(res,503,{code:'ITEM_HOST_NOT_CONFIGURED',error:'单条操作尚未完成服务接入。'});return true;}
-      return this.roundItems.handle(req,res,url,{body,json});
+      const scoped=new URL(url),shops=scoped.searchParams.getAll('executionShop');
+      if(shops.length>1||shops.length===1&&shops[0]!==this.shop.id)throw err('单条操作与当前执行店铺不一致');
+      // The outer host owns shop routing; the item adapter accepts only its
+      // original round/window/key scope (and no query string on mutations).
+      scoped.searchParams.delete('executionShop');
+      return this.roundItems.handle(req,res,scoped,{body,json});
     }
     const action=url.pathname.slice('/api/v1/rounds/'.length),id=url.searchParams.get('id');
     if(req.method==='GET'){
@@ -98,6 +112,7 @@ export class ProductApi {
     if(req.method!=='POST')throw err('轮次操作不存在',404);
     if(['pause','stop'].includes(action)){
       const input=await body(req),r=this.round.round(),latest=r&&this.round.windows.latest(r.id),w=r&&(this.round.windows.open(r.id)||(latest?.continuation_pending?latest:null));
+      assertShopInput(input,this.shop.id);
       const verifier=this.roundItems?.verification?.verifier;
       if(verifier?.activeRequest||input?.verificationRequestId!==undefined){
         if(verifier?.controlScope(input)!==true)throw err('核验操作范围已变化，请刷新后操作原核验任务');
@@ -109,6 +124,7 @@ export class ProductApi {
     }
     if(!['create','start','resume','content-review','rules-apply','window-preview','window-create'].includes(action))throw err('轮次操作不存在',404);
     const input=await body(req),target=action==='create'?input.importId:input.id;
+    assertShopInput(input,this.shop.id);
     if(!/^[a-f0-9-]{36}$/i.test(input.requestId||''))throw err('缺少有效操作编号');
     const previous=this.source.store.db.prepare('SELECT * FROM product_actions WHERE id=?').get(input.requestId);
     if(previous){if(previous.action!=='rounds/'+action||previous.target!==target)throw err('请求编号不能用于其他操作');const result=JSON.parse(previous.result);if((['content-review','rules-apply','window-create'].includes(action)||result.attemptId)&&result.inputHash!==digest(input))throw err(action==='content-review'?'请求编号对应的审核内容已改变':'请求编号对应的范围内容已改变');json(res,200,{...result,replayed:true});return true;}
@@ -180,14 +196,16 @@ export class ProductApi {
   assertRulesIdle(){if(this.batch.active||this.source.active||this.capturing)throw err('任务执行或属性读取中，请等待结束');}
   assertImportRules(id){
     const imported=this.source.store.batch(id),preset=this.rules.preset(this.shop.id);
-    if(imported?.format!=='travel-os-template-v1'||!preset.enabled)return;
+    if(imported&&(imported.tasks.some(t=>t.shopId!==this.shop.id)||(imported.sourceBinding&&imported.sourceBinding.shopId!==this.shop.id)))throw err('商品资料与当前执行店铺不一致，请在对应店铺重新导入');
+    if(!/^travel-os-template-v[12]$/.test(imported?.format||'')||!preset.enabled)return;
     const root=imported.assetRoot;
     for(const a of [...preset.secondary.A,...preset.secondary.B,...preset.covers]){const r=relative(root,a.path);if(isAbsolute(r)||r==='..'||r.startsWith('..'+sep))throw err('新资料与发布随机规则不一致：规则仍引用旧资料，请在资料设置重新选择图片并确认。已有任务不变。');}
   }
-  async preparePreview(id,limit=DEFAULT_BATCH_SIZE){this.assertRulesIdle();this.assertImportRules(id);return this.rules.prepare(this.preview(id,limit),this.shop.id);}
+  async preparePreview(id,limit=DEFAULT_BATCH_SIZE){this.assertRulesIdle();this.assertImportRules(id);const p=this.preview(id,limit);return {...await this.rules.prepare(p,this.shop.id),importTotal:this.source.store.batch(p.importId)?.tasks.length||0};}
   async createBatch(input){
     this.assertRulesIdle();
     const round=this.round?.round();if(round&&round.state!=='COMPLETED')throw err('已有固定清单轮次，请从原轮次继续；不能另起批次创建任务');
+    if(input.mode==='LIVE')throw err('正式发布请使用自动化任务中的“创建执行批次”建立本店清单；图片按用户要求默认批量确认，本次没有消耗次数');
     this.assertImportRules(input.importId);
     if(input.draftId)return this.rules.create(input,this.shop.id,this.batch,()=>this.preview(input.importId,input.limit??DEFAULT_BATCH_SIZE));
     if(this.rules.preset(this.shop.id).enabled)throw err('随机规则已启用，请重新生成并确认随机预览');
@@ -217,14 +235,41 @@ export class ProductApi {
   }
   async settings() {
     let saved={};try{saved=JSON.parse(await readFile(this.settingsFile,'utf8'));}catch(e){if(e.code!=='ENOENT')throw err('系统设置无法读取，保持暂停，请检查本机文件。');}
-    return {executionEnabled:false,limit:DEFAULT_BATCH_SIZE,...batchDefaults,...saved};
+    if(this.websiteSettingsFile){const shared=JSON.parse(await readFile(this.websiteSettingsFile,'utf8').catch(e=>{if(e.code==='ENOENT')return '{}';throw e;}));delete saved.websiteListingDefaults;if(shared.websiteListingDefaults)saved.websiteListingDefaults=shared.websiteListingDefaults;}
+    const map=saved.shopListingDefaults;
+    if(map!==undefined&&(!map||typeof map!=='object'||Array.isArray(map)))throw err('店铺默认发布规则无效，请核对本机设置。');
+    const defaults=map?.[this.shop.id];
+    if(Object.hasOwn(map||{},this.shop.id)&&(!defaults||typeof defaults!=='object'||Array.isArray(defaults)||defaults.shopId!==this.shop.id||typeof defaults.ignoreExternalDestinationProducts!=='boolean'||!Number.isInteger(defaults.revision)||defaults.revision<1||typeof defaults.confirmedAt!=='string'||!Number.isFinite(Date.parse(defaults.confirmedAt))))throw err('店铺默认发布规则无效，请核对本机设置。');
+    const website=saved.websiteListingDefaults;
+    if(Object.hasOwn(saved,'websiteListingDefaults')&&(!website||typeof website!=='object'||Array.isArray(website)||website.scope!=='ALL_SHOPS'||typeof website.ignoreExternalDestinationProducts!=='boolean'||!Number.isInteger(website.revision)||website.revision<1||typeof website.confirmedAt!=='string'||!Number.isFinite(Date.parse(website.confirmedAt))))throw err('网站默认发布规则无效，请核对本机设置。');
+    // The website rule applies to every current and future shop. Retain old
+    // shop preferences as history, but do not let them override this rule.
+    const effective=website?{...website,shopId:this.shop.id,scope:'WEBSITE_DEFAULT'}:defaults||{shopId:this.shop.id,ignoreExternalDestinationProducts:false,revision:0,confirmedAt:null};
+    return {executionEnabled:false,limit:DEFAULT_BATCH_SIZE,...(this.shop.id==='wuzhou-changyou'?batchDefaults:{heat:'',pool:'',assets:'',sheet:'境外城市热度'}),...saved,listingDefaults:effective};
   }
   async saveSettings(input) {
-    const allowed=['executionEnabled','limit','heat','pool','assets','sheet','confirmShop'];
+    const allowed=['executionEnabled','limit','heat','pool','assets','sheet','confirmShop','ignoreExternalDestinationProducts','listingDefaultsScope','confirmAllShops'];
     if(Object.keys(input).some(k=>!allowed.includes(k)))throw err('无效设置字段',400);
+    if(('listingDefaultsScope' in input||'confirmAllShops' in input)&&!('ignoreExternalDestinationProducts' in input))throw err('缺少默认发布规则设置',400);
+    if(this.websiteSettingsFile&&input.listingDefaultsScope==='WEBSITE_DEFAULT')throw err('网站统一规则请在五洲畅游设置页修改；本店自动继承');
     const old=await this.settings(),next={...old};
     for(const key of ['heat','pool','assets','sheet'])if(key in input){if(typeof input[key]!=='string'||!input[key].trim()||input[key].length>2000)throw err('资料路径或工作表无效',400);next[key]=input[key].trim();}
     if('limit' in input){if(!Number.isInteger(input.limit)||input.limit<1||input.limit>MAX_BATCH_SIZE)throw err(`每批数量为 1—${MAX_BATCH_SIZE}`,400);next.limit=input.limit;}
+    if('ignoreExternalDestinationProducts' in input){
+      const scope='listingDefaultsScope' in input?input.listingDefaultsScope:'SHOP_DEFAULT';
+      if(!['SHOP_DEFAULT','WEBSITE_DEFAULT'].includes(scope)||typeof input.ignoreExternalDestinationProducts!=='boolean')throw err('默认发布规则无效',400);
+      if(scope==='WEBSITE_DEFAULT'){if(input.confirmAllShops!==true)throw err('请确认默认规则适用于网站所有店铺');}
+      else{
+        if('confirmAllShops' in input)throw err('店铺默认规则不能使用网站范围确认',400);
+        if(old.websiteListingDefaults)throw err('网站已统一设置所有店铺的默认规则，请按网站范围修改');
+        if(input.confirmShop!==this.shop.name)throw err('请确认要保存默认规则的店铺');
+      }
+      this.assertRulesIdle();this.round.assertIdle();if(this.round.creating)throw err('清单正在创建，请等待默认规则写入完成');
+      // Saving a future preference is not an execution approval. Creation,
+      // start and resume still enforce the original kernel and LIVE gates.
+      if(scope==='WEBSITE_DEFAULT')next.websiteListingDefaults={scope:'ALL_SHOPS',ignoreExternalDestinationProducts:input.ignoreExternalDestinationProducts,revision:(old.websiteListingDefaults?.revision||0)+1,confirmedAt:new Date().toISOString(),source:'user-confirmed-website-default'};
+      else next.shopListingDefaults={...old.shopListingDefaults,[this.shop.id]:{shopId:this.shop.id,ignoreExternalDestinationProducts:input.ignoreExternalDestinationProducts,revision:(old.shopListingDefaults?.[this.shop.id]?.revision||0)+1,confirmedAt:new Date().toISOString(),source:'user-confirmed-shop-default'}};
+    }
     if('executionEnabled' in input){
       if(typeof input.executionEnabled!=='boolean')throw err('执行开关无效',400);
       if(input.executionEnabled&&!old.executionEnabled&&input.confirmShop!==this.shop.name)throw err('开启执行前请确认目标店铺');
@@ -233,8 +278,9 @@ export class ProductApi {
       next.executionEnabled=input.executionEnabled;
     }
     await mkdir(join(this.runtime,'product-v1'),{recursive:true});
+    delete next.listingDefaults; // Effective read projection, never a second stored default.
     await writeFile(this.settingsFile+'.tmp',JSON.stringify(next,null,2));await rename(this.settingsFile+'.tmp',this.settingsFile);
-    this.checkResult=null;return next;
+    this.checkResult=null;return this.settings();
   }
   async assertExecution({legacy=false}={}) {
     if(legacy){const round=this.round?.round();if(round&&round.state!=='COMPLETED')throw err('已有固定清单轮次，请从原轮次继续；不能另起批次执行');}
@@ -282,6 +328,7 @@ export class ProductApi {
     this.validationCache={signature,value};return value;
   }
   preview(id,limit=DEFAULT_BATCH_SIZE){
+    this.assertImportRules(id);
     const result=this.batch.preview(id,limit),classes={};
     for(const x of result.excluded){x.category=/已有成功/.test(x.reason)?'已成功':/重复/.test(x.reason)?'重复':/已有队列|已有单条/.test(x.reason)?'已有任务':'需补充';classes[x.category]=(classes[x.category]||0)+1;}
     return {...result,classification:{可执行:result.tasks.length,...classes},scope:'按热度顺序选取前 '+result.tasks.length+' 条合格商品；不包含已成功、已占用或资料不完整的商品'};
@@ -402,6 +449,7 @@ export class ProductApi {
   async handle(req,res,url,{body,json}) {
     const path=url.pathname;
     if(!path.startsWith('/api/v1/'))return false;
+    if(path==='/api/v1/content-preparation'||path.startsWith('/api/v1/content-preparation/'))return this.contentPreparation.handle(req,res,url,{body,json});
     if(path.startsWith('/api/v1/rounds/'))return this.handleRound(req,res,url,{body,json});
     const action=path.slice('/api/v1/'.length);
     if(action.startsWith('setup/'))return this.setup.handle(req,res,url,{body,json});
@@ -413,7 +461,7 @@ export class ProductApi {
         else json(res,200,searchDestinations(catalog,url.searchParams.get('q')||'',url.searchParams.get('limit')||60,url.searchParams.get('filter')||''));
         return true;
       }
-      if(action==='health'){json(res,200,{app:'ly-tb-workbench',version:'1.0.0',pid:process.pid,kernel:await this.frozen});return true;}
+      if(action==='health'){json(res,200,{app:'ly-tb-workbench',version:'1.0.0',pid:process.pid,kernel:await this.integrity()});return true;}
       if(action==='state'){json(res,200,await this.snapshot(url.searchParams.get('batch')));return true;}
       if(action==='preview'){json(res,200,this.preview(url.searchParams.get('import'),Number(url.searchParams.get('limit')||DEFAULT_BATCH_SIZE)));return true;}
       if(action==='publishing-rules'){
@@ -479,12 +527,22 @@ export class ProductApi {
     }
     if(req.method==='POST'){
       const input=await body(req);
+      assertShopInput(input,this.shop.id);
       if(this.capturing&&action!=='pause')throw err('正在读取属性，请等待完成');
       const controlled=['start','continue','retry','resume-single'].includes(action);
       if(controlled&&input.requestId){const previous=this.source.store.db.prepare('SELECT * FROM product_actions WHERE id=?').get(input.requestId);if(previous){if(previous.action!==action||previous.target!==input.id)throw err('请求编号不能用于其他操作');json(res,200,{...JSON.parse(previous.result),replayed:true});return true;}}
 
       if(['start','continue','retry','resume-single'].includes(action)){
         await this.assertExecution({legacy:true});
+        if(action!=='resume-single'){
+          const pendingBatch=this.batch.store.batch(input.id);
+          if(pendingBatch?.mode==='LIVE'&&typeof this.source.checkLiveContent==='function'){
+            for(const item of this.batch.store.items(input.id).filter(x=>['PENDING','RETRY','WAITING_HUMAN','FAILED'].includes(x.state)))await this.source.checkLiveContent(item.task);
+          }
+        }else{
+          const pendingRun=this.source.store.run(input.id);
+          if((pendingRun.mode==='LIVE'||pendingRun.state==='DRY_RUN_COMPLETE'&&input.publish===true)&&typeof this.source.checkLiveContent==='function'&&!['SUBMITTING','RESULT_UNKNOWN','VERIFIED'].includes(pendingRun.state))await this.source.checkLiveContent(pendingRun.task);
+        }
         const browser=browserView(await this.owner.status(this.shop),Date.now(),true);
         if(!browser.loggedIn)throw err(redact(browser.reason)||'请先登录店铺');
         if(['start','continue','retry'].includes(action)){const b=this.batch.store.view(input.id);if(b?.items.some(x=>x.runId&&this.source.store.run(x.runId).state==='PAUSED_CAPTCHA')&&input.humanVerified!==true)throw err('请确认已人工完成验证');}
@@ -515,7 +573,7 @@ export class ProductApi {
         case 'publishing-capture':data=await this.capturePublishingFields();break;
         case 'publishing-save':this.assertRulesIdle();data=await this.rules.save(this.shop.id,input,(await this.settings()).assets);break;
         case 'settings':data=await this.saveSettings(input);break;
-        case 'import':{const settings=await this.settings(),setup=await this.setup.config();if(setup.format==='standard'&&(!input.pool||input.pool===settings.pool)){const imported=await this.setup.importSource({format:'standard',root:settings.assets});data=imported.preview;}else{const imported=await this.batch.import({...settings,...input});data=this.preview(imported.importId,20);}break;}
+        case 'import':{const settings=await this.settings(),setup=await this.setup.config();if(setup.format==='standard'&&(!input.pool||input.pool===settings.pool)){const imported=await this.setup.importSource({format:'standard',root:settings.assets});data=imported.preview;}else{if(this.shop.id!=='wuzhou-changyou')throw err('本店请通过资料设置导入标准模板');const imported=await this.batch.import({...settings,...input});data=this.preview(imported.importId,20);}break;}
         case 'upload':data=await this.source.stage(input);break;
         case 'create':data=await this.createBatch(input);break;
         case 'start':case 'continue':data=this.batch.start(input.id,this.shop);break;

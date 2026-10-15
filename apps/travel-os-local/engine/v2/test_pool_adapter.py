@@ -15,6 +15,16 @@ class PoolAdapterTest(unittest.TestCase):
         self.assertFalse(known_destination_mismatch(h, '圣皮埃尔和密克隆群岛', None))
         self.assertFalse(known_destination_mismatch('replacement', '英国', '伦敦'))
 
+    def test_audited_empty_duplicate_and_spelling_mismatch_images_stay_blocked(self):
+        self.assertTrue(known_destination_mismatch('cf40c7414f260cd7897c431735c2bf414bcac2f1a7794b6f756fc96e13ccab27', '俄罗斯', '萨马拉'))
+        self.assertTrue(known_destination_mismatch('7a0119049de1064ada58e2cb811f404a5a5cecbd0d56e1d3b14f30c63e41c334', '英国', '韦克菲尔德'))
+        duplicate = 'ae7f3acbdc626f3d3be4d66a28317d5d3180efeac43b47c52f5f31b0bbfaf3b3'
+        self.assertTrue(known_destination_mismatch(duplicate, '美国', '阿布奎基'))
+        self.assertFalse(known_destination_mismatch(duplicate, '美国', '密尔沃基'))
+        spelling = 'fd7122554ac665b770625e7e9ae4b109b01924f1380eb45f4583094dcbb2064c'
+        self.assertTrue(known_destination_mismatch(spelling, '美国', '戴德姆'))
+        self.assertFalse(known_destination_mismatch('replacement', '美国', '戴德姆'))
+
     def fixture(self, root, formula=False):
         workbook = root / 'source.xlsx'
         cells = {'A': '1', 'B': '国家链接', 'C': '英国', 'H': '个性定制/设计服务/DIY>>其它定制>>其它商品定制',

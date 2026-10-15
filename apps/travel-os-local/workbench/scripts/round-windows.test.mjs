@@ -34,6 +34,28 @@ async function fixture(t,n=6){
  return {round,r,store,flow,batch,tasks,make,create,run,checked,hold:()=>held=true,release:()=>{held=false;release?.();},fail:n=>failAt=n};
 }
 
+for(const state of ['READY','STOPPED'])test('idle '+state+' manifest starts its original window after deployment without resetting history',async t=>{
+ const x=await fixture(t,3);
+ if(state==='STOPPED'){
+  const old=await x.create({limit:1});x.round.stop();
+  assert.equal(x.round.windows.get(old.id).state,'STOPPED');
+ }
+ const w=await x.create({limit:2}),before=x.round.round(x.r.id),events=x.round.events(x.r.id);
+ assert.equal(before.state,state);
+ x.round.start(x.r.id,{windowId:w.id,repairVersion:'fixture-deployed-v2'});
+ assert.throws(()=>x.round.start(x.r.id,{windowId:w.id,repairVersion:'fixture-deployed-v3'}),/已有/);
+ await x.round.pending;
+ assert.equal(x.flow.submits,2);
+ assert.equal(x.round.round(x.r.id).repair_version,'fixture-deployed-v2');
+ assert.equal(x.round.round(x.r.id).manifest_hash,before.manifest_hash);
+ assert.equal(x.round.round(x.r.id).authorization_hash,before.authorization_hash);
+ assert.equal(x.round.windows.get(w.id).state,'COMPLETED');
+ assert.deepEqual(x.round.events(x.r.id).filter(e=>events.some(old=>old.seq===e.seq)),events);
+ const updated=x.round.events(x.r.id).find(e=>e.kind==='REPAIR_VERSION_UPDATED');
+ assert.equal(updated.payload.from,'fixture');assert.equal(updated.payload.to,'fixture-deployed-v2');
+ assert.equal(x.round.events(x.r.id).find(e=>e.kind==='START_ACCEPTED').payload.repairVersion,'fixture-deployed-v2');
+});
+
 test('fixed window stops exactly at selected limit without changing other entries or allocating them',async t=>{
  const x=await fixture(t),before=x.round.items(x.r.id).slice(2),w=await x.create({limit:2});await x.run(w);
  assert.equal(x.flow.submits,2);assert.equal(x.round.round(x.r.id).state,'PAUSED');assert.deepEqual(x.round.items(x.r.id).slice(2),before);
@@ -89,4 +111,12 @@ test('manifest, selection and bounded input tampering fail before any submit',as
 test('unknown submitted task prevents creating a fresh execution assignment',async t=>{
  const x=await fixture(t),entry=x.round.items(x.r.id)[0];x.round.update(x.r.id,entry.key,{state:'RESULT_UNKNOWN',submitted:1,failure_stage:'submit-once'});
  await assert.rejects(x.create({startPosition:2}),/核验原商品/);assert.equal(x.flow.submits,0);
+});
+
+test('window selection never rereads files; executor still checks each product before dispatch',async t=>{
+ const x=await fixture(t,3);let checks=0;
+ x.round.checkFiles=async()=>{checks++;throw Object.assign(Error('SOURCE_OR_ASSET_CHANGED'),{code:'TASK_DATA'});};
+ const p=await x.round.windows.preview(x.r.id,{limit:3});assert.equal(p.count,3);assert.equal(checks,0);
+ const w=x.round.windows.create(p);await x.run(w);
+ assert(checks>0);assert.equal(x.flow.submits,0);assert.equal(x.round.items(x.r.id).filter(i=>i.state==='PREFLIGHT_SKIPPED').length,3);
 });

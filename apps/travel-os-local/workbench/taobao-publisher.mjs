@@ -7,16 +7,19 @@ import {createHash,randomUUID} from 'node:crypto';
 import {basename} from 'node:path';
 import assert from 'node:assert/strict';
 import {visibleChallenge} from './browser-environment.mjs';
-import {fillAttributes,verifyAttributes,validateSelections} from './publishing-attributes.mjs';
+import {fillAttributes,verifyAttributes,validateSelections,selectedCustomState} from './publishing-attributes.mjs';
 import {uploadMaterial} from './publishing-materials.mjs';
 import {createBackgroundPage,getAuxiliaryPage,assertAuxiliaryPage} from './publishing-pages.mjs';
 import {captureTaskScreenshot} from './task-screenshot.mjs';
 import {setTimeout as delay} from 'node:timers/promises';
 import {sellerTable,listingEvidence} from './listing-verification.mjs';
+import {materialTask} from './round-material-binding.mjs';
 export const MAPPING_VERSION = 'taobao-custom-service-20261008-controls';
 export const selectors = {title:'#sell-field-title input',guide:'#sell-field-shopping_title input',price:'#sell-field-price input',stock:'#sell-field-batchInventory-card input',main:'#sell-field-mainImagesGroup',details:'#sell-field-descRepublicOfSell img.image-item'};
 const norm=u=>u.split('?')[0].split('.png')[0];
-export async function assertTaskFiles(task,{cache}={}) {
+export async function assertTaskFiles(task,{cache=new Map(),materialBinding=null}={}) {
+ task=materialTask(task,materialBinding);
+ for(const c of materialBinding?.changes||[]){let hash=cache?.get(c.path);if(!hash){hash=createHash('sha256').update(await readFile(c.path)).digest('hex');cache?.set(c.path,hash);}assert.equal(hash,c.toSha256,'SOURCE_OR_ASSET_CHANGED');}
  for(const a of [{path:task.source.workbook,sha256:task.source.sha256},...(task.sourceReferences||[]).map(s=>({path:s.workbook,sha256:s.sha256})),...Object.values(task.assets).flat()]){
   let hash=cache?.get(a.path);if(!hash){hash=createHash('sha256').update(await readFile(a.path)).digest('hex');cache?.set(a.path,hash);}
   assert.equal(hash,a.sha256,'SOURCE_OR_ASSET_CHANGED');
@@ -203,15 +206,10 @@ export async function waitMainMaterialFrame(page,guard,{timeout=20000}={}) {
 // A material click can apply its image before an unrelated iframe navigation
 // times out. Never click again: reconcile the exact complete image prefix on
 // the guarded original form. A timeout alone is not proof of success.
-export async function clickMainImageAndVerify(page,card,expectedUrls,guard,{onEvent=async()=>{}}={}) {
- assert(Array.isArray(expectedUrls)&&expectedUrls.length>=1&&expectedUrls.length<=5,'MAIN_IMAGE_EXPECTATION_INVALID');
- assert(expectedUrls.every(u=>typeof u==='string'&&u.length>0),'MAIN_IMAGE_EXPECTATION_INVALID');
- const images=page.locator('#sell-field-mainImagesGroup img');
- const read=()=>images.evaluateAll(es=>es.map(e=>e.src));
+function mainImageKey(value){
  // Keep the seller asset path exact. Normalize only the observed Taobao
  // thumbnail transform and the 13-digit cache timestamp; all other query
  // parameters remain part of the identity.
- const imageKey=value=>{
   const u=new URL(value);
   assert(!u.username&&!u.password&&u.origin==='https://img.alicdn.com','MAIN_IMAGE_ORIGIN_CHANGED');
   const stablePath=u.pathname.replace(/(\.(?:png|jpe?g))_320x320q80_\.webp$/i,'$1_320x320');
@@ -220,12 +218,31 @@ export async function clickMainImageAndVerify(page,card,expectedUrls,guard,{onEv
    .sort(([ak,av],[bk,bv])=>ak.localeCompare(bk)||av.localeCompare(bv))
    .map(([key,val])=>`${encodeURIComponent(key)}=${encodeURIComponent(val)}`).join('&');
   return u.origin+stablePath+(query?`?${query}`:'')+u.hash;
- };
- const expected=expectedUrls.map(imageKey),formUrl=page.url();
+}
+
+// The actual form and this task's frozen receipts define image identity.
+// Do not filter by one seller's CDN directory or silently ignore extra images.
+export async function reconcileMainImages(page,receipts,assets){
+ const actual=await page.locator(`${selectors.main} img`).evaluateAll(es=>es.map(e=>e.src));
+ assert(actual.length<=assets.length,'MAIN_IMAGE_COUNT_CHANGED：表单图片超过当前商品数量');
+ for(const [i,url]of actual.entries()){
+  const receipt=receipts[i],asset=assets[i];
+  assert(receipt?.source?.path===asset.path&&receipt?.source?.sha256===asset.sha256,'UNRECONCILED_EXISTING_IMAGE：已有图片缺少当前商品素材回执');
+  assert.equal(mainImageKey(url),mainImageKey(receipt.url),'MAIN_IMAGE_ORDER：已有图片与当前商品回执顺序不一致');
+ }
+ return actual;
+}
+
+export async function clickMainImageAndVerify(page,card,expectedUrls,guard,{onEvent=async()=>{}}={}) {
+ assert(Array.isArray(expectedUrls)&&expectedUrls.length>=1&&expectedUrls.length<=5,'MAIN_IMAGE_EXPECTATION_INVALID');
+ assert(expectedUrls.every(u=>typeof u==='string'&&u.length>0),'MAIN_IMAGE_EXPECTATION_INVALID');
+ const images=page.locator('#sell-field-mainImagesGroup img');
+ const read=()=>images.evaluateAll(es=>es.map(e=>e.src));
+ const expected=expectedUrls.map(mainImageKey),formUrl=page.url();
  const check=async()=>{await guard();assert.equal(page.url(),formUrl,'MAIN_IMAGE_FORM_CHANGED');};
  const stableRead=async()=>{
-  await check();const first=(await read()).map(imageKey);
-  await check();const second=(await read()).map(imageKey);
+  await check();const first=(await read()).map(mainImageKey);
+  await check();const second=(await read()).map(mainImageKey);
   await check();assert.deepEqual(second,first,'MAIN_IMAGE_STATE_CHANGED');return second;
  };
  const initial=await stableRead();
@@ -260,16 +277,114 @@ export async function closeMainImageActionMenu(page,guard) {
  return {closed:true};
 }
 
-export async function fillTask({page:p, task,dir,target,step,guard}) {
+export async function fillBrand(page,value,guard,{timeout=8000}={}){
+ assert(typeof value==='string'&&value.length>0,'FORM_BRAND_SOURCE_MISSING：原商品缺少品牌');
+ const formUrl=page.url(),root=page.locator('#struct-p-20000'),input=root.locator('input').first();
+ const options=page.locator(':is(.options-item,[role="option"]):visible:not(#struct-nav *):not(.sell-component-navigation-bar *)');
+ const check=async()=>{await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');assert.equal(page.url(),formUrl,'FORM_BRAND_PAGE_CHANGED');};
+ await check();await expect(root).toHaveCount(1);await expect(input).toBeVisible();await expect(input).toBeEnabled();
+ if(await input.inputValue()===value){await input.press('Tab');await check();await expect(input).toHaveValue(value);return;}
+ const expanded=await input.getAttribute('aria-expanded');
+ if(expanded!=='true'){
+  assert.equal(await options.count(),0,'FORM_BRAND_OTHER_MENU：存在其他候选面板，请先关闭');
+  await input.click();
+ }
+ await expect.poll(()=>options.count(),{timeout,message:'FORM_BRAND_OPTIONS：品牌候选尚未加载'}).toBeGreaterThan(0);
+ const target=options.filter({has:page.getByText(value,{exact:true})});
+ if(!await target.count()){
+  // The observed brand menu initially lists alphabetic results. Its search
+  // input is distinct from the committed brand field; typing there is not a
+  // selected value. Find that input through the menu's own DOM ancestry.
+  const main=await input.elementHandle();let searchHandle;
+  try{
+   searchHandle=await options.first().evaluateHandle((option,main)=>{
+    for(let node=option.parentElement,depth=0;node&&depth<6;node=node.parentElement,depth++){
+     if(node.contains(main))break;
+     const inputs=[...node.querySelectorAll('input')].filter(el=>el.type!=='hidden'&&!el.readOnly&&!el.disabled&&el.getClientRects().length&&getComputedStyle(el).visibility!=='hidden');
+     if(inputs.length>1)throw Error('FORM_BRAND_SEARCH_AMBIGUOUS：品牌搜索框不唯一');
+     if(inputs.length===1)return inputs[0];
+    }
+    return null;
+   },main);
+   const search=searchHandle.asElement();
+   assert(search,'FORM_BRAND_SEARCH_MISSING：品牌列表未找到独立搜索框');
+   await check();await search.fill(value);
+  }finally{await searchHandle?.dispose();await main?.dispose();}
+ }
+ await expect(target,{message:'FORM_BRAND_OPTION_MISSING：未找到原商品指定品牌，请保留页面'}).toHaveCount(1,{timeout});
+ await expect(target).toHaveText(value);await expect(target).toBeEnabled();
+ assert(await target.getAttribute('aria-disabled')!=='true'&&!await target.evaluate(el=>el.classList.contains('disabled')),'FORM_BRAND_OPTION_DISABLED');
+ await check();await target.click();await expect(input).toHaveValue(value,{timeout});
+ await input.press('Tab');await check();await expect(input).toHaveValue(value);await expect(options).toHaveCount(0,{timeout});
+}
+
+function freightTemplate(task,profile){
+ if(!profile)return task.business.freight_template;
+ assert(profile.version===1&&profile.shopId===task.shopId&&profile.confirmedBy==='用户'&&profile.sha256&&[profile.freightTemplate?.from,profile.freightTemplate?.to].includes(task.business.freight_template),'FORM_FREIGHT_TEMPLATE_BINDING_INVALID');
+ return profile.freightTemplate.to;
+}
+
+export async function executionDetailImages(task,profile=null,materialBinding=null){
+ if(materialBinding){assert(!(profile?.detailImagePadding||[]).some(e=>materialBinding.changes.some(c=>c.group==='details'&&c.path===e.sourcePath)),'FORM_DETAIL_PADDING_SOURCE_CHANGED');task=materialTask(task,materialBinding);}
+ const changes=profile?.detailImagePadding||[];
+ if(changes.length)assert(profile.shopId===task.shopId&&profile.confirmedBy==='用户'&&profile.sha256,'FORM_DETAIL_PADDING_INVALID');
+ const pngSize=data=>{assert(data.length>=24&&data.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])),'FORM_DETAIL_PADDING_PNG_REQUIRED');return [data.readUInt32BE(16),data.readUInt32BE(20)];};
+ const result=[];
+ for(const asset of task.assets.details){
+  const matches=changes.filter(e=>e.sourcePath===asset.path);assert(matches.length<=1,'FORM_DETAIL_PADDING_AMBIGUOUS');
+  if(!matches.length){result.push(asset);continue;}
+  const entry=matches[0];assert.equal(entry.sourceSha256,asset.sha256,'FORM_DETAIL_PADDING_SOURCE_CHANGED');
+  const original=await readFile(asset.path),padded=await readFile(entry.path);
+  assert.equal(createHash('sha256').update(original).digest('hex'),asset.sha256,'FORM_DETAIL_PADDING_SOURCE_CHANGED');
+  assert.equal(createHash('sha256').update(padded).digest('hex'),entry.sha256,'FORM_DETAIL_PADDING_CHANGED');
+  const [w,h]=pngSize(original),[pw,ph]=pngSize(padded);
+  assert.deepEqual([w,h],entry.dimensions,'FORM_DETAIL_PADDING_DIMENSIONS');
+  assert(pw===w+entry.left+entry.right&&ph===h&&h>w*2&&ph<=pw*2,'FORM_DETAIL_PADDING_DIMENSIONS');
+  result.push({...asset,path:entry.path,sha256:entry.sha256,dimensions:[pw,ph],sourceAsset:asset,padding:{left:entry.left,right:entry.right,profileSha256:profile.sha256}});
+ }
+ return result;
+}
+
+export async function inspectShippingArea(page,task,profile=null,guard=async()=>{}){
+ await guard();const area=page.locator('#sell-field-shippingArea'),count=await area.count();
+ assert(count<=1,'FORM_SHIPPING_AREA_AMBIGUOUS');
+ if(count===1)return {mode:'LEGACY_FIELDS',rendered:true};
+ // Recorded current official form: delivery is defined by its selected freight
+ // template and has no standalone shippingArea/address component at all.
+ // Never invent a value for an absent field or ignore an unfamiliar replacement.
+ const name=freightTemplate(task,profile),delivery=page.locator('#sell-field-tbExtractWay');
+ await expect(page.locator('#global-card')).toContainText(/其[它他]商品定制/);
+ await expect(page.locator('#sell-field-tmDeliveryTime')).toBeVisible();
+ await expect(delivery).toBeVisible();
+ await expect(delivery.locator('input[type=checkbox][value="2"]')).toBeChecked();
+ const input=delivery.locator('input[role=combobox]');await expect(input).toHaveCount(1);
+ const selected=await input.evaluate(selectedCustomState);
+ assert(selected.committed&&!selected.ambiguous&&!selected.conflicting&&selected.text===name,'FORM_FREIGHT_TEMPLATE_UNCONFIRMED：运费模板尚未选定');
+ const unknown=await page.locator('[id^="sell-field-"]').evaluateAll(nodes=>nodes.some(el=>/shipping|shipFrom|location|address|origin/i.test(el.id)||[...el.querySelectorAll('.sell-component-info-wrapper-label')].some(n=>/^(发货范围|配送范围|发货地|商品所在地|单一发货地)$/.test(n.textContent.trim()))));
+ assert(!unknown,'FORM_SHIPPING_MAPPING_CHANGED：发现其他发货控件，需重新适配');
+ await expect(page.locator('#sell-field-regionLimitSale')).toHaveCount(1);
+ await guard();assert.equal(await area.count(),0,'FORM_SHIPPING_AREA_CHANGED');
+ return {mode:'PLATFORM_TEMPLATE',rendered:false,template:name,standaloneRegionApplied:false,standaloneOriginApplied:false,contract:'taobao-template-shipping-20261015'};
+}
+
+export async function verifyMaterialUploadReceipt(asset,card){
+ if(!asset.materialVersion)return true;
+ if(typeof card!=='string'&&typeof card?.locator!=='function')return false;
+ const receipt=await readFile(asset.path+'.upload.json','utf8').then(JSON.parse).catch(()=>null);
+ const url=typeof card==='string'?card:await card.locator('.PicList_pic_imgBox__c0HXw img').getAttribute('src');
+ return !!receipt&&receipt.sha256===asset.sha256&&receipt.path===asset.path&&JSON.stringify(receipt.materialVersion)===JSON.stringify(asset.materialVersion)&&receipt.url===url;
+}
+
+export async function fillTask({page:p, task,dir,target,step,guard,executionProfile=null,materialBinding=null}) {
  const order=task.priority;
  const risk=async()=>{if(await visibleChallenge(p))throw Error('PAUSED_CAPTCHA');};
  async function fill(selector,value){const l=p.locator(selector);await guard();await l.fill(String(value));await l.press('Tab');await expect(l).toHaveValue(String(value));}
  async function radio(scope,text){const l=p.locator(scope).locator('label').filter({hasText:text}).filter({has:p.locator('input[type=radio]')}).first();await guard();await l.click();await expect(l.locator('input[type=radio]')).toBeChecked();}
  async function ensureMaterial(f,a,card) {
-  if(await card.isVisible().catch(()=>false))return;
+  if(await card.isVisible().catch(()=>false)){assert(await verifyMaterialUploadReceipt(a,card),'SOURCE_OR_ASSET_CHANGED: BOUND_MATERIAL_UPLOAD_UNVERIFIED：新版图片尚无上传回执，不能复用同名旧素材');return;}
   // The native Playwright owner handles the real file chooser; never injects uploads.
   const exists=await card.waitFor({state:'visible',timeout:4000}).then(()=>true).catch(()=>false);
-  if(exists)return;
+  if(exists){assert(await verifyMaterialUploadReceipt(a,card),'SOURCE_OR_ASSET_CHANGED: BOUND_MATERIAL_UPLOAD_UNVERIFIED：新版图片尚无上传回执，不能复用同名旧素材');return;}
   await guard();
   // Use the official top-level material library; its native file chooser was
   // verified on September 21. Embedded chooser did not emit filechooser.
@@ -291,24 +406,29 @@ export async function fillTask({page:p, task,dir,target,step,guard}) {
   await materialGuard();await uploadDialog.getByRole('button',{name:'完成',exact:true}).click();await guard();
   const search=f.getByPlaceholder('搜索图片名称');await search.fill('');await search.press('Enter');
   await expect(card).toBeVisible({timeout:30000});
+  if(a.materialVersion){
+   const receipt={path:a.path,sha256:a.sha256,materialVersion:a.materialVersion,url:await card.locator('.PicList_pic_imgBox__c0HXw img').getAttribute('src'),at:new Date().toISOString()};
+   await writeFile(a.path+'.upload.json',JSON.stringify(receipt,null,2),{flag:'wx'}).catch(async e=>{if(e.code!=='EEXIST'||!await verifyMaterialUploadReceipt(a,card))throw e;});
+  }
  }
- await assertTaskFiles(task);
- const mains=[...task.assets.main,...task.assets.secondary];
- const details=task.assets.details;
- for(const a of [...mains,...details])assert.equal(createHash('sha256').update(await readFile(a.path)).digest('hex'),a.sha256);
+ await assertTaskFiles(task,{materialBinding});
+ const effective=materialTask(task,materialBinding);
+ const mains=[...effective.assets.main,...effective.assets.secondary];
+ const details=await executionDetailImages(task,executionProfile,materialBinding);
  await writeFile(dir+'task.json',JSON.stringify({...task,selectedDetails:details,executionInstruction:'User: new listings only, source order, existing listings unchanged'},null,2));
  p.setDefaultTimeout(8000);await guard();
  const currentTitle=await p.locator('#sell-field-title input').inputValue();assert(!currentTitle||currentTitle===task.listing.title,'ANOTHER_TASK_FORM');
  await expect(p.locator('#global-card')).toContainText(/其[它他]商品定制/);
- const images=p.locator('#sell-field-mainImagesGroup img');
  let receipts=JSON.parse(await readFile(dir+'main-receipts.json','utf8').catch(()=>'[]'));
+ let shippingArea=await p.locator('#sell-field-shippingArea').count()?{mode:'LEGACY_FIELDS',rendered:true}:null;
  // A retained loading detail picker must settle before any form refill.
  const openDetailFrame=await waitDetailMaterialFrame(p,guard,{required:false});
+ if(openDetailFrame)shippingArea=await inspectShippingArea(p,task,executionProfile,guard);
  if(!openDetailFrame){
  for(const [i,a] of mains.entries())await step('main-image-'+(i+1),async()=>{
-  const existing=await images.evaluateAll(es=>es.map(e=>e.src).filter(s=>s.includes('/2215038760087/')));
-  if(existing.length>i){assert(receipts[i]&&norm(existing[i])===norm(receipts[i].url),'UNRECONCILED_EXISTING_IMAGE');return;}
-  assert.equal(existing.length,i);
+  const existing=await reconcileMainImages(p,receipts,mains);
+  if(existing.length>i)return;
+  assert.equal(existing.length,i,'MAIN_IMAGE_COUNT_CHANGED：前序主图尚未插入，请保留原页面');
   if(!await p.locator('iframe#mainImagesGroup').isVisible())await p.locator('#sell-field-mainImagesGroup').getByText('上传图片',{exact:true}).first().click();
   const f=await waitMainMaterialFrame(p,guard),name=basename(a.path);
   const card=f.locator('.PicList_pic_background__pGTdV').filter({hasText:name}).first();
@@ -324,15 +444,17 @@ export async function fillTask({page:p, task,dir,target,step,guard}) {
  await step('guide-title',()=>fill(selectors.guide,task.listing.guideTitle));
  await step('price',()=>fillPriceWithBlankRecovery(p,task.business.price_cny,guard,{onEvent:event=>writeFile(dir+'price-'+randomUUID()+'.json',JSON.stringify({at:new Date().toISOString(),...event},null,2),{flag:'wx'})}));
  await step('inventory',()=>fillStableInventory(p,task.business.inventory,guard));
- await step('brand',async()=>{const brand=p.locator('#struct-p-20000 input');if(await brand.inputValue()!==task.business.brand){await brand.click();const option=p.locator('.options-item').filter({has:p.getByText(task.business.brand,{exact:true})});await expect(option).toHaveCount(1);await option.click();await expect(brand).toHaveValue(task.business.brand);}await brand.press('Tab');await expect(brand).toHaveValue(task.business.brand);});
+ await step('brand',()=>fillBrand(p,task.business.brand,guard));
  await step('custom-service',()=>radio('#sell-field-customize',/^是$/));
  await step('listing-state',()=>radio('#sale-card',target === 'WAREHOUSE' ? /^放入仓库$/ : /^(立刻|立即)上架$/));
  await step('shipping-time',()=>radio('#deliver-card',/^24小时内发货/));
- await step('shipping-region',()=>radio('#sell-field-shippingArea',/^大陆及港澳台$/));
- await step('single-origin',()=>radio('#sell-field-shippingArea',/^单一发货地$/));
  await step('logistics',async()=>{const l=p.locator('#sell-field-tbExtractWay input[type=checkbox][value="2"]');await l.check();await expect(l).toBeChecked();});
- await step('freight-template',async()=>{await p.locator('#sell-field-tbExtractWay input[role=combobox]').click();await p.getByText(task.business.freight_template,{exact:true}).last().click();await expect(p.locator('#sell-field-tbExtractWay')).toContainText(task.business.freight_template);});
- await step('ship-from',async()=>{const l=p.locator('#sell-field-shippingArea input[role=combobox]');if(await l.getAttribute('aria-valuetext')!=='北京 / 北京'){await l.click();await p.getByText('北京',{exact:true}).first().click();await p.getByText('北京',{exact:true}).last().click();}await expect(l).toHaveAttribute('aria-valuetext','北京 / 北京');});
+ await step('freight-template',async()=>{const name=freightTemplate(task,executionProfile);await p.locator('#sell-field-tbExtractWay input[role=combobox]').click();await p.getByText(name,{exact:true}).last().click();await expect(p.locator('#sell-field-tbExtractWay')).toContainText(name);});
+ // New shops may start with logistics disabled. Shipping-area controls are
+ // rendered only after delivery/template selection; never wait for them first.
+ await step('shipping-region',async()=>{const current=await inspectShippingArea(p,task,executionProfile,guard);if(shippingArea)assert.equal(current.mode,shippingArea.mode,'FORM_SHIPPING_AREA_CHANGED');shippingArea=current;if(shippingArea.rendered)await radio('#sell-field-shippingArea',/^大陆及港澳台$/);});
+ await step('single-origin',async()=>{if(shippingArea.rendered)await radio('#sell-field-shippingArea',/^单一发货地$/);else{await guard();assert.equal(await p.locator('#sell-field-shippingArea').count(),0,'FORM_SHIPPING_AREA_CHANGED');}});
+ await step('ship-from',async()=>{if(!shippingArea.rendered){await guard();assert.equal(await p.locator('#sell-field-shippingArea').count(),0,'FORM_SHIPPING_AREA_CHANGED');return;}const l=p.locator('#sell-field-shippingArea input[role=combobox]');if(await l.getAttribute('aria-valuetext')!=='北京 / 北京'){await l.click();await p.getByText('北京',{exact:true}).first().click();await p.getByText('北京',{exact:true}).last().click();}await expect(l).toHaveAttribute('aria-valuetext','北京 / 北京');});
  await step('procurement',async()=>{if(!await p.locator('#sell-field-globalStock').isVisible())await p.locator('#base-card').getByText('展开',{exact:true}).click();await radio('#sell-field-globalStock',/^中国内地（大陆）$/);});
  await step('region-restriction',async()=>{const l=p.locator('#deliver-card label').filter({hasText:/^不设置商品维度区域限售模板$/}).locator('input');if(!await l.isVisible())await p.locator('#deliver-card').getByText('展开',{exact:true}).click();await expect(l).toBeChecked();});
  }
@@ -368,13 +490,13 @@ export async function fillTask({page:p, task,dir,target,step,guard}) {
  await step('pre-submit-review',async()=>{
   await expect(detailImgs).toHaveCount(details.length);const urls=await detailImgs.evaluateAll(es=>es.map(e=>e.src));assert(urls.every((u,i)=>norm(u)===norm(detailReceipts[i]?.url||'')),'DETAIL_ORDER');
   await expect(p.locator('#sell-field-title input')).toHaveValue(task.listing.title);await expect(p.locator('#sell-field-price input')).toHaveValue(String(task.business.price_cny));await expect(p.locator('#sell-field-batchInventory-card input')).toHaveValue(String(task.business.inventory));
-  const {noSku}=await verifyForm(p,task,target,{main:receipts,details:detailReceipts});
-  assert.equal(createHash('sha256').update(await readFile(task.source.workbook)).digest('hex'),task.source.sha256);
+  const {noSku,shippingArea:verifiedShippingArea}=await verifyForm(p,task,target,{main:receipts,details:detailReceipts,shippingArea,materialBindingSha256:materialBinding?.sha256||null},executionProfile,materialBinding);
+  shippingArea=verifiedShippingArea;
   await p.screenshot({path:dir+'pre-submit-full.png',fullPage:true});
-  await writeFile(dir+'review.json',JSON.stringify({at:new Date().toISOString(),decision:'PASS_SOURCE_AND_FORM',mappingVersion:MAPPING_VERSION,order,source:task.source,title:task.listing.title,main:receipts,details:detailReceipts,noSku},null,2));
+  await writeFile(dir+'review.json',JSON.stringify({at:new Date().toISOString(),decision:'PASS_SOURCE_AND_FORM',mappingVersion:MAPPING_VERSION,order,source:task.source,title:task.listing.title,main:receipts,details:detailReceipts,noSku,executionProfile,shippingArea},null,2));
  });
 
- return {main:receipts,details:detailReceipts};
+ return {main:receipts,details:detailReceipts,shippingArea,...(materialBinding?{materialBindingSha256:materialBinding.sha256}:{})};
 }
 
 // Positive empty-UI contract from the read-only 2026-10-08 seller DOM:
@@ -387,7 +509,11 @@ export async function assertNoSku(page) {
   const one=selector=>{const all=document.querySelectorAll(selector);return all.length===1?all[0]:null;};
   const sale=one('#sale-card'),prop=one('#struct-saleProp'),custom=one('#struct-customSaleProp'),sku=one('#struct-sku'),field=one('#sell-field-sku'),content=one('.sell-new-sku-table-content'),wrapper=one('.sell-sku-table-wrapper-new');
   if(!sale||!prop||!custom||!sku||!field||!content||!wrapper)return 'ROOT_MISSING_OR_DUPLICATE';
-  if([prop,custom,sku].some(el=>el.parentElement!==sale)||field.parentElement!==sku||!field.contains(content)||wrapper.parentElement!==content)return 'ROOT_ANCESTRY_CHANGED';
+  // Recorded 2026-10-15 form hides only the empty custom-property placeholder
+  // in one display:none div. Its subtree must still be structurally empty.
+  const customParent=custom.parentElement;
+  const wrappedCustom=customParent!==sale&&customParent?.parentElement===sale&&customParent.localName==='div'&&customParent.attributes.length===1&&customParent.hasAttribute('style')&&customParent.style.length===1&&customParent.style.display==='none'&&customParent.style.getPropertyPriority('display')===''&&!customParent.shadowRoot&&customParent.children.length===1&&customParent.firstElementChild===custom&&[...customParent.childNodes].every(n=>n===custom||n.nodeType===Node.TEXT_NODE&&!n.textContent.trim());
+  if(prop.parentElement!==sale||sku.parentElement!==sale||customParent!==sale&&!wrappedCustom||field.parentElement!==sku||!field.contains(content)||wrapper.parentElement!==content)return 'ROOT_ANCESTRY_CHANGED';
   // Light-DOM emptiness cannot certify an additional public shadow subtree.
   // Reject its presence without inspecting its content or private component state.
   if(sale.shadowRoot||[prop,custom,sku].some(root=>root.shadowRoot||[...root.querySelectorAll('*')].some(el=>el.shadowRoot)))return 'UNKNOWN_SHADOW_ROOT';
@@ -397,7 +523,7 @@ export async function assertNoSku(page) {
     if(el.hidden||el.hasAttribute('inert')||el.getAttribute('aria-hidden')==='true'||el.getAttribute('aria-expanded')==='false'||el.getAttribute('aria-busy')==='true'||style.display==='none'||style.visibility!=='visible'||style.contentVisibility==='hidden'||Number(style.opacity)===0)return false;
    }return true;
   };
-  if(document.readyState==='loading'||[sale,prop,custom,sku,field,content,wrapper].some(el=>!shown(el)))return 'NOT_VISIBLE_OR_READY';
+  if(document.readyState==='loading'||[sale,prop,...(wrappedCustom?[]:[custom]),sku,field,content,wrapper].some(el=>!shown(el)))return 'NOT_VISIBLE_OR_READY';
   // The two recorded empty placeholders legitimately have height zero.
   for(const el of [prop,custom]){
    if(el.localName!=='div'||el.className!=='com-struct'||el.attributes.length!==2||el.children.length!==1||el.firstElementChild.localName!=='div'||el.firstElementChild.attributes.length||el.firstElementChild.childNodes.length||el.textContent.trim())return 'SALES_PROPERTIES_NOT_EMPTY';
@@ -438,25 +564,41 @@ export async function assertNoSku(page) {
  return {structureVersion:'taobao-no-sku-empty-20261008',status:'VERIFIED_EMPTY',skuCount:0,checkedAt:new Date().toISOString()};
 }
 
-export async function verifyForm(p,task,target,receipts) {
+export async function verifyForm(p,task,target,receipts,executionProfile=null,materialBinding=null) {
  assert(newForm(p),'NEW_ITEMS_ONLY');
- await assertTaskFiles(task);
+ await assertTaskFiles(task,{materialBinding});
+ if(materialBinding)assert.equal(receipts.materialBindingSha256,materialBinding.sha256,'SOURCE_OR_ASSET_CHANGED: 图片回执与原任务绑定版本不一致');
+ const effective=materialTask(task,materialBinding);
  await expect(p.locator('#global-card')).toContainText(/其[它他]商品定制/);
  for(const [selector,value] of [[selectors.title,task.listing.title],[selectors.price,task.business.price_cny],[selectors.stock,task.business.inventory],['#struct-p-20000 input',task.business.brand]])await expect(p.locator(selector)).toHaveValue(String(value));
  await expect(p.locator(selectors.guide)).toHaveValue(task.listing.guideTitle);
- for(const [scope,text] of [['#sale-card',target==='WAREHOUSE'?/^放入仓库$/:/^(立刻|立即)上架$/],['#sell-field-customize',/^是$/],['#deliver-card',/^24小时内发货/],['#sell-field-shippingArea',/^大陆及港澳台$/],['#sell-field-shippingArea',/^单一发货地$/],['#sell-field-globalStock',/^中国内地（大陆）$/],['#deliver-card',/^不设置商品维度区域限售模板$/]]) {
+ for(const [scope,text] of [['#sale-card',target==='WAREHOUSE'?/^放入仓库$/:/^(立刻|立即)上架$/],['#sell-field-customize',/^是$/],['#deliver-card',/^24小时内发货/],['#sell-field-globalStock',/^中国内地（大陆）$/],['#deliver-card',/^不设置商品维度区域限售模板$/]]) {
   await expect(p.locator(scope).locator('label').filter({hasText:text}).locator('input').first()).toBeChecked();
  }
- await expect(p.locator('#sell-field-shippingArea input[role=combobox]')).toHaveAttribute('aria-valuetext','北京 / 北京');
+ const shippingArea=await inspectShippingArea(p,task,executionProfile,async()=>{if(await visibleChallenge(p))throw Error('PAUSED_CAPTCHA');});
+ if(receipts.shippingArea)assert.equal(shippingArea.mode,receipts.shippingArea.mode,'FORM_SHIPPING_AREA_CHANGED：发货控件模式在填写后变化');
+ if(shippingArea.rendered){
+  for(const text of [/^大陆及港澳台$/,/^单一发货地$/])await expect(p.locator('#sell-field-shippingArea label').filter({hasText:text}).locator('input').first()).toBeChecked();
+  await expect(p.locator('#sell-field-shippingArea input[role=combobox]')).toHaveAttribute('aria-valuetext','北京 / 北京');
+ }
  await expect(p.locator('#sell-field-tbExtractWay input[type=checkbox][value="2"]')).toBeChecked();
- await expect(p.locator('#sell-field-tbExtractWay')).toContainText(task.business.freight_template);
- const main=await p.locator(`${selectors.main} img`).evaluateAll(es=>es.map(e=>e.src).filter(u=>u.includes('/2215038760087/')));
+ await expect(p.locator('#sell-field-tbExtractWay')).toContainText(freightTemplate(task,executionProfile));
+ const main=await reconcileMainImages(p,receipts.main,[...effective.assets.main,...effective.assets.secondary]);
+ for(const [i,asset]of [...effective.assets.main,...effective.assets.secondary].entries())if(asset.materialVersion)assert(await verifyMaterialUploadReceipt(asset,receipts.main[i]?.url),'SOURCE_OR_ASSET_CHANGED: BOUND_MATERIAL_UPLOAD_UNVERIFIED');
  const details=await p.locator(selectors.details).evaluateAll(es=>es.map(e=>e.src));
- assert.equal(main.length,5);assert.equal(details.length,task.assets.details.length);
+ const expectedDetails=await executionDetailImages(task,executionProfile,materialBinding);
+ assert.equal(main.length,5);assert.equal(details.length,expectedDetails.length);
+ for(const [i,asset]of expectedDetails.entries()){
+  if(materialBinding||asset.padding||receipts.details[i]?.source?.padding){
+   assert.equal(receipts.details[i]?.source?.path,asset.path,'DETAIL_SOURCE_MISMATCH');
+   assert.equal(receipts.details[i]?.source?.sha256,asset.sha256,'DETAIL_SOURCE_MISMATCH');
+   assert.equal(receipts.details[i]?.source?.padding?.profileSha256,asset.padding?.profileSha256,'DETAIL_SOURCE_MISMATCH');
+  }
+  if(asset.materialVersion)assert(await verifyMaterialUploadReceipt(asset,receipts.details[i]?.url),'SOURCE_OR_ASSET_CHANGED: BOUND_MATERIAL_UPLOAD_UNVERIFIED');
+ }
   await verifyAttributes(p,task,async()=>{if(await visibleChallenge(p))throw Error('PAUSED_CAPTCHA');});
- assert(main.every((u,i)=>norm(u)===norm(receipts.main[i]?.url||'')),'MAIN_IMAGE_ORDER');
  assert(details.every((u,i)=>norm(u)===norm(receipts.details[i]?.url||'')),'DETAIL_IMAGE_ORDER');
- const noSku=await assertNoSku(p);return {noSku};
+ const noSku=await assertNoSku(p);return {noSku,shippingArea};
 }
 
 export async function openTaskPage(context,task,checkpoint,guard,record,onPage=()=>{}) {

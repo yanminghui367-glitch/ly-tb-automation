@@ -1,0 +1,31 @@
+import {chromium} from 'playwright';
+import assert from 'node:assert/strict';
+import {mkdir,writeFile,readFile} from 'node:fs/promises';
+import {resolve,join} from 'node:path';
+import {createHash} from 'node:crypto';
+import {verifyKernel} from '../kernel-integrity.mjs';
+const base=process.env.MATERIAL_QA_BASE||'http://127.0.0.1:4318',shopId='shop-7949a469',out=resolve(import.meta.dirname,'../../output/material-replacement-20261015');
+await mkdir(out,{recursive:true});
+const health=await fetch(base+'/api/v1/health').then(r=>r.json()),os=await fetch(base+'/api/os/state?executionShop='+shopId).then(r=>r.json());
+const before=JSON.parse(await readFile(join(out,'production-before.json'),'utf8'));assert.notEqual(health.pid,before.health.pid,'后台仍是维护前的旧进程');
+const qa=JSON.parse(await readFile(join(out,'independent-qa/final-candidate-hashes.json'),'utf8'));assert(qa.ok);
+for(const [file,sha]of Object.entries(qa.files))assert.equal(createHash('sha256').update(await readFile(resolve(import.meta.dirname,'../..',file))).digest('hex'),sha,'换图候选变化：'+file);
+const diskKernel=await verifyKernel();assert(diskKernel.changed.every(file=>!Object.hasOwn(qa.files,file)));assert.equal(health.kernel.revision,diskKernel.revision);assert.equal(health.kernel.files,diskKernel.files);
+const inventory=os.materials[shopId];assert.equal(inventory.covers.count,2);assert.equal(inventory.details.count,8);
+const module=await fetch(base+'/material-editor.js').then(r=>r.text()),disk=await readFile(resolve(import.meta.dirname,'../material-editor.js'),'utf8');assert.equal(module,disk);
+const writes=[],errors=[],browser=await chromium.launch({channel:'chrome',headless:true}),page=await browser.newPage({viewport:{width:1536,height:1000}});
+await page.route('**/*',route=>{const request=route.request();if(new URL(request.url()).origin!==base)return route.abort();if(!['GET','HEAD'].includes(request.method())){writes.push({method:request.method(),url:request.url()});return route.abort();}return route.continue();});
+page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(15000);
+try{
+ await page.goto(base+'/travel-os.html?shop='+shopId+'#products');await page.getByRole('button',{name:'图片与资料',exact:true}).click();await page.locator('[data-action="library-tab"][data-filter="details"]').click();
+ const buttons=page.locator('[data-action="material-edit"]');await buttons.first().waitFor();assert.equal(await buttons.count(),10);
+ assert.equal(await buttons.first().getAttribute('data-shop'),shopId);await page.screenshot({path:join(out,'live-desktop-cards.png')});
+ await buttons.first().click();const editor=page.locator('.material-image-editor');await editor.waitFor();assert(await editor.locator('[type=submit]').isDisabled());assert.equal(await editor.locator('input[type=file]').getAttribute('multiple'),null);
+ await page.waitForFunction(()=>{const img=document.querySelector('.material-editor-previews img');return img?.complete&&img.naturalWidth>0;});
+ await page.screenshot({path:join(out,'live-desktop-editor.png')});await editor.getByRole('button',{name:'取消',exact:true}).click();
+ await page.setViewportSize({width:390,height:844});await buttons.first().scrollIntoViewIfNeeded();await buttons.first().click();await editor.waitFor();
+ assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));await page.screenshot({path:join(out,'live-mobile-editor.png')});await editor.getByRole('button',{name:'取消',exact:true}).click();
+ assert.equal(writes.length,0);assert.equal(errors.length,0);
+ await writeFile(join(out,'live-ui-qa.json'),JSON.stringify({at:new Date().toISOString(),base,shopId,pid:health.pid,kernel:health.kernel,diskKernel,scope:'MATERIAL_REPLACEMENT_ONLY',reviewedFilesUnchanged:true,detailEditButtons:10,covers:inventory.covers.count,details:inventory.details.count,moduleSha256:createHash('sha256').update(module).digest('hex'),writes,errors,uploadedImages:0,publishingActions:0,ok:true},null,2));
+ console.log(JSON.stringify({ok:true,pid:health.pid,detailEditButtons:10,writes:0,errors:0}));
+}finally{await page.close();await browser.close();}

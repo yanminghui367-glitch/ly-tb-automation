@@ -2,6 +2,10 @@ import { lstat, readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative, sep } from 'node:path';
 
 const publicFiles = new Map([
+  ['execution-orb.js', 'text/javascript; charset=utf-8'],
+  ['material-editor.js', 'text/javascript; charset=utf-8'],
+  ['setup-files.js', 'text/javascript; charset=utf-8'],
+  ['shop-scope.js', 'text/javascript; charset=utf-8'],
   ['ui-copy.js', 'text/javascript; charset=utf-8'],
   ['operations-catalog-ui.js', 'text/javascript; charset=utf-8'],
   ['operations-catalog.css', 'text/css; charset=utf-8'],

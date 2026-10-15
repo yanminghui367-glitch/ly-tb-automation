@@ -1,3 +1,4 @@
+import {shopFetch} from './shop-scope.js';
 // Single-item controls used by the production workbench and isolated QA.
 import {requestId} from './task-view-model.mjs';
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -39,7 +40,7 @@ export function submissionSummary(item, submissionEvidence) {
 
 // The caller owns the existing dialog, shop context and original-run navigation.
 // Controlled single-item actions use the existing server; never contacts Chrome.
-export function mountRoundItemDetail(root, scope, {request = fetch, onRun = null, canContinueAfterSkip = () => false, onContinueAfterSkip = null, labelStep = value => value ? '步骤待确认，查看定位信息' : '尚未开始', makeId = requestId} = {}) {
+export function mountRoundItemDetail(root, scope, {request = shopFetch, onRun = null, canContinueAfterSkip = () => false, onContinueAfterSkip = null, labelStep = value => value ? '步骤待确认，查看定位信息' : '尚未开始', makeId = requestId} = {}) {
   let alive = true, generation = 0, data = null, loading = false, writing = false;
   let draft = '', pending = null, pendingContinueAfterSkip = false, continuePending = null, verifyPending = null, retryPending = null, notice = '', error = '', readFailed = false;
   let controlBusy=false,controlNotice='',controlError='';
@@ -248,9 +249,9 @@ export function mountRoundItemDetail(root, scope, {request = fetch, onRun = null
 // A single operator decision, using the existing item-skip and round-resume APIs.
 // Keep the exact requests through a lost response or page reload. Never infer
 // that a submission is safe from the status banner alone.
-export function createCurrentItemSkip({request=fetch,storage=sessionStorage,currentRound,makeId=requestId,onChange=()=>{}}) {
+export function createCurrentItemSkip({request=shopFetch,storage=sessionStorage,currentRound,makeId=requestId,onChange=()=>{}}) {
  const storageKey='ly-current-item-skip-v1';
- let pending=null,working=false,notice='',error=false;
+ let pending=null,working=false,notice='',error=false,noticeScope=null;
  try {
   const saved=JSON.parse(storage.getItem(storageKey)||'null');
   if(saved?.version===1&&saved.skip&&saved.resume&&saved.skip.roundId===saved.resume.id&&saved.skip.windowId===saved.resume.windowId&&typeof saved.skip.key==='string'&&typeof saved.skip.expectedRevision==='string'&&typeof saved.skip.requestId==='string'&&typeof saved.resume.requestId==='string'&&typeof saved.resume.manifestHash==='string')pending=saved;
@@ -267,6 +268,11 @@ export function createCurrentItemSkip({request=fetch,storage=sessionStorage,curr
  }
  function view(r){
   const recover=pending&&r?.id===pending.resume.id&&r.manifestHash===pending.resume.manifestHash;
+  // Feedback belongs to the item that produced it. Once that item is no longer
+  // current, keep the durable skip in round history but clear this action banner.
+  if(noticeScope&&!pending&&(r?.id!==noticeScope.roundId||r?.window?.id!==noticeScope.windowId||r?.current?.key!==noticeScope.key)){
+   notice='';error=false;noticeScope=null;
+  }
   const open=r?.window&&!['COMPLETED','STOPPED'].includes(r.window.state);
   const skipped=r?.current?.state==='MANUAL_SKIPPED';
   const shown=!!recover||!!(open&&r.current&&!['NEW_SUCCESS','EXISTING_VERIFIED','PREFLIGHT_SKIPPED'].includes(r.current.state));
@@ -284,7 +290,7 @@ export function createCurrentItemSkip({request=fetch,storage=sessionStorage,curr
   if(working)return;
   const r=currentRound(),v=view(r);
   if(!v.allowed||scope.roundId!==v.roundId||scope.windowId!==v.windowId||scope.key!==v.key)throw Error('当前商品或轮次已变化，请刷新后重新操作。');
-  working=true;notice='正在核对当前商品是否尚未提交…';error=false;publish();
+  working=true;noticeScope={roundId:scope.roundId,windowId:scope.windowId,key:scope.key};notice='正在核对当前商品是否尚未提交…';error=false;publish();
   try {
    if(!pending){
     const query=new URLSearchParams(scope),detail=await json('/api/v1/rounds/item?'+query);

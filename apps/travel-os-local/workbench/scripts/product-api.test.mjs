@@ -35,7 +35,7 @@ test('retry recovery rejects unknown and exhausted; mixed pending stays outside 
  items=[{...failed,attempts:3}];assert.equal((await x.api.recovery({id:'batch',operation:'retry'})).ready,false);
  assert.equal(x.flow.submits,0);
 });
-test('create only queues reviewed tasks and excludes successful destinations',async t=>{const x=await fixture(t);x.store.history(x.tasks[0],{itemId:'100',status:'仓库中',at:'2026-09-21'});const {result:{data:p}}=await x.call('preview?import='+x.importId);assert.equal(p.tasks.length,1);assert.match(p.excluded[0].reason,/成功/);await x.call('create',{importId:x.importId,limit:20,mode:'LIVE',review:{reviewed:true,selectionHash:p.selectionHash,authorization:"synthetic QA"}});assert.equal(x.flow.submits,0);assert.equal(x.batch.store.view().counts.PENDING,1);assert.equal((await x.api.snapshot()).records[0].duplicateBlocked,true);});
+test('create only queues reviewed tasks and excludes successful destinations',async t=>{const x=await fixture(t);x.store.history(x.tasks[0],{itemId:'100',status:'仓库中',at:'2026-09-21'});const {result:{data:p}}=await x.call('preview?import='+x.importId);assert.equal(p.tasks.length,1);assert.match(p.excluded[0].reason,/成功/);await x.call('create',{importId:x.importId,limit:20,mode:'DRY_RUN',review:{reviewed:true,selectionHash:p.selectionHash,authorization:"synthetic QA"}});assert.equal(x.flow.submits,0);assert.equal(x.batch.store.view().counts.PENDING,1);assert.equal((await x.api.snapshot()).records[0].duplicateBlocked,true);});
 test('CAPTCHA requires manual confirmation and fresh login; resumes the same run once',async t=>{const x=await fixture(t);await x.api.saveSettings({executionEnabled:true,confirmShop:shop.name});const p=x.batch.preview(x.importId,1),b=x.batch.create({importId:x.importId,limit:1,mode:'LIVE',review:{reviewed:true,selectionHash:p.selectionHash,authorization:"synthetic QA"}},shop);await x.call('start',{id:b.id});await x.batch.pending;const id=x.batch.store.view().items[0].runId;assert.equal((await x.api.snapshot()).exceptions[0].captcha,true);for(const op of ['start','continue','retry'])await assert.rejects(x.call(op,{id:b.id}),/人工/);x.setLogin(false);await assert.rejects(x.call('continue',{id:b.id,humanVerified:true}),/登录/);x.setLogin(true);x.setOutcome('VERIFIED');await x.call('continue',{id:b.id,humanVerified:true});await x.batch.pending;assert.equal(x.batch.store.view().items[0].runId,id);assert.equal(x.flow.submits,1);assert.equal((await x.api.snapshot()).exceptions.length,0);await assert.rejects(x.call('start',{id:b.id}),/结束/);assert.equal(x.flow.submits,1);});
 test('kernel mismatch prevents execution even with saved enablement',async t=>{const x=await fixture(t);await x.api.saveSettings({executionEnabled:true,confirmShop:shop.name});x.api.integrity=async()=>({ok:false});await assert.rejects(x.api.assertExecution(),/内核/);assert.equal((await x.api.snapshot()).kernel.ok,false);});
 test('attribute capture beginning during awaited execution checks blocks dispatch',async t=>{
@@ -44,8 +44,174 @@ test('attribute capture beginning during awaited execution checks blocks dispatc
 });
 test('records export, task logs and screenshots remain bounded to task artifacts',async t=>{const x=await fixture(t);x.tasks[0].listing.title='=formula';x.store.create(x.importId,x.tasks[0],'DRY_RUN','SOURCE',{reviewed:true,taskHash:digest(x.tasks[0])});x.store.imported({sourceHash:'new',tasks:x.tasks});x.store.history(x.tasks[0],{itemId:'1',status:'仓库中',url:'https://attacker.test',at:'2026-09-21'});const {result}=await x.call('records.csv');assert(result.includes("'=formula"));assert.equal((await x.api.snapshot()).records[0].url,null);assert.equal(x.api.screenshot(join(x.dir,'secret.png')),null);assert.equal(x.api.screenshot(join(x.flow.artifacts,'r','ok.png')),'/output/tasks/r/ok.png');const r=x.store.create(x.importId,x.tasks[1],'DRY_RUN','SOURCE',{reviewed:true,taskHash:digest(x.tasks[1])});const detail=await x.call('task?id='+r.id);assert.equal(detail.result.data.events.length,1);});
 test('SSE supplies current snapshot and cleans up on close',async t=>{const x=await fixture(t);const {result,res}=await x.call('events');assert(result.startsWith('event: state\n'));assert.equal(JSON.parse(result.split('data: ')[1]).settings.executionEnabled,false);res.emit('close');assert.equal(res.listenerCount('close'),0);});
+test('health reports the current kernel check instead of a stale startup snapshot',async t=>{const x=await fixture(t);x.api.integrity=async()=>({ok:false,revision:'disk-revision',changed:['workbench/product-api.mjs']});const {result}=await x.call('health');assert.equal(result.status,200);assert.equal(result.data.kernel.ok,false);assert.equal(result.data.kernel.revision,'disk-revision');assert.deepEqual(result.data.kernel.changed,['workbench/product-api.mjs']);});
 test('all legacy execution routes are covered by the product stop switch',()=>{for(const p of ['batch/start','batch/continue','batch/retry','source/start','source/resume','tasks/abc/start','tasks/abc/resume','tasks/abc/acknowledge-manual','tasks/abc/complete-dry-run'])assert(executionRoute('/api/'+p));assert(!executionRoute('/api/batch/pause'));assert(!executionRoute('/api/source/import'));});
 test('frozen production kernel matches the recorded baseline',async()=>assert.equal((await verifyKernel()).ok,true));
+
+const roundAuthorization=count=>({allowLive:true,maxSafeRecoveries:2,confirmedShop:shop.name,expectedCount:count});
+const createDefaultRound=x=>x.api.round.create({importId:x.importId,authorization:roundAuthorization(2),expectedCount:2,repairVersion:'ISOLATED_DEFAULT_TEST'});
+
+test('shop listing default persists across restarts and other settings changes without enabling execution',async t=>{
+ const x=await fixture(t),before=await x.api.settings();
+ const saved=await x.api.saveSettings({ignoreExternalDestinationProducts:true,confirmShop:shop.name});
+ assert.equal(saved.listingDefaults.shopId,shop.id);assert.equal(saved.listingDefaults.ignoreExternalDestinationProducts,true);
+ assert.equal(saved.listingDefaults.revision,1);assert.equal(saved.executionEnabled,false);assert.equal(x.flow.submits,0);
+ const restarted=new ProductApi(x.params);assert.deepEqual((await restarted.settings()).listingDefaults,saved.listingDefaults);
+ await restarted.saveSettings({limit:2});assert.deepEqual((await restarted.settings()).listingDefaults,saved.listingDefaults);
+ for(const key of ['heat','pool','assets','sheet'])assert.equal((await restarted.settings())[key],before[key]);
+ const other=new ProductApi({...x.params,shop:{id:'other-shop',name:'其他测试店'}});
+ assert.equal((await other.settings()).listingDefaults.ignoreExternalDestinationProducts,false);
+ assert.equal((await other.settings()).listingDefaults.shopId,'other-shop');
+});
+
+test('new imported round inherits a frozen shop default but preserves original manifest and authorization',async t=>{
+ const x=await fixture(t);await x.api.saveSettings({ignoreExternalDestinationProducts:true,confirmShop:shop.name});
+ x.api=new ProductApi(x.params);const r=await createDefaultRound(x),original=x.api.round.assertManifest(r.id);
+ const p=original.policies['ignore-destination-duplicates'];
+ assert.equal(p.enabled,true);assert.equal(p.scope,'THIS_ROUND_ONLY');assert.equal(p.shop,shop.id);assert.equal(p.manifestHash,r.manifestHash);
+ assert.equal(p.inheritedFrom.scope,'SHOP_DEFAULT');assert.equal(p.inheritedFrom.revision,1);
+ assert.equal(original.authorization_hash,digest(roundAuthorization(2)));
+ assert.equal(x.api.round.events(r.id).filter(e=>e.kind==='SHOP_DEFAULT_POLICY_INHERITED').length,1);
+ assert.equal(r.state,'READY');assert.equal(r.counts.PENDING,2);assert.equal(x.flow.submits,0);assert.equal(x.flow.active,null);
+ assert.equal((await x.api.settings()).executionEnabled,false);
+});
+
+test('changing a shop default affects future rounds only and never rewrites an existing round policy',async t=>{
+ const x=await fixture(t);await x.api.saveSettings({ignoreExternalDestinationProducts:true,confirmShop:shop.name});
+ const r=await createDefaultRound(x),original=x.api.round.round(r.id);
+ await x.api.saveSettings({ignoreExternalDestinationProducts:false,confirmShop:shop.name});
+ assert.deepEqual(x.api.round.round(r.id),original);
+ x.store.db.prepare("UPDATE rounds SET state='COMPLETED' WHERE id=?").run(r.id);
+ const next=await createDefaultRound(x);assert.equal(x.api.round.round(next.id).policies['ignore-destination-duplicates'],undefined);
+ assert.equal((await x.api.settings()).listingDefaults.revision,2);assert.equal(x.flow.submits,0);
+});
+
+test('shop defaults require exact shop confirmation, boolean input and an idle owner; execution gates remain separate',async t=>{
+ const x=await fixture(t);
+ await assert.rejects(x.api.saveSettings({ignoreExternalDestinationProducts:true,confirmShop:'错误店铺'}),/确认/);
+ await assert.rejects(x.api.saveSettings({ignoreExternalDestinationProducts:'true',confirmShop:shop.name}),/无效/);
+ x.api.round.creating=true;await assert.rejects(x.api.saveSettings({ignoreExternalDestinationProducts:true,confirmShop:shop.name}),/创建/);x.api.round.creating=false;
+ x.flow.active='busy';await assert.rejects(x.api.saveSettings({ignoreExternalDestinationProducts:true,confirmShop:shop.name}),/执行|已有/);x.flow.active=null;
+ await x.api.saveSettings({executionEnabled:true,confirmShop:shop.name});
+ x.api.integrity=async()=>({ok:false});await x.api.saveSettings({ignoreExternalDestinationProducts:true,confirmShop:shop.name});
+ await assert.rejects(x.api.assertExecution(),/内核/);
+ assert.equal((await x.api.settings()).listingDefaults.ignoreExternalDestinationProducts,true);assert.equal(x.flow.submits,0);
+});
+
+test('a stored shop default does not supply missing LIVE authorization and cannot be injected through create input',async t=>{
+ const x=await fixture(t);await x.api.saveSettings({ignoreExternalDestinationProducts:true,confirmShop:shop.name});
+ await assert.rejects(x.api.round.create({importId:x.importId,authorization:{...roundAuthorization(2),allowLive:false},expectedCount:2,repairVersion:'TEST'}),/授权/);
+ assert.equal(x.api.round.round(),null);
+ await x.api.saveSettings({ignoreExternalDestinationProducts:false,confirmShop:shop.name});
+ const r=await x.api.round.create({importId:x.importId,authorization:roundAuthorization(2),expectedCount:2,repairVersion:'TEST',listingDefaults:{shopId:shop.id,ignoreExternalDestinationProducts:true}});
+ assert.equal(x.api.round.round(r.id).policies['ignore-destination-duplicates'],undefined);assert.equal(x.flow.submits,0);
+});
+
+test('malformed or cross-shop stored defaults fail closed instead of silently changing execution rules',async t=>{
+ const x=await fixture(t);await x.api.saveSettings({ignoreExternalDestinationProducts:true,confirmShop:shop.name});
+ const saved=JSON.parse(await readFile(x.api.settingsFile,'utf8')),original=saved.shopListingDefaults[shop.id];
+ for(const bad of [null,[],true,{[shop.id]:null},{[shop.id]:{...original,shopId:'other-shop'}},{[shop.id]:{...original,ignoreExternalDestinationProducts:'true'}},{[shop.id]:{...original,revision:0}},{[shop.id]:{...original,confirmedAt:0}}]){
+  await writeFile(x.api.settingsFile,JSON.stringify({...saved,shopListingDefaults:bad}));
+  await assert.rejects(x.api.settings(),/默认发布规则无效/);await assert.rejects(createDefaultRound(x),/默认发布规则无效/);
+  assert.equal(x.api.round.creating,false);assert.equal(x.api.round.round(),null);
+ }
+ assert.equal(x.flow.submits,0);
+});
+
+const websiteDefault=enabled=>({ignoreExternalDestinationProducts:enabled,listingDefaultsScope:'WEBSITE_DEFAULT',confirmAllShops:true});
+
+test('website listing default persists for existing and future shops, superseding old shop preferences',async t=>{
+ const x=await fixture(t);await x.api.saveSettings({ignoreExternalDestinationProducts:true,confirmShop:shop.name});
+ const other=new ProductApi({...x.params,shop:{id:'other-shop',name:'其他测试店'}});
+ await other.saveSettings({ignoreExternalDestinationProducts:false,confirmShop:other.shop.name});
+ const before=await x.api.settings(),saved=await x.api.saveSettings(websiteDefault(true));
+ assert.equal(saved.websiteListingDefaults.scope,'ALL_SHOPS');assert.equal(saved.websiteListingDefaults.revision,1);
+ assert.deepEqual(saved.shopListingDefaults,before.shopListingDefaults);
+ for(const identity of [shop,other.shop,{id:'future-new-shop',name:'以后新增测试店'}]){
+  const restarted=new ProductApi({...x.params,shop:identity}),effective=(await restarted.settings()).listingDefaults;
+  assert.equal(effective.shopId,identity.id);assert.equal(effective.scope,'WEBSITE_DEFAULT');assert.equal(effective.ignoreExternalDestinationProducts,true);
+  assert.equal(effective.revision,1);assert.equal(effective.confirmedAt,saved.websiteListingDefaults.confirmedAt);
+ }
+ await other.saveSettings({limit:2});assert.deepEqual((await x.api.settings()).websiteListingDefaults,saved.websiteListingDefaults);
+ assert.equal(saved.executionEnabled,false);assert.equal(x.flow.submits,0);assert.equal(x.store.list().length,0);
+});
+
+test('new rounds in each shop freeze website provenance with the original shop, manifest and authorization',async t=>{
+ for(const identity of [shop,{id:'new-shop',name:'新店铺'}]){
+  const x=await fixture(t);await x.api.saveSettings(websiteDefault(true));
+  const tasks=x.tasks.map(task=>({...task,shopId:identity.id,business:{...task.business,shop_name:identity.name}}));
+  const importId=x.store.imported({sourceHash:'WEBSITE_DEFAULT_'+identity.id,tasks});
+  const api=new ProductApi({...x.params,shop:identity}),authorization={...roundAuthorization(2),confirmedShop:identity.name};
+  const r=await api.round.create({importId,authorization,expectedCount:2,repairVersion:'ISOLATED_WEBSITE_DEFAULT'}),original=api.round.assertManifest(r.id);
+  const p=original.policies['ignore-destination-duplicates'];
+  assert.equal(p.enabled,true);assert.equal(p.scope,'THIS_ROUND_ONLY');assert.equal(p.shop,identity.id);assert.equal(p.manifestHash,r.manifestHash);
+  assert.equal(p.inheritedFrom.scope,'WEBSITE_DEFAULT');assert.equal(p.inheritedFrom.revision,1);
+  assert.equal(original.authorization_hash,digest(authorization));
+  assert.equal(api.round.events(r.id).filter(e=>e.kind==='WEBSITE_DEFAULT_POLICY_INHERITED').length,1);
+  assert.equal(api.round.events(r.id).filter(e=>e.kind==='SHOP_DEFAULT_POLICY_INHERITED').length,0);
+  assert.equal(r.state,'READY');assert.equal(r.active,false);assert.equal(r.counts.PENDING,2);assert.equal(x.store.list().length,0);assert.equal(x.flow.submits,0);
+ }
+});
+
+test('website rule changes affect future rounds, preserve old policies and cannot be overridden by a shop save',async t=>{
+ const x=await fixture(t);await x.api.saveSettings({ignoreExternalDestinationProducts:true,confirmShop:shop.name});
+ await x.api.saveSettings(websiteDefault(true));const r=await createDefaultRound(x),original=x.api.round.round(r.id);
+ await assert.rejects(x.api.saveSettings({ignoreExternalDestinationProducts:false,confirmShop:shop.name}),/网站范围/);
+ const changed=await x.api.saveSettings(websiteDefault(false));
+ assert.equal(changed.websiteListingDefaults.revision,2);assert.equal(changed.listingDefaults.ignoreExternalDestinationProducts,false);
+ assert.equal(changed.shopListingDefaults[shop.id].ignoreExternalDestinationProducts,true);
+ assert.deepEqual(x.api.round.round(r.id),original);
+ x.store.db.prepare("UPDATE rounds SET state='COMPLETED' WHERE id=?").run(r.id);
+ const next=await createDefaultRound(x);assert.equal(x.api.round.round(next.id).policies['ignore-destination-duplicates'],undefined);
+ assert.equal(x.flow.submits,0);
+});
+
+test('website defaults require explicit scope confirmation and idle ownership without approving LIVE',async t=>{
+ const x=await fixture(t);
+ for(const input of [
+  {...websiteDefault(true),confirmAllShops:false},{...websiteDefault(true),confirmAllShops:'true'},
+  {...websiteDefault(true),listingDefaultsScope:'ALL_SHOPS'},{...websiteDefault(true),ignoreExternalDestinationProducts:'true'},
+  {listingDefaultsScope:'WEBSITE_DEFAULT',confirmAllShops:true},
+  {ignoreExternalDestinationProducts:true,confirmAllShops:true,confirmShop:shop.name}
+ ])await assert.rejects(x.api.saveSettings(input),/确认|无效|缺少/);
+ x.api.round.creating=true;await assert.rejects(x.api.saveSettings(websiteDefault(true)),/创建/);x.api.round.creating=false;
+ x.flow.active='busy';await assert.rejects(x.api.saveSettings(websiteDefault(true)),/执行|已有/);x.flow.active=null;
+ x.api.integrity=async()=>({ok:false});await x.api.saveSettings(websiteDefault(true));
+ await assert.rejects(x.api.assertExecution(),/暂停/);
+ await assert.rejects(x.api.saveSettings({executionEnabled:true,confirmShop:shop.name}),/内核/);
+ await assert.rejects(x.api.round.create({importId:x.importId,authorization:{...roundAuthorization(2),allowLive:false},expectedCount:2,repairVersion:'TEST'}),/授权/);
+ assert.equal(x.api.round.round(),null);assert.equal(x.flow.submits,0);
+});
+
+test('malformed website defaults fail closed even when an existing shop preference is valid',async t=>{
+ const x=await fixture(t);await x.api.saveSettings({ignoreExternalDestinationProducts:true,confirmShop:shop.name});await x.api.saveSettings(websiteDefault(true));
+ const saved=JSON.parse(await readFile(x.api.settingsFile,'utf8')),original=saved.websiteListingDefaults;
+ for(const bad of [null,[],true,{...original,scope:'SHOP_DEFAULT'},{...original,ignoreExternalDestinationProducts:'true'},{...original,revision:0},{...original,confirmedAt:0},{...original,confirmedAt:'invalid'}]){
+  await writeFile(x.api.settingsFile,JSON.stringify({...saved,websiteListingDefaults:bad}));
+  await assert.rejects(x.api.settings(),/网站默认发布规则无效/);await assert.rejects(createDefaultRound(x),/网站默认发布规则无效/);
+  assert.equal(x.api.round.creating,false);assert.equal(x.api.round.round(),null);
+ }
+ assert.equal(x.flow.submits,0);
+});
+
+test('clients cannot inject website inheritance through a new round request',async t=>{
+ const x=await fixture(t);
+ const r=await x.api.round.create({importId:x.importId,authorization:roundAuthorization(2),expectedCount:2,repairVersion:'TEST',websiteListingDefaults:{scope:'ALL_SHOPS',ignoreExternalDestinationProducts:true},listingDefaults:{shopId:shop.id,scope:'WEBSITE_DEFAULT',ignoreExternalDestinationProducts:true}});
+ assert.equal(x.api.round.round(r.id).policies['ignore-destination-duplicates'],undefined);assert.equal(x.flow.submits,0);
+});
+
+test('website defaults retain successful own-item and unknown-submission protections',async t=>{
+ const x=await fixture(t);await x.api.saveSettings(websiteDefault(true));
+ x.store.history(x.tasks[0],{itemId:'100001',status:'出售中',at:new Date().toISOString()});
+ const preview=x.api.preview(x.importId,2);assert.equal(preview.tasks.length,1);assert.match(preview.excluded[0].reason,/成功/);
+ const run=x.store.create(x.importId,x.tasks[1],'LIVE','SOURCE',{reviewed:true,taskHash:digest(x.tasks[1])});
+ x.store.move(run.id,'RUNNING');x.store.move(run.id,'SUBMITTING');x.store.move(run.id,'RESULT_UNKNOWN','提交结果未知');
+ await x.api.saveSettings({executionEnabled:true,confirmShop:shop.name});
+ const snapshot=await x.api.snapshot();assert.equal(snapshot.records.find(r=>r.runId===run.id).duplicateBlocked,true);
+ assert.equal((await x.api.recovery({id:run.id},true)).ready,false);
+ await assert.rejects(x.call('resume-single',{id:run.id}),/核验/);assert.equal(x.store.run(run.id).state,'RESULT_UNKNOWN');assert.equal(x.flow.submits,0);
+});
+
 test('batch cap and material upload adapter are included in the frozen execution boundary',async()=>{
  const lock=JSON.parse(await readFile(new URL('../kernel-lock.json',import.meta.url),'utf8'));
  for(const path of ['workbench/batch-policy.mjs','workbench/publishing-materials.mjs','workbench/publishing-pages.mjs'])assert.match(lock.files[path]||'',/^[a-f0-9]{64}$/);

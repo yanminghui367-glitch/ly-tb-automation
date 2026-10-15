@@ -6,11 +6,12 @@ export function taskGroup(item){
  if(['PENDING','QUEUED','RETRY','PREPARING','READY','AVAILABLE'].includes(state))return 'waiting';
  return 'attention';
 }
+export function taskSkipped(item){return ['SKIPPED','MANUAL_SKIPPED','PREFLIGHT_SKIPPED'].includes(item.state)||item.displayState==='SKIPPED';}
 export function taskListView(items,{filter='all',search='',page=1,pageSize=10}={}){
- const counts={all:items.length,running:0,waiting:0,done:0,attention:0};
+ const counts={all:items.length,running:0,waiting:0,done:0,attention:0,skipped:items.filter(taskSkipped).length};
  for(const item of items)counts[taskGroup(item)]++;
  const q=search.trim().toLocaleLowerCase();
- const matches=items.filter(item=>(filter==='all'||taskGroup(item)===filter)&&(!q||[item.name,item.title,item.destination].some(v=>String(v||'').toLocaleLowerCase().includes(q))));
+ const matches=items.filter(item=>(filter==='all'||(filter==='skipped'?taskSkipped(item):taskGroup(item)===filter))&&(!q||[item.name,item.title,item.destination].some(v=>String(v||'').toLocaleLowerCase().includes(q))));
  const pages=Math.max(1,Math.ceil(matches.length/pageSize)),current=Math.max(1,Math.min(page,pages));
  return {counts,total:matches.length,pages,page:current,rows:matches.slice((current-1)*pageSize,current*pageSize)};
 }

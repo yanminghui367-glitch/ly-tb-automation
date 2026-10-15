@@ -66,6 +66,7 @@
     return text.replace(/[ \t]{2,}/g, ' ').trim();
   };
   const reasonText = value => {
+    if(/SOURCE_OR_ASSET_CHANGED|PACKAGE_CHANGED_SINCE_REVIEW/.test(String(value??'')))return diagnose(value).cause;
     let text = safeText(value).replace(/\bChrome\b/gi, '执行浏览器').replace(/\bPlaywright\b/gi, '自动化程序').replace(/\bExcel\b/gi, '表格文件').replace(/\bDRY_RUN\b/gi, '仅填写模式').replace(/\bLIVE\b/g, '正式执行').replace(/\bID\b/g, '编号');
     return /[A-Za-z]{2,}/.test(text) ? '系统记录了技术异常，请按页面提供的处理建议检查；详细诊断已保存在本机。' : text;
   };
@@ -82,5 +83,25 @@
     const text = reasonText(label || kinds[kind] || kind || '状态已更新');
     return /[A-Za-z]{2,}/.test(text) ? kinds[kind] || '执行状态已记录' : text;
   };
-  globalThis.LyUiCopy = Object.freeze({ text: safeText, reason: reasonText, step: stepName, event: eventName, state: value => {const text=states[value]||safeText(value);return /[A-Za-z]{2,}/.test(text)?'状态待确认':text;} });
+  // Display guidance only: never grants retry permission or changes a task.
+  const diagnose = (value, {state='', stage='', submissionUncertain=false}={}) => {
+    const raw=String(value??'');
+    const issue=(title,cause,action,known=true)=>({title,cause,action,known});
+    if(state==='RESULT_UNKNOWN'||submissionUncertain||/提交结果未知|提交可能|结果待核验/.test(raw))return issue('提交结果待核验','尚未确认平台是否已经收到并发布这条商品。','查看原商品详情和后台核验记录，先确认原商品结果；不要再次提交或重新发布。');
+    if(state==='PAUSED_CAPTCHA'||/CAPTCHA|CHALLENGE_PRESENT|验证码|滑块/.test(raw))return issue('需要人工验证','执行页面出现验证码或平台人工验证，自动执行已暂停。','打开执行浏览器，人工完成验证；确认验证消失后，点击“检查并继续本轮”。');
+    if(/内核发生变化|内核校验失败|内核文件变化|内核已改变|KERNEL_(?:CHANGED|MISMATCH)|INTEGRITY_FAILED/.test(raw))return issue('网站执行版本不一致','执行代码与已验收的版本记录不一致。','保留原任务，交维护人员核对代码、同步已验收版本并重载网站；完成后刷新页面再检查。');
+    if(/SOURCE_OR_ASSET_CHANGED|PACKAGE_CHANGED_SINCE_REVIEW/.test(raw))return issue('任务资料与当前文件不一致','当前表格或图片已改变，原任务仍记录修改前的资料版本，执行前核对未通过。','在“资料设置”确认最新资料已保存，再由维护人员核对原任务与新资料的版本绑定；完成后继续原任务。重新开始一轮不会自动更新旧快照。');
+    if(/ENOENT|找不到指定文件|文件不存在|缺图|缺少.*图片/.test(raw))return issue('资料文件缺失','任务引用的表格或图片在原位置找不到。','在资料设置核对文件目录和名称，恢复缺失文件或补齐资料后保存；保留原任务，再检查对应的资料版本。');
+    if(/运费模板.*(?:不存在|未找到|不匹配|未通过)|FREIGHT_TEMPLATE/.test(raw)||(stage==='freight-template'&&/timeout|超时|locator|expect\(/i.test(raw)))return issue('运费模板未核对通过','任务要求的运费模板尚未成功选择或与店铺实际模板不一致。','在店铺后台核对实际模板名称，再检查本店资料的运费模板设置；不要套用其他店铺的模板。');
+    if(/NO_SKU_UNVERIFIED|ROOT_ANCESTRY_CHANGED/.test(raw))return issue('销售规格核对未通过','平台销售规格区域未通过当前无规格商品的结构核对，尚未确认可以安全提交。','打开当前商品详情与步骤截图，交维护人员核对发布页结构；确认适配后再继续，不要跳过提交前检查。');
+    if(/(?:图片|详情图|主图).*(?:尺寸|超长|比例|分割)|IMAGE_(?:SIZE|DIMENSION)|DETAIL_IMAGE_/.test(raw))return issue('图片规格需要处理','当前图片尺寸或详情图插入状态未通过检查。','查看平台图片提示，按提示调整原资料图片并保存；同时核对原任务的图片版本，再检查并继续。');
+    if(/CONTENT_REVIEW_HELD|CONTENT_MISMATCH|主图内容待核验|错图/.test(raw))return issue('商品图片内容需要核对','商品图片与目的地的一致性尚未确认。','核对当前商品的目的地、主图与详情；已有商品应检查平台实际内容，保留原商品记录，不要重新发布。');
+    if(/ITEM_RETRY_BUDGET_EXHAUSTED|ROUND_.*(?:EXHAUSTED|BUDGET)|尝试.*上限|恢复.*耗尽|不具备额外安全恢复条件/.test(raw))return issue('原任务恢复条件未满足','原任务的尝试次数或额外恢复条件未通过检查。','查看当前商品详情中的尝试与恢复记录；可按原计划跳过问题商品，待首轮结束后检查是否允许重试，不重置次数或重建任务绕过限制。');
+    if(/LOGIN|登录|店铺身份|浏览器未运行|BROWSER_UNAVAILABLE|browser.*closed|disconnected/i.test(raw))return issue('店铺登录或浏览器不可用','执行浏览器未连接，或目标店铺的登录身份尚未确认。','打开执行浏览器，确认登录的是当前店铺；如有登录或身份提示，处理后再检查并继续。');
+    if(/MATERIAL_UPLOAD_|MAIN_MATERIAL_FRAME_|ATTRIBUTE_SELECTION_MISMATCH/.test(raw))return issue('页面操作核对未通过','素材上传、图片选择或属性选择的结果未通过回读核对。','查看当前步骤截图，确认上传或选择是否完成；若页面结构变化，交维护人员修复适配后再继续。');
+    if(/TimeoutError|timed?\s*out|超时|locator\.|expect\(|strict mode/i.test(raw))return issue('当前页面步骤未完成','页面控件未在规定时间内出现，或操作后的状态未通过检查；具体触发原因仍需核对页面。','打开执行浏览器和当前商品步骤截图，检查弹窗、加载状态及控件；处理后通过原任务检查恢复条件，持续失败时交维护人员修复。');
+    if(/ECONNRESET|ECONNREFUSED|ETIMEDOUT|连接中断|连接被/.test(raw))return issue('连接中断','当前页面与服务或平台之间的连接未完成。','检查本地服务与执行浏览器的连接，恢复后重新读取最新状态；如已进入提交阶段，应先核验原商品结果。');
+    return issue('异常原因待确认','当前步骤发生异常，现有记录尚不足以确认具体原因。','打开当前商品详情，查看本次异常记录和步骤截图，将记录交维护人员定位；原因明确后再检查恢复条件。',false);
+  };
+  globalThis.LyUiCopy = Object.freeze({ text: safeText, reason: reasonText, diagnose, step: stepName, event: eventName, state: value => {const text=states[value]||safeText(value);return /[A-Za-z]{2,}/.test(text)?'状态待确认':text;} });
 })();
