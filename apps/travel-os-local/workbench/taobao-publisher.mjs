@@ -8,7 +8,7 @@ import {basename} from 'node:path';
 import assert from 'node:assert/strict';
 import {visibleChallenge} from './browser-environment.mjs';
 import {fillAttributes,verifyAttributes,validateSelections,selectedCustomState} from './publishing-attributes.mjs';
-import {uploadMaterial} from './publishing-materials.mjs';
+import {uploadMaterial,waitDetailThumbnail,materialDomSnippet} from './publishing-materials.mjs';
 import {createBackgroundPage,getAuxiliaryPage,assertAuxiliaryPage} from './publishing-pages.mjs';
 import {captureTaskScreenshot} from './task-screenshot.mjs';
 import {setTimeout as delay} from 'node:timers/promises';
@@ -53,6 +53,7 @@ export async function readSubmissionReceipt(page,formUrl){
  const text=await page.locator('body').innerText();if(page.url()!==before)return null;
  submissionAddress(page,formUrl);if(!/商品提交成功/.test(text))return null;
  const ids=[...text.matchAll(/商品ID[：:]\s*(\d+)/g)].map(m=>m[1]);
+ if(!ids.length)return null;
  assert(ids.length===1&&ids[0]===id,'SUCCESS_WITHOUT_MATCHING_UNIQUE_ITEM_ID');return id;
 }
 // A blank price may be refilled once with the frozen value. Any different
@@ -118,89 +119,120 @@ export async function fillStableInventory(page,value,guard,{settleMs=500,timeout
 // .media-img-plug. Its container can open before its search UI is ready.
 // Poll that same picker only. Never reload it, re-click Image, or choose a
 // similarly named search box from a main-image/preview/unrelated frame.
-export async function waitDetailMaterialFrame(page,guard,{required=true,timeout=20000}={}) {
+const pendingMaterialFrameUrl=value=>value===null||value===''||value==='about:blank';
+function materialFrameLocation(value){
+ if(pendingMaterialFrameUrl(value))return value;
+ try{const u=new URL(value);return ['https:','http:'].includes(u.protocol)?u.origin+u.pathname:'[non-http-url]';}catch{return '[invalid-url]';}
+}
+export async function waitDetailMaterialFrame(page,guard,{required=true,timeout=20000,onDiagnostic=async()=>{}}={}) {
  assert(Number.isFinite(timeout)&&timeout>0&&timeout<=30000,'DETAIL_WAIT_BUDGET_INVALID');
  const hosts=page.locator('.media-img-plug iframe:not(#mainImagesGroup):visible'),deadline=Date.now()+timeout;
- let host=null,frame=null;
- const allowed=url=>{try{const u=new URL(url);return u.origin==='https://market.m.taobao.com'&&u.pathname==='/app/crs-qn/sucai-selector-ng/index';}catch{return false;}};
+ let host=null,frame=null,status='failed',actual={hosts:0,src:null,frameUrl:null},failure=null;const started=performance.now();
+ const diagnostic=()=>({stage:'detail-panel',status,selector:'.media-img-plug iframe:not(#mainImagesGroup):visible',expected:'唯一官方详情面板、可编辑搜索框与可见确定按钮',actual,durationMs:Math.round((performance.now()-started)*1000)/1000,timeoutMs:timeout,screenshot:null});
+ const notReady=()=>Object.assign(Error('DETAIL_MATERIAL_FRAME_NOT_READY'),{code:'SAFE_RETRY_DETAIL_PANEL'});
+ const wrongOrigin=()=>Object.assign(Error('DETAIL_MATERIAL_FRAME_ORIGIN'),{code:'SAFE_RETRY_DETAIL_FRAME_ORIGIN'});
+ const allowed=url=>{try{const u=new URL(url);return !u.username&&!u.password&&u.origin==='https://market.m.taobao.com'&&u.pathname==='/app/crs-qn/sucai-selector-ng/index';}catch{return false;}};
  const checkHost=async()=>{
   assert.equal(await hosts.count(),1,'DETAIL_MATERIAL_FRAME_CHANGED');
   assert.equal(await page.locator('iframe#mainImagesGroup:visible').count(),0,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
   assert(await host.evaluate(el=>el.isConnected)&&await host.isVisible(),'DETAIL_MATERIAL_FRAME_CHANGED');
   assert(await hosts.evaluate((el,original)=>el===original,host),'DETAIL_MATERIAL_FRAME_CHANGED');
-  assert(allowed(await host.getAttribute('src')),'DETAIL_MATERIAL_FRAME_ORIGIN');
+  const src=await host.getAttribute('src');actual.src=materialFrameLocation(src);return src;
  };
  try {
   do {
    await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');
-   const count=await hosts.count();assert(count<=1,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
+    const count=await hosts.count();actual={hosts:count,src:null,frameUrl:null};assert(count<=1,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
    if(count)assert.equal(await page.locator('iframe#mainImagesGroup:visible').count(),0,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
-   if(!host&&count===0&&!required)return null;
+    if(!host&&count===0&&!required){status='absent';return null;}
    if(!host&&count===1)host=await hosts.elementHandle();
    if(host){
-    await checkHost();
+    const src=await checkHost();
     const current=await host.contentFrame();
     if(frame&&current!==frame)throw Error('DETAIL_MATERIAL_FRAME_CHANGED');
     frame=current;
-    if(frame&&frame.url()!=='about:blank'){
-     assert(allowed(frame.url()),'DETAIL_MATERIAL_FRAME_ORIGIN');
+    const frameUrl=frame?.url()??null;actual.frameUrl=materialFrameLocation(frameUrl);
+    if(!pendingMaterialFrameUrl(src)&&!allowed(src)||!pendingMaterialFrameUrl(frameUrl)&&!allowed(frameUrl))throw wrongOrigin();
+    if(!pendingMaterialFrameUrl(src)&&frame&&!pendingMaterialFrameUrl(frameUrl)){
      const search=frame.getByPlaceholder('搜索图片名称',{exact:true});
      const confirm=frame.getByRole('button',{name:/^确定(?:\s*[（(]\d+[）)])?$/});
+      const searches=await search.count(),confirms=await confirm.count();
+      actual={...actual,search:searches,confirm:confirms,searchVisible:searches===1&&await search.isVisible(),searchEditable:searches===1&&await search.isEditable(),confirmVisible:confirms===1&&await confirm.isVisible()};
      assert((await search.count())<=1&&(await confirm.count())<=1,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
      if(await search.count()===1&&await search.isVisible()&&await search.isEditable()&&await confirm.count()===1&&await confirm.isVisible()){
       const readyUrl=frame.url();
       await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');
-      await checkHost();assert(!frame.isDetached()&&frame.url()===readyUrl&&allowed(frame.url()),'DETAIL_MATERIAL_FRAME_CHANGED');
-      assert(await search.count()===1&&await search.isVisible()&&await search.isEditable()&&await confirm.count()===1&&await confirm.isVisible(),'DETAIL_MATERIAL_FRAME_NOT_READY');
-      return frame;
+      const finalSrc=await checkHost();actual.frameUrl=materialFrameLocation(frame.url());
+      assert(!frame.isDetached()&&frame.url()===readyUrl&&allowed(frame.url()),'DETAIL_MATERIAL_FRAME_CHANGED');
+      if(!pendingMaterialFrameUrl(finalSrc)&&!allowed(finalSrc))throw wrongOrigin();
+      assert(await search.count()<=1&&await confirm.count()<=1,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
+      if(pendingMaterialFrameUrl(finalSrc))throw notReady();
+      if(!(await search.count()===1&&await search.isVisible()&&await search.isEditable()&&await confirm.count()===1&&await confirm.isVisible()))throw notReady();
+      if(Date.now()>=deadline)throw notReady();status='ready';return frame;
      }
     }
    }
-   await delay(150);
+   await delay(Math.min(150,Math.max(0,deadline-Date.now())));
   }while(Date.now()<deadline);
-  throw Error('DETAIL_MATERIAL_FRAME_NOT_READY');
- }finally{await host?.dispose();}
+  throw notReady();
+  }catch(error){failure=error;error.materialReadiness??=diagnostic();throw error;}
+  finally{
+   await host?.dispose();
+   if(status!=='absent')try{const d=failure?.materialReadiness||diagnostic();d.dom_snippet=await materialDomSnippet(hosts);const evidence=await onDiagnostic(d);if(evidence)Object.assign(d,evidence);}catch{}
+  }
 }
 
 // Main and detail pickers share .media-img-plug. Main is identified by its
 // observed exact ID; wait for the same official iframe, never reopen/reload it.
-export async function waitMainMaterialFrame(page,guard,{timeout=20000}={}) {
+export async function waitMainMaterialFrame(page,guard,{timeout=20000,onDiagnostic=async()=>{}}={}) {
  assert(Number.isFinite(timeout)&&timeout>0&&timeout<=30000,'MAIN_WAIT_BUDGET_INVALID');
  const hosts=page.locator('.media-img-plug iframe#mainImagesGroup:visible'),deadline=Date.now()+timeout;
  const allowed=url=>{try{const u=new URL(url);return !u.username&&!u.password&&u.origin==='https://market.m.taobao.com'&&u.pathname==='/app/crs-qn/sucai-selector-ng/index';}catch{return false;}};
- let host=null,frame=null;
+ let host=null,frame=null,status='failed',actual={hosts:0,src:null,frameUrl:null},failure=null;const started=performance.now();
+ const diagnostic=()=>({stage:'main-panel',status,selector:'.media-img-plug iframe#mainImagesGroup:visible',expected:'唯一官方主图面板及可编辑搜索框',actual,durationMs:Math.round((performance.now()-started)*1000)/1000,timeoutMs:timeout,screenshot:null});
+ const notReady=()=>Object.assign(Error('MAIN_MATERIAL_FRAME_NOT_READY：主图素材面板未就绪，已停止；保留原页面后重试此条'),{code:'SAFE_RETRY_MAIN_PANEL'});
+ const wrongOrigin=()=>Object.assign(Error('MAIN_MATERIAL_FRAME_ORIGIN'),{code:'SAFE_RETRY_MAIN_FRAME_ORIGIN'});
  const checkHost=async()=>{
   assert.equal(await hosts.count(),1,'MAIN_MATERIAL_FRAME_CHANGED');
   assert(await host.evaluate(el=>el.isConnected)&&await host.isVisible(),'MAIN_MATERIAL_FRAME_CHANGED');
   assert(await hosts.evaluate((el,original)=>el===original,host),'MAIN_MATERIAL_FRAME_CHANGED');
-  assert(allowed(await host.getAttribute('src')),'MAIN_MATERIAL_FRAME_ORIGIN');
   assert.equal(await page.locator('.media-img-plug iframe:not(#mainImagesGroup):visible').count(),0,'MAIN_MATERIAL_FRAME_AMBIGUOUS');
+  const src=await host.getAttribute('src');actual.src=materialFrameLocation(src);return src;
  };
  try{
   do{
    await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');
-   const count=await hosts.count();assert(count<=1,'MAIN_MATERIAL_FRAME_AMBIGUOUS');
+   const count=await hosts.count();actual={hosts:count,src:null,frameUrl:null};assert(count<=1,'MAIN_MATERIAL_FRAME_AMBIGUOUS');
    if(!host&&count===1)host=await hosts.elementHandle();
    if(host){
-    await checkHost();const current=await host.contentFrame();
+    const src=await checkHost();const current=await host.contentFrame();
     if(frame&&current!==frame)throw Error('MAIN_MATERIAL_FRAME_CHANGED');
     frame=current;
-    if(frame&&frame.url()!=='about:blank'){
-     assert(allowed(frame.url()),'MAIN_MATERIAL_FRAME_ORIGIN');
+    const frameUrl=frame?.url()??null;actual.frameUrl=materialFrameLocation(frameUrl);
+    if(!pendingMaterialFrameUrl(src)&&!allowed(src)||!pendingMaterialFrameUrl(frameUrl)&&!allowed(frameUrl))throw wrongOrigin();
+    if(!pendingMaterialFrameUrl(src)&&frame&&!pendingMaterialFrameUrl(frameUrl)){
      const search=frame.getByPlaceholder('搜索图片名称',{exact:true});
-     assert(await search.count()<=1,'MAIN_MATERIAL_FRAME_AMBIGUOUS');
+     const searches=await search.count();actual={...actual,search:searches,searchVisible:searches===1&&await search.isVisible(),searchEditable:searches===1&&await search.isEditable()};
+     assert(searches<=1,'MAIN_MATERIAL_FRAME_AMBIGUOUS');
      if(await search.count()===1&&await search.isVisible()&&await search.isEditable()){
       const readyUrl=frame.url();await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');
-      await checkHost();assert(!frame.isDetached()&&frame.url()===readyUrl&&allowed(frame.url()),'MAIN_MATERIAL_FRAME_CHANGED');
-      assert(await search.count()===1&&await search.isVisible()&&await search.isEditable(),'MAIN_MATERIAL_FRAME_NOT_READY');
-      return frame;
+      const finalSrc=await checkHost();actual.frameUrl=materialFrameLocation(frame.url());
+      assert(!frame.isDetached()&&frame.url()===readyUrl&&allowed(frame.url()),'MAIN_MATERIAL_FRAME_CHANGED');
+      if(!pendingMaterialFrameUrl(finalSrc)&&!allowed(finalSrc))throw wrongOrigin();
+      assert(await search.count()<=1,'MAIN_MATERIAL_FRAME_AMBIGUOUS');
+      if(pendingMaterialFrameUrl(finalSrc)||!(await search.count()===1&&await search.isVisible()&&await search.isEditable())||Date.now()>=deadline)throw notReady();
+      status='ready';return frame;
      }
     }
    }
-   await delay(150);
+   await delay(Math.min(150,Math.max(0,deadline-Date.now())));
   }while(Date.now()<deadline);
-  throw Error('MAIN_MATERIAL_FRAME_NOT_READY：主图素材面板未就绪，已停止；保留原页面后重试此条');
- }finally{await host?.dispose();}
+  throw notReady();
+ }catch(error){failure=error;error.materialReadiness??=diagnostic();throw error;}
+ finally{
+  await host?.dispose();
+  try{const d=failure?.materialReadiness||diagnostic();d.dom_snippet=await materialDomSnippet(hosts);const evidence=await onDiagnostic(d);if(evidence)Object.assign(d,evidence);}catch{}
+ }
 }
 
 // A material click can apply its image before an unrelated iframe navigation
@@ -233,17 +265,28 @@ export async function reconcileMainImages(page,receipts,assets){
  return actual;
 }
 
-export async function clickMainImageAndVerify(page,card,expectedUrls,guard,{onEvent=async()=>{}}={}) {
+export async function clickMainImageAndVerify(page,card,expectedUrls,guard,{onEvent=async()=>{},stabilityTimeout=5000}={}) {
  assert(Array.isArray(expectedUrls)&&expectedUrls.length>=1&&expectedUrls.length<=5,'MAIN_IMAGE_EXPECTATION_INVALID');
  assert(expectedUrls.every(u=>typeof u==='string'&&u.length>0),'MAIN_IMAGE_EXPECTATION_INVALID');
+ assert(Number.isFinite(stabilityTimeout)&&stabilityTimeout>0&&stabilityTimeout<=5000,'MAIN_IMAGE_WAIT_BUDGET_INVALID');
  const images=page.locator('#sell-field-mainImagesGroup img');
  const read=()=>images.evaluateAll(es=>es.map(e=>e.src));
  const expected=expectedUrls.map(mainImageKey),formUrl=page.url();
  const check=async()=>{await guard();assert.equal(page.url(),formUrl,'MAIN_IMAGE_FORM_CHANGED');};
- const stableRead=async()=>{
-  await check();const first=(await read()).map(mainImageKey);
-  await check();const second=(await read()).map(mainImageKey);
-  await check();assert.deepEqual(second,first,'MAIN_IMAGE_STATE_CHANGED');return second;
+ const same=(left,right)=>left.length===right.length&&left.every((value,index)=>value===right[index]);
+ const timedOut=()=>Object.assign(Error('主图状态等待超时：原页面图片未在限定时间内稳定，未重复点击或提交'),{code:'SAFE_RETRY_MAIN_IMAGE_STATE'});
+ const remaining=deadline=>{const ms=deadline-performance.now();if(ms<=0)throw timedOut();return ms;};
+ const stableRead=async(deadline=performance.now()+stabilityTimeout)=>{
+  await check();let previous=(await read()).map(mainImageKey);
+  for(;;){
+   // A pending render is not a state conflict. Observe only, with a shared
+   // deadline and fresh guards; neither the card click nor upload is retried.
+   await delay(Math.min(100,remaining(deadline)));
+   await check();const current=(await read()).map(mainImageKey);
+   await check();remaining(deadline);
+   if(same(current,previous))return current;
+   previous=current;
+  }
  };
  const initial=await stableRead();
  if(initial.length===expected.length&&initial.every((value,index)=>value===expected[index])){
@@ -255,8 +298,16 @@ export async function clickMainImageAndVerify(page,card,expectedUrls,guard,{onEv
  try{await card.locator('.PicList_pic_imgBox__c0HXw').click();}
  catch(error){if(error.name!=='TimeoutError')throw error;clickTimeout=error;}
  try{
-  await expect.poll(stableRead,{timeout:5000}).toEqual(expected);
-  const final=await stableRead();assert.deepEqual(final,expected,'MAIN_IMAGE_PREFIX_CHANGED');
+  const deadline=performance.now()+stabilityTimeout;
+  for(;;){
+   const current=await stableRead(deadline);
+   if(same(current,expected))break;
+   // The unchanged original prefix can precede the new image. A stable
+   // different image, order, or count is a real conflict, not a safe timeout.
+   assert.deepEqual(current,expected.slice(0,-1),'MAIN_IMAGE_STATE_CHANGED');
+   await delay(Math.min(100,remaining(deadline)));
+  }
+  const final=await stableRead(deadline);assert.deepEqual(final,expected,'MAIN_IMAGE_STATE_CHANGED');
  }catch(error){
   // Keep the original click diagnostic alongside a failed result check.
   if(clickTimeout)error.mainImageClickTimeout=clickTimeout.message;
@@ -375,12 +426,37 @@ export async function verifyMaterialUploadReceipt(asset,card){
  return !!receipt&&receipt.sha256===asset.sha256&&receipt.path===asset.path&&JSON.stringify(receipt.materialVersion)===JSON.stringify(asset.materialVersion)&&receipt.url===url;
 }
 
+// Reuse only a proven prefix already inserted in the original form. Material
+// search results and thumbnails may change; the saved source receipt must not.
+export async function verifyInsertedDetails(urls,assets,receipts){
+ assert(urls.length<=assets.length,'TOO_MANY_DETAIL_IMAGES');
+ let missing=false;
+ for(const [i,url]of urls.entries()){
+  const a=assets[i],r=receipts[i];
+  if(!r){missing=true;continue;}
+  assert(r.order===i+1&&typeof r.url==='string'&&r.url&&typeof url==='string'&&url,'EXISTING_DETAIL_MISMATCH');
+  assert.equal(r.source?.path,a.path,'DETAIL_SOURCE_MISMATCH');
+  assert.equal(r.source?.sha256,a.sha256,'DETAIL_SOURCE_MISMATCH');
+  assert.deepEqual(r.source?.materialVersion,a.materialVersion,'DETAIL_SOURCE_MISMATCH');
+  assert.deepEqual(r.source?.padding,a.padding,'DETAIL_SOURCE_MISMATCH');
+  assert.equal(norm(url),norm(r.url),'EXISTING_DETAIL_MISMATCH');
+  assert(await verifyMaterialUploadReceipt(a,r.url),'SOURCE_OR_ASSET_CHANGED: BOUND_MATERIAL_UPLOAD_UNVERIFIED');
+ }
+ assert(!missing,'EXISTING_DETAIL_RECEIPT_MISSING');
+ return urls.length;
+}
+
 export async function fillTask({page:p, task,dir,target,step,guard,executionProfile=null,materialBinding=null}) {
  const order=task.priority;
  const risk=async()=>{if(await visibleChallenge(p))throw Error('PAUSED_CAPTCHA');};
+ const detailReadiness={onDiagnostic:async (diagnostic,evidencePage=p)=>{
+  const evidence=diagnostic.status==='failed'?await captureTaskScreenshot(evidencePage,dir,'detail-readiness-'+diagnostic.stage):{};
+  await writeFile(dir+'detail-readiness-'+randomUUID()+'.json',JSON.stringify({at:new Date().toISOString(),...diagnostic,...evidence},null,2),{flag:'wx'});
+  return evidence;
+ }};
  async function fill(selector,value){const l=p.locator(selector);await guard();await l.fill(String(value));await l.press('Tab');await expect(l).toHaveValue(String(value));}
  async function radio(scope,text){const l=p.locator(scope).locator('label').filter({hasText:text}).filter({has:p.locator('input[type=radio]')}).first();await guard();await l.click();await expect(l.locator('input[type=radio]')).toBeChecked();}
- async function ensureMaterial(f,a,card) {
+  async function ensureMaterial(f,a,card,{detail=false}={}) {
   if(await card.isVisible().catch(()=>false)){assert(await verifyMaterialUploadReceipt(a,card),'SOURCE_OR_ASSET_CHANGED: BOUND_MATERIAL_UPLOAD_UNVERIFIED：新版图片尚无上传回执，不能复用同名旧素材');return;}
   // The native Playwright owner handles the real file chooser; never injects uploads.
   const exists=await card.waitFor({state:'visible',timeout:4000}).then(()=>true).catch(()=>false);
@@ -396,16 +472,17 @@ export async function fillTask({page:p, task,dir,target,step,guard,executionProf
   library=await getAuxiliaryPage(p.context(),{role:'material',shopId:task.shopId,url:href,guard:materialGuard});
   if((await library.locator('body').innerText()).includes('支持所有商品测图'))await library.getByRole('button',{name:'关闭',exact:true}).click();
   let uploadDialog;
-  try{uploadDialog=await uploadMaterial(library,a.path,materialGuard);}
+   try{uploadDialog=await uploadMaterial(library,a.path,materialGuard,{readiness:detail?{onDiagnostic:d=>detailReadiness.onDiagnostic(d,library)}:null});}
   catch(error){
-   const evidence=await captureTaskScreenshot(library,dir,'material-upload-paused');
-   await writeFile(dir+'material-upload-checkpoint.json',JSON.stringify({at:new Date().toISOString(),reason:error.message,diagnostic:error.uploadDiagnostic||null,...evidence},null,2)).catch(()=>{});
+    const evidence=error.materialReadiness?.screenshot?{screenshot:error.materialReadiness.screenshot,screenshotAt:error.materialReadiness.screenshotAt,screenshotError:null}:await captureTaskScreenshot(library,dir,'material-upload-paused');
+    await writeFile(dir+'material-upload-checkpoint.json',JSON.stringify({at:new Date().toISOString(),reason:error.message,diagnostic:error.materialReadiness||error.uploadDiagnostic||null,...evidence},null,2)).catch(()=>{});
    throw error;
   }
   await library.screenshot({path:dir+`uploaded-${basename(a.path)}.png`});
   await materialGuard();await uploadDialog.getByRole('button',{name:'完成',exact:true}).click();await guard();
   const search=f.getByPlaceholder('搜索图片名称');await search.fill('');await search.press('Enter');
-  await expect(card).toBeVisible({timeout:30000});
+   if(detail)await waitDetailThumbnail(card,guard,detailReadiness);
+   else await expect(card).toBeVisible({timeout:30000});
   if(a.materialVersion){
    const receipt={path:a.path,sha256:a.sha256,materialVersion:a.materialVersion,url:await card.locator('.PicList_pic_imgBox__c0HXw img').getAttribute('src'),at:new Date().toISOString()};
    await writeFile(a.path+'.upload.json',JSON.stringify(receipt,null,2),{flag:'wx'}).catch(async e=>{if(e.code!=='EEXIST'||!await verifyMaterialUploadReceipt(a,card))throw e;});
@@ -422,7 +499,7 @@ export async function fillTask({page:p, task,dir,target,step,guard,executionProf
  let receipts=JSON.parse(await readFile(dir+'main-receipts.json','utf8').catch(()=>'[]'));
  let shippingArea=await p.locator('#sell-field-shippingArea').count()?{mode:'LEGACY_FIELDS',rendered:true}:null;
  // A retained loading detail picker must settle before any form refill.
- const openDetailFrame=await waitDetailMaterialFrame(p,guard,{required:false});
+ const openDetailFrame=await waitDetailMaterialFrame(p,guard,{required:false,...detailReadiness});
  if(openDetailFrame)shippingArea=await inspectShippingArea(p,task,executionProfile,guard);
  if(!openDetailFrame){
  for(const [i,a] of mains.entries())await step('main-image-'+(i+1),async()=>{
@@ -430,7 +507,7 @@ export async function fillTask({page:p, task,dir,target,step,guard,executionProf
   if(existing.length>i)return;
   assert.equal(existing.length,i,'MAIN_IMAGE_COUNT_CHANGED：前序主图尚未插入，请保留原页面');
   if(!await p.locator('iframe#mainImagesGroup').isVisible())await p.locator('#sell-field-mainImagesGroup').getByText('上传图片',{exact:true}).first().click();
-  const f=await waitMainMaterialFrame(p,guard),name=basename(a.path);
+  const f=await waitMainMaterialFrame(p,guard,{onDiagnostic:detailReadiness.onDiagnostic}),name=basename(a.path);
   const card=f.locator('.PicList_pic_background__pGTdV').filter({hasText:name}).first();
   if(!await card.count()){await f.getByPlaceholder('搜索图片名称').fill(name);await f.getByPlaceholder('搜索图片名称').press('Enter');}
   await ensureMaterial(f,a,card);
@@ -462,27 +539,29 @@ export async function fillTask({page:p, task,dir,target,step,guard,executionProf
  let detailReceipts=JSON.parse(await readFile(dir+'detail-receipts.json','utf8').catch(()=>'[]'));
  const detailImgs=p.locator('#sell-field-descRepublicOfSell img.image-item');
  const insertedDetails=await detailImgs.evaluateAll(es=>es.map(e=>e.src));
- assert(insertedDetails.length<=details.length,'TOO_MANY_DETAIL_IMAGES');
+ await verifyInsertedDetails(insertedDetails,details,detailReceipts);
  if(insertedDetails.length<details.length){
   let f=openDetailFrame;
   if(!f)await step('open-details',async()=>{
    await p.locator('#sell-field-descRepublicOfSell').getByText('图片',{exact:true}).click();
-   f=await waitDetailMaterialFrame(p,guard);
+   f=await waitDetailMaterialFrame(p,guard,detailReadiness);
   });
   for(const [i,a] of details.entries())await step('select-detail-'+(i+1),async()=>{
+   await guard();
+   if(i<insertedDetails.length){await risk();return;}
    const name=basename(a.path),search=f.getByPlaceholder('搜索图片名称'),matches=f.locator('.PicList_pic_background__pGTdV').filter({hasText:name});
-   const inserted=insertedDetails[i];
-   const targetCard=inserted?matches.filter({has:f.locator(`img[src^="${norm(inserted)}"]`)}).first():matches.first();
+   const targetCard=matches.first();
    // Reuse the current material list during checkpoint recovery. Search only
    // when the required filename is absent, preserving the user's selection.
    if(!await targetCard.isVisible()){await search.fill(name);await search.press('Enter');}
-   if(inserted)await expect(targetCard).toBeVisible();else await ensureMaterial(f,a,targetCard);await risk();
+   await ensureMaterial(f,a,targetCard,{detail:true});await risk();
    const checked=matches.filter({has:f.locator('input[type=checkbox]:checked')}).first();
-   const card=inserted?targetCard:await checked.count()?checked:targetCard;
+   const card=await checked.count()?checked:targetCard;
+   await waitDetailThumbnail(card,guard,detailReadiness);
    await expect(card.locator('.PicList_tip_title__aQfti')).toHaveText(name);
    const url=await card.locator('.PicList_pic_imgBox__c0HXw img').getAttribute('src');
-   if(inserted)assert.equal(norm(url),norm(inserted),'EXISTING_DETAIL_MISMATCH');
-   else{if(!await card.locator('input[type=checkbox]').isChecked())await card.locator('.PicList_pic_imgBox__c0HXw').click();await expect(card.locator('input[type=checkbox]')).toBeChecked();}
+   assert(await verifyMaterialUploadReceipt(a,card),'SOURCE_OR_ASSET_CHANGED: BOUND_MATERIAL_UPLOAD_UNVERIFIED');
+   if(!await card.locator('input[type=checkbox]').isChecked())await card.locator('.PicList_pic_imgBox__c0HXw').click();await expect(card.locator('input[type=checkbox]')).toBeChecked();
    detailReceipts[i]={order:i+1,source:a,url};await writeFile(dir+'detail-receipts.json',JSON.stringify(detailReceipts,null,2));
   });
   await step('insert-details',async()=>{await f.getByRole('button',{name:/确定/}).click();await expect(detailImgs).toHaveCount(details.length);});
@@ -603,6 +682,22 @@ export async function verifyForm(p,task,target,receipts,executionProfile=null,ma
 
 export async function openTaskPage(context,task,checkpoint,guard,record,onPage=()=>{}) {
  let p;
+ if(checkpoint.residualPageRefill||checkpoint.refillPageTargetId){
+  const binding=checkpoint.residualPageRefill,targetId=checkpoint.refillPageTargetId;
+  assert(typeof targetId==='string'&&targetId&&(!binding||binding.status==='BOUND'&&binding.newTargetId===targetId),'RESIDUAL_REFILL_PAGE_UNAVAILABLE：重填页面尚未完整绑定，禁止再次创建页面');
+  const matches=[];
+  for(const candidate of context.pages().filter(p=>!p.isClosed()&&newForm(p))){
+   const session=await context.newCDPSession(candidate);
+   try{const info=(await session.send('Target.getTargetInfo'))?.targetInfo;if(info?.type==='page'&&info.targetId===targetId)matches.push(candidate);}
+   finally{await session.detach();}
+  }
+  assert(matches.length===1,'RESIDUAL_REFILL_PAGE_UNAVAILABLE：原绑定的重填页面已关闭或无法唯一识别，禁止再次创建页面');
+  p=matches[0];await guard(p);
+  assert(newForm(p)&&(!checkpoint.formUrl||p.url()===checkpoint.formUrl),'RESIDUAL_REFILL_PAGE_UNAVAILABLE：原绑定的重填页面地址已变化');
+  assert.equal(await p.locator(selectors.title).inputValue(),task.listing.title,'ANOTHER_TASK_FORM');
+  await guard(p);assert(newForm(p)&&(!checkpoint.formUrl||p.url()===checkpoint.formUrl),'RESIDUAL_REFILL_PAGE_UNAVAILABLE：原绑定的重填页面地址已变化');
+  await onPage(p);return p;
+ }
  if(checkpoint.formUrl) {
   const matches=[];
   for(const candidate of context.pages().filter(p=>p.url()===checkpoint.formUrl && newForm(p))) {
@@ -610,15 +705,15 @@ export async function openTaskPage(context,task,checkpoint,guard,record,onPage=(
    if(title===task.listing.title)matches.push(candidate);
   }
   assert(matches.length<=1,'原填写页无法唯一识别，请保留目标商品页面后继续');p=matches[0];
-  if(p){onPage(p);return p;}
+  if(p){await onPage(p);return p;}
   // A restarted tab can lose its unsaved DOM. Only pre-submit runs call here;
   // reconstruct the same task and revalidate every field instead of trusting flags.
   const blanks=[];
   for(const candidate of context.pages().filter(p=>p.url()===checkpoint.formUrl && newForm(p)))if(!await candidate.locator(selectors.title).inputValue())blanks.push(candidate);
-  if(blanks.length===1){p=blanks[0];onPage(p);await guard(p);await p.locator(selectors.title).fill(task.listing.title);await p.locator(selectors.title).press('Tab');await record({formUrl:p.url(),reconstructed:true});return p;}
+  if(blanks.length===1){p=blanks[0];await onPage(p);await guard(p);await p.locator(selectors.title).fill(task.listing.title);await p.locator(selectors.title).press('Tab');await record({formUrl:p.url(),reconstructed:true});return p;}
  }
  await guard();
- p=await createBackgroundPage(context);onPage(p,{createdThisExecution:true});await record({formPageCreated:true});
+ p=await createBackgroundPage(context);await onPage(p,{createdThisExecution:true});await record({formPageCreated:true});
   await p.goto('https://upload.taobao.com/auction/sell.jhtml',{waitUntil:'domcontentloaded'});
  await guard(p);
  await p.getByText('其它商品定制',{exact:true}).click();
@@ -631,13 +726,23 @@ export async function openTaskPage(context,task,checkpoint,guard,record,onPage=(
  return p;
 }
 
-export async function submitTask(p,guard,onClicked=async()=>{},{timeout=30000}={}) {
+export async function submitTask(p,guard,onClicked=async()=>{},{timeout=60000,readBackend}={}) {
+ assert(Number.isFinite(timeout)&&timeout>0&&timeout<=60000,'SUBMISSION_RECEIPT_BUDGET_INVALID');
  await guard();
  assert(newForm(p),'NEW_ITEMS_ONLY');const formUrl=p.url();
  await p.getByRole('button',{name:'提交宝贝信息',exact:true}).click();
  await onClicked();
- let itemId;
- await expect.poll(async()=>{await guard();itemId=await readSubmissionReceipt(p,formUrl);return !!itemId;},{timeout}).toBeTruthy();
+ let itemId,observationError;
+ try{
+  await expect.poll(async()=>{try{await guard();itemId=await readSubmissionReceipt(p,formUrl);return !!itemId;}catch(error){observationError=error;throw error;}},
+   {timeout,message:'已点击提交、回执未读到、正在后台确认；不会再次点击提交'}).toBeTruthy();
+ }catch(error){
+  // Only an exhausted receipt wait authorizes the read-only fallback. Changed
+  // page/shop, CAPTCHA, callback and click errors never authorize any retry.
+  if(observationError)throw observationError;
+  if(typeof readBackend!=='function')throw error;
+  itemId=await readBackend();
+ }
  assert(itemId,'SUCCESS_WITHOUT_ITEM_ID');return itemId;
 }
 

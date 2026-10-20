@@ -1,0 +1,175 @@
+{
+  "at": "2026-10-18T04:47:17.893671+00:00",
+  "revision": "20261018-step2-safe-retry-r2",
+  "fromRevision": "20261018-step1-detail-ready-r1",
+  "step1ManifestSha256": "9f547eeff65cbb46275098e3d57bff726d1288b7e3773daa4a9422171c1d1820",
+  "runtimeFiles": [
+    "workbench/taobao-publisher.mjs",
+    "workbench/publishing-materials.mjs",
+    "workbench/listing-round.mjs"
+  ],
+  "deploymentAllowed": false,
+  "supersedesUninstalledCandidate": {
+    "revision": "20261018-step2-safe-retry-r1",
+    "manifestSha256": "af1f25cf66eac24172dd35f4f459f12818fae21c3b14f661e8d09b7d97641d9c"
+  },
+  "scope": "Step 2 only: explicit detail readiness classification, bounded original recovery and per-item exhaustion; protected gates unchanged",
+  "files": [
+    {
+      "path": "workbench/taobao-publisher.mjs",
+      "baselineSha256": "4abcb31f391e95a13355f97c1a023a52ca3c8abaad6065d87ec51e3db9e618ea",
+      "sha256": "0cac2402fb1112c53e22883c4daaf04b59330a15d817934488deecd66159bd66",
+      "productionBeforeStep1Sha256": "20d575d7c119b91529d2d54af0295c3f707ccda873b4745d88aba84cdd335565"
+    },
+    {
+      "path": "workbench/publishing-materials.mjs",
+      "baselineSha256": "735f652636ee65d200ab3b0528b25b468885cd751ee63213b56241f5c2971dc7",
+      "sha256": "304500f53f12f18a08bba327e8d77ca1985c3316c97e94719977708acbd6ea29",
+      "productionBeforeStep1Sha256": "a786dde96a3fba43858650d252498224d44a5718ed0455c80e0defd61799f5c3"
+    },
+    {
+      "path": "workbench/listing-round.mjs",
+      "baselineSha256": "2c25fe6930aea157ffcf60fc047cc30348647eee309dbb650366b16509897196",
+      "sha256": "658da87504bc6fc7637c0243e0744b8050367613d8e0a4810c8d08ecb8a41dc9",
+      "productionBeforeStep1Sha256": "2c25fe6930aea157ffcf60fc047cc30348647eee309dbb650366b16509897196"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "baseline/workbench/listing-round.mjs",
+      "baselineSha256": null,
+      "sha256": "2c25fe6930aea157ffcf60fc047cc30348647eee309dbb650366b16509897196"
+    },
+    {
+      "path": "baseline/workbench/publishing-materials.mjs",
+      "baselineSha256": null,
+      "sha256": "735f652636ee65d200ab3b0528b25b468885cd751ee63213b56241f5c2971dc7"
+    },
+    {
+      "path": "baseline/workbench/taobao-publisher.mjs",
+      "baselineSha256": null,
+      "sha256": "4abcb31f391e95a13355f97c1a023a52ca3c8abaad6065d87ec51e3db9e618ea"
+    },
+    {
+      "path": "docs/kernel-baselines/20261018-before-step1-detail-ready-r1.json",
+      "baselineSha256": null,
+      "sha256": "1d21ba6d5d046376a9a4e285cb081593aee8041d1f17c7ff68794f3b539d46a2"
+    },
+    {
+      "path": "docs/kernel-baselines/20261018-before-step2-safe-retry-r2.json",
+      "baselineSha256": null,
+      "sha256": "17188e2e59a5bb791bef86ee12b8f32d62aaaeee0f582af7fe8fcc71f238e26a"
+    },
+    {
+      "path": "evidence/amendment-binding.json",
+      "baselineSha256": null,
+      "sha256": "ec922a26e452a10af15f394ee95698f51253901b170590f9a4998b1ffc56af2c"
+    },
+    {
+      "path": "evidence/budget-after.log",
+      "baselineSha256": null,
+      "sha256": "01c06e79883e8ae97e30b2c2bfd9c6b92173e088812519c5d3597b79771b275c"
+    },
+    {
+      "path": "evidence/budget-before.log",
+      "baselineSha256": null,
+      "sha256": "df98e06cf28f9571743a8d6d51cfeb1ef0a17932f870837bf527e9562e3e66f9"
+    },
+    {
+      "path": "evidence/budget-outcomes.json",
+      "baselineSha256": null,
+      "sha256": "12555acb266ff3ea035b96d4fc73fa81b680c5bf06f7c9e26cc5d8df2597b269"
+    },
+    {
+      "path": "evidence/diffs/listing-round.mjs.diff",
+      "baselineSha256": null,
+      "sha256": "3638e20d4f9975d13f138829f1aadad895c20f15c40581400a6ccc7c69f4ff01"
+    },
+    {
+      "path": "evidence/diffs/publishing-materials.mjs.diff",
+      "baselineSha256": null,
+      "sha256": "f6ee8b49a79bbcc0ac6d2b56af54bafbda737d8075d43eb0a397d37a0623cf56"
+    },
+    {
+      "path": "evidence/diffs/taobao-publisher.mjs.diff",
+      "baselineSha256": null,
+      "sha256": "d90f86bdee1dd1201588b4c2298a00f46fd0fc534c8c0b48abac115b83240bef"
+    },
+    {
+      "path": "evidence/final-mock-regression.log",
+      "baselineSha256": null,
+      "sha256": "0624f6bb6df9b2dd558ebb5216086ee92ccfa3943a6afd3b82e150a4e63b2848"
+    },
+    {
+      "path": "evidence/mock-outcomes.json",
+      "baselineSha256": null,
+      "sha256": "9846faef06005093e512dad1740998a8f3177bbf30cca79b6ea164696ab4c921"
+    },
+    {
+      "path": "evidence/production-unchanged.json",
+      "baselineSha256": null,
+      "sha256": "1f704f8a43ec14b3b8035249f2e3ecd51e0a123fd727ffe8842cbefda7170f8d"
+    },
+    {
+      "path": "evidence/r1-to-r2.diff",
+      "baselineSha256": null,
+      "sha256": "c76b6567d9aff1ab93ccd3bcea5a4960e6604592ab288487440191ff0304d939"
+    },
+    {
+      "path": "evidence/step1-final-bytes-full-regression.log",
+      "baselineSha256": null,
+      "sha256": "3ac886f7272797bbd8bf310131da42c2578396825226a8b8d4a1288b2c19b3ee"
+    },
+    {
+      "path": "evidence/step1-final-regression-binding.json",
+      "baselineSha256": null,
+      "sha256": "f2acd70ebc5ddec52d1518bda191e2499f4abb2769781da604b053185160b723"
+    },
+    {
+      "path": "evidence/tests/budget-exhaustion.test.mjs",
+      "baselineSha256": null,
+      "sha256": "807fe807bbd789a7d21578a9f2f5808b448b249f314f4211012fa3c1e7c53420"
+    },
+    {
+      "path": "evidence/tests/independent-round-r2.test.mjs",
+      "baselineSha256": null,
+      "sha256": "5a758cedde315c1f76bcf26c23282ee148c7534d40ba8228d68dcad74bd33e08"
+    },
+    {
+      "path": "evidence/tests/round-fixture.mjs",
+      "baselineSha256": null,
+      "sha256": "18e2b0c1c0b438453c2f5e49ab212c7b61a6dc114121fa7f7e7bb1b0dcbfb7a2"
+    },
+    {
+      "path": "evidence/tests/step2-mock.test.mjs",
+      "baselineSha256": null,
+      "sha256": "2a3590a2d7adde9f298a1574c5d8e34c88fc2520dbc034700f6c92b668b02ccf"
+    },
+    {
+      "path": "evidence/timing-collector-check.json",
+      "baselineSha256": null,
+      "sha256": "4a9b8cbed2f3c934511cd0ff3ab1cde7d01b1848f209e6d0091aecf7c6e242af"
+    },
+    {
+      "path": "tools/collect-stage-timings.py",
+      "baselineSha256": null,
+      "sha256": "fbfd017a32601f1253284e44772c31c04219691e226e13971823d65c1e745090"
+    }
+  ],
+  "baselineKind": "approved Step 1 candidate; not the currently deployed production version",
+  "beforeLockSha256": "17188e2e59a5bb791bef86ee12b8f32d62aaaeee0f582af7fe8fcc71f238e26a",
+  "productionBeforeStep1LockSha256": "1d21ba6d5d046376a9a4e285cb081593aee8041d1f17c7ff68794f3b539d46a2",
+  "baselineSnapshot": "docs/kernel-baselines/20261018-before-step2-safe-retry-r2.json",
+  "testsExecutionRoot": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\output\\step2-safe-retry-20261018-r2",
+  "budgetValuesUnchanged": true,
+  "readyDiagnosticsPolicyUnchanged": true,
+  "excluded": [
+    "source-workflow.mjs",
+    "execution-steps.mjs",
+    "batch-store.mjs",
+    "attempts/maxAttempts semantics",
+    "submission",
+    "state enums",
+    "production deployment"
+  ]
+}

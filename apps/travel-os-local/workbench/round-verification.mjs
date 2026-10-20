@@ -4,12 +4,13 @@ import {join} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {sellerTable,listingEvidence} from './listing-verification.mjs';
 import {classifyListingIdentity,auditInventoryIdentity,LOCATION_ALIAS_EVIDENCE} from './listing-identity.mjs';
+import {readSubmittedListing,submissionLookupWindow} from './result-reconciliation.mjs';
 
 const issue=(code,message,details={})=>Object.assign(Error(message),{code,...details});
 export class RoundVerification {
  constructor({context,guard,round,artifacts,tableFactory=sellerTable,evidence=listingEvidence}){Object.assign(this,{context,guard,round,artifacts,tableFactory,evidence});this.reset();}
  reset(){this.inventory=null;this.verified=0;}
- async verify({task,itemId,roundId,key,run,verificationAttemptId,executionAttemptId}){
+ async verify({task,itemId,roundId,key,run,verificationAttemptId,executionAttemptId,submissionEvents,assertUnusedItemId}){
   const current=this.round(),tasks=current.items.map(x=>x.task),authorization=current.round.authorization;
   assert(current.round.id===roundId,'核验轮次与当前清单不符');
   assert(verificationAttemptId===undefined||executionAttemptId===undefined,'处理记录类型冲突');
@@ -22,6 +23,13 @@ export class RoundVerification {
    // Exclusive directory prevents a repeated action from replacing prior evidence.
    await mkdir(join(originalDir,'attempts'),{recursive:true});
    await mkdir(dir);
+  }
+  // Missing ID after an original submit is reconciliation, even when the shop
+  // policy ignores destination duplicates. It can never authorize publication.
+  if(!itemId&&['SUBMITTING','RESULT_UNKNOWN'].includes(run?.state)){
+   return readSubmittedListing({context:this.context(),task,target:run.target==='WAREHOUSE'||task.business.listing_time==='放入仓库'?'WAREHOUSE':'SOURCE',
+    dir:join(dir,'receipt-recovery',randomUUID()),guard:this.guard,window:submissionLookupWindow(submissionEvents||[]),assertUnused:assertUnusedItemId,
+    tableFactory:this.tableFactory,evidence:this.evidence});
   }
   const table=await this.tableFactory(this.context(),task,this.guard,{onFailure:async diagnostic=>{
    // Best-effort evidence must never replace the original closed failure.

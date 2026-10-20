@@ -1,0 +1,17 @@
+{
+  "at": "2026-10-18T03:56:23.408409+00:00",
+  "sourceFilesCompared": 382,
+  "allFormalSourceHashesUnchanged": true,
+  "frozenFiles": 84,
+  "formalLockSha256": "1d21ba6d5d046376a9a4e285cb081593aee8041d1f17c7ff68794f3b539d46a2",
+  "onlyCandidateSourceDifferences": [
+    "workbench/publishing-materials.mjs",
+    "workbench/taobao-publisher.mjs"
+  ],
+  "productionActions": {
+    "POST": 0,
+    "restart": 0,
+    "retryItem12": 0,
+    "submit": 0
+  }
+}

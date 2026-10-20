@@ -1,0 +1,18 @@
+{
+  "runtimeUninstalled": true,
+  "isolated": true,
+  "hashes": [
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "sha256": "6eafc82f2b7236ef0b1b0c0b560b2b9227057303705267adaf2f472f6df1f9a3"
+    },
+    {
+      "file": "workbench/scripts/main-image-click.test.mjs",
+      "sha256": "1dcf70262d33675d22ee5af70119ef42f488880158f0c95889566d814c2030db"
+    },
+    {
+      "file": "workbench/scripts/step3-main-image.test.mjs",
+      "sha256": "8b9a6a1960b2f1e36a9ed41fd6cbb4100d6a14c40df29af3b9552a4857e7c851"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-18T04:47:17.893671+00:00",
+  "sourceFiles": 382,
+  "allSourceHashesMatchColdBackup": true,
+  "formalLockSha256": "1d21ba6d5d046376a9a4e285cb081593aee8041d1f17c7ff68794f3b539d46a2",
+  "formalRevision": "20261017-single-item-direct-retry3",
+  "frozenFiles": 84,
+  "productionPostRequests": 0,
+  "restarts": 0,
+  "submissions": 0,
+  "retryItem12": 0
+}

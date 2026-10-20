@@ -1,0 +1,119 @@
+{
+  "at": "2026-10-19T15:55:21.425Z",
+  "revision": "20261019-success-target-r1",
+  "fromRevision": "20261019-park-and-continue-r1",
+  "previousManifest": "docs/kernel-baselines/20261019-before-success-target-r1.json",
+  "beforeLockSha256": "e483fc91774e2a0657c0febcd6f63bba4f7b19c23b08e97a7f903e738a1390a6",
+  "scope": "Explicit new-success goal on original fixed manifest, bounded clean-page recovery, Chinese UI; existing human and submitted-result gates preserved",
+  "deploymentAllowed": false,
+  "files": [
+    {
+      "path": "workbench/listing-round.mjs",
+      "baselineSha256": "680aef1f8cf3325f8487ccfea5ba19d59301590665fc2bd4730557fc9a3486af",
+      "sha256": "0cb4c3dcbeb4c215cdeecae716dba7cd00deed8a52fb2aba6288d495fbadb629",
+      "role": "runtime"
+    },
+    {
+      "path": "workbench/pre-submit-page-recovery.mjs",
+      "baselineSha256": null,
+      "sha256": "0f74fb9cec5596553966aa4332a6229812f020710c939eb13f6206c4f70d262f",
+      "role": "runtime"
+    },
+    {
+      "path": "workbench/product-api.mjs",
+      "baselineSha256": "9ad6d4c710cacff6de529e1c8e34e36fa1e1b767c3c6bfe025b7b2eed158b439",
+      "sha256": "1dad14bb972393eca77f5b3674dfac42d7c816b704ee34923193fc3a759334d4",
+      "role": "runtime"
+    },
+    {
+      "path": "workbench/round-success-goal.mjs",
+      "baselineSha256": null,
+      "sha256": "772a6db3d3c40bdcfa8a48b6c54b85cd3147d97ae018ca0213dc17826a8aa76c",
+      "role": "runtime"
+    },
+    {
+      "path": "workbench/round-windows.mjs",
+      "baselineSha256": "a8f800d95a7c7b70bda6fb6631647ad04ed270adce5b751022a548d0d9e83195",
+      "sha256": "b8ab76cd501ffefad1fb294da25e4ce0eb6257e17340c538331e4f1004f7d7e6",
+      "role": "runtime"
+    },
+    {
+      "path": "workbench/server.mjs",
+      "baselineSha256": "4590d7c2ba6bf93ba32fa7fa5bd26971320ebe029387a7c43908db918b3003af",
+      "sha256": "1665a7afc3bb7c8bc594626658ed8363127b0096d243b6d5ecf56dbe5bca46ee",
+      "role": "runtime"
+    },
+    {
+      "path": "workbench/source-workflow.mjs",
+      "baselineSha256": "9afa7344d9342e75142c310a89be86bbe5dd16bb9586906a8b32ed92af486034",
+      "sha256": "f1ed2e5f268c141d531aad14be82f38df4ba52981e8e1b11753218451da7ff49",
+      "role": "runtime"
+    },
+    {
+      "path": "workbench/tasks.css",
+      "baselineSha256": "9fc41e551f8c51471a6086c9874dabf974496c4da4bb95722ff0e98510e3cb8d",
+      "sha256": "7e462c692ec46ac99dec27b4a1fe3df0fa2c50b62ba045e427f35b2793a6f0ff",
+      "role": "runtime"
+    },
+    {
+      "path": "workbench/travel-os.js",
+      "baselineSha256": "ce0638ed5576b42a080710ce6c091273333f5b78bd43938f3c3997c726cce509",
+      "sha256": "c3b2a248270f55329f8360d8bd67b09c8577fb732a423f6be4f2611e8ccc66c2",
+      "role": "runtime"
+    },
+    {
+      "path": "workbench/ui-copy.js",
+      "baselineSha256": "7cdd799c0f9769c635243dd46d3bb59c1ceb07f8cd07d06523ec9127d9f81303",
+      "sha256": "99b5bc32bce37f50048ede0b7ae6c1f4930a321a219a87a8a8df71330af23690",
+      "role": "runtime"
+    },
+    {
+      "path": "workbench/scripts/pre-submit-page-recovery.test.mjs",
+      "baselineSha256": null,
+      "sha256": "249a3e7de389400b3ab13f434a018cfa4530f661db9abb149bda7f80c0510812",
+      "role": "test"
+    },
+    {
+      "path": "workbench/scripts/round-success-goal-api.test.mjs",
+      "baselineSha256": null,
+      "sha256": "fc8ab3088b8e1d28dfceebd7891997836a01188f1ac43c5385d853f7b602ad93",
+      "role": "test"
+    },
+    {
+      "path": "workbench/scripts/round-success-goal.test.mjs",
+      "baselineSha256": null,
+      "sha256": "42b7cdfc1637d8cc5c7c8fcf950607ab1ca1ecbf4b182886a421f151cae44814",
+      "role": "test"
+    },
+    {
+      "path": "workbench/scripts/success-goal-fixture.mjs",
+      "baselineSha256": null,
+      "sha256": "d9fe23358496ebe46d03f8d6c2267df6ec0f02b22821db33d71bf4fb7309336c",
+      "role": "test"
+    },
+    {
+      "path": "workbench/scripts/success-goal-ui-qa.mjs",
+      "baselineSha256": null,
+      "sha256": "1650af58daf7dee11f2d1839e2af113222d9f297cd9edc0481bc142cdbc419a7",
+      "role": "test"
+    },
+    {
+      "path": "docs/kernel-baselines/20261019-before-success-target-r1.json",
+      "role": "baseline",
+      "baselineSha256": null,
+      "sha256": "e483fc91774e2a0657c0febcd6f63bba4f7b19c23b08e97a7f903e738a1390a6"
+    }
+  ],
+  "runtimeFiles": [
+    "workbench/listing-round.mjs",
+    "workbench/pre-submit-page-recovery.mjs",
+    "workbench/product-api.mjs",
+    "workbench/round-success-goal.mjs",
+    "workbench/round-windows.mjs",
+    "workbench/server.mjs",
+    "workbench/source-workflow.mjs",
+    "workbench/tasks.css",
+    "workbench/travel-os.js",
+    "workbench/ui-copy.js"
+  ]
+}

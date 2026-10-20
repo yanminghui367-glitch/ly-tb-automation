@@ -1,0 +1,163 @@
+{
+  "source": "read-only original item 12 STEP_PAUSED events; not replayed in production",
+  "priority": 12,
+  "events": [
+    {
+      "seq": 1273,
+      "run": "ea9b9ee6-2070-4360-80fc-538013fb2c3b",
+      "at": "2026-10-17T14:26:52.896Z",
+      "kind": "STEP_PAUSED",
+      "name": "select-detail-1",
+      "error": "expect(locator).toHaveCount(expected) failed\n\nLocator:  getByRole('button', { name: '上传文件', exact: true })\nExpected: 1\nReceived: 0\nTimeout:  5000ms\n\nCall log:\n  - Expect \"to.have.count\" with timeout 5000ms\n  - waiting for getByRole('button', { name: '上传文件', exact: true })\n    14 × locator resolved to 0 elements\n       - unexpected value \"0\"\n",
+      "errorCode": null,
+      "durationMs": 15950.05120000057,
+      "timing": {
+        "elapsedMs": 15950.05120000057,
+        "categories": {
+          "browser-status": {
+            "calls": 4,
+            "totalMs": 376.19139999710023,
+            "selfMs": 376.19139999710023,
+            "errors": 0
+          },
+          "challenge-check": {
+            "calls": 4,
+            "totalMs": 79.60019999742508,
+            "selfMs": 79.60019999742508,
+            "errors": 0
+          },
+          "form-identity": {
+            "calls": 4,
+            "totalMs": 35.05989999882877,
+            "selfMs": 35.05989999882877,
+            "errors": 0
+          },
+          "guard": {
+            "calls": 4,
+            "totalMs": 492.60849999822676,
+            "selfMs": 1.7570000048726797,
+            "errors": 0
+          },
+          "action": {
+            "calls": 1,
+            "totalMs": 13798.805800000206,
+            "selfMs": 13410.879400001839,
+            "errors": 1
+          },
+          "evidence": {
+            "calls": 1,
+            "totalMs": 2045.3534999992698,
+            "selfMs": 2045.3534999992698,
+            "errors": 0
+          }
+        }
+      },
+      "screenshot": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ea9b9ee6-2070-4360-80fc-538013fb2c3b\\select-detail-1-a86102e7-f4f9-43fa-a443-f49d15bd66f7.png"
+    },
+    {
+      "seq": 1335,
+      "run": "ea9b9ee6-2070-4360-80fc-538013fb2c3b",
+      "at": "2026-10-17T14:38:53.129Z",
+      "kind": "STEP_PAUSED",
+      "name": "select-detail-1",
+      "error": "expect(locator).toBeVisible() failed\n\nLocator: locator('.PicList_pic_background__pGTdV').filter({ hasText: 'HQLH-详情页首页-1-R01.png' }).filter({ has: locator('img[src^=\"[页面地址] }).first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"to.be.visible\" with timeout 5000ms\n  - waiting for locator('.PicList_pic_background__pGTdV').filter({ hasText: 'HQLH-详情页首页-1-R01.png' }).filter({ has: locator('img[src^=\"[页面地址] }).first()\n",
+      "errorCode": null,
+      "durationMs": 7082.94840000011,
+      "timing": {
+        "elapsedMs": 7082.94840000011,
+        "categories": {
+          "browser-status": {
+            "calls": 1,
+            "totalMs": 115.00709999911487,
+            "selfMs": 115.00709999911487,
+            "errors": 0
+          },
+          "challenge-check": {
+            "calls": 1,
+            "totalMs": 22.388499999418855,
+            "selfMs": 22.388499999418855,
+            "errors": 0
+          },
+          "form-identity": {
+            "calls": 1,
+            "totalMs": 12.289700001478195,
+            "selfMs": 12.289700001478195,
+            "errors": 0
+          },
+          "guard": {
+            "calls": 1,
+            "totalMs": 150.06959999911487,
+            "selfMs": 0.3842999991029501,
+            "errors": 0
+          },
+          "action": {
+            "calls": 1,
+            "totalMs": 5408.683500001207,
+            "selfMs": 5408.683500001207,
+            "errors": 1
+          },
+          "evidence": {
+            "calls": 1,
+            "totalMs": 1522.9951999988407,
+            "selfMs": 1522.9951999988407,
+            "errors": 0
+          }
+        }
+      },
+      "screenshot": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ea9b9ee6-2070-4360-80fc-538013fb2c3b\\select-detail-1-4250a7c3-25a4-4d72-975c-edc4c953b74b.png"
+    },
+    {
+      "seq": 1397,
+      "run": "ea9b9ee6-2070-4360-80fc-538013fb2c3b",
+      "at": "2026-10-17T14:39:45.936Z",
+      "kind": "STEP_PAUSED",
+      "name": "select-detail-1",
+      "error": "expect(locator).toBeVisible() failed\n\nLocator: locator('.PicList_pic_background__pGTdV').filter({ hasText: 'HQLH-详情页首页-1-R01.png' }).filter({ has: locator('img[src^=\"[页面地址] }).first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"to.be.visible\" with timeout 5000ms\n  - waiting for locator('.PicList_pic_background__pGTdV').filter({ hasText: 'HQLH-详情页首页-1-R01.png' }).filter({ has: locator('img[src^=\"[页面地址] }).first()\n",
+      "errorCode": null,
+      "durationMs": 5231.233000000939,
+      "timing": {
+        "elapsedMs": 5231.233000000939,
+        "categories": {
+          "browser-status": {
+            "calls": 1,
+            "totalMs": 96.4692000001669,
+            "selfMs": 96.4692000001669,
+            "errors": 0
+          },
+          "challenge-check": {
+            "calls": 1,
+            "totalMs": 19.316499998793006,
+            "selfMs": 19.316499998793006,
+            "errors": 0
+          },
+          "form-identity": {
+            "calls": 1,
+            "totalMs": 10.817500000819564,
+            "selfMs": 10.817500000819564,
+            "errors": 0
+          },
+          "guard": {
+            "calls": 1,
+            "totalMs": 126.97609999962151,
+            "selfMs": 0.3728999998420477,
+            "errors": 0
+          },
+          "action": {
+            "calls": 1,
+            "totalMs": 5029.944000000134,
+            "selfMs": 5029.944000000134,
+            "errors": 1
+          },
+          "evidence": {
+            "calls": 1,
+            "totalMs": 73.11789999902248,
+            "selfMs": 73.11789999902248,
+            "errors": 0
+          }
+        }
+      },
+      "screenshot": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ea9b9ee6-2070-4360-80fc-538013fb2c3b\\select-detail-1-8fd37411-80c8-4a77-ac12-87dc13812bb6.png"
+    }
+  ],
+  "fullLocalEvidenceSha256": "ed991831435773f26efb710bde31b10126b7984b6d9d868fc97cb66ec659e902"
+}

@@ -54,7 +54,6 @@ test('click throws after side effect; no second click or receipt callback',async
  await assert.rejects(submitTask(p,async()=>{},async()=>recorded++),/transport timeout/);assert.equal(clicks,1);assert.equal(recorded,0);
 });
 for(const [name,url,html] of [
- ['body has no ID',success,shop+'商品提交成功'],
  ['body ID differs',success,receipt('9999999999999')],
  ['body has duplicate IDs',success,receipt()+' 商品ID：'+id],
  ['URL duplicate IDs',success+'&primaryId='+id,receipt()],
@@ -65,3 +64,7 @@ for(const [name,url,html] of [
 ])test('rejects ambiguous/changed receipt: '+name,async()=>{await setup();await transition(url,html);await assert.rejects(readSubmissionReceipt(page,form));});
 test('external domain cannot provide a receipt or pass post-click identity',async()=>{await page.goto('https://example.invalid/sell/v2/success.htm?primaryId='+id);await page.setContent(receipt());await assert.rejects(readSubmissionReceipt(page,form),/ORIGIN_CHANGED/);await assert.rejects(assertPublishIdentity(page,task,{submitted:true,formUrl:form}),/ORIGIN_CHANGED/);});
 test('exact URL/body ID pair is returned only on the original page',async()=>{await setup();assert.equal(await readSubmissionReceipt(page,form),null);await transition();assert.equal(await readSubmissionReceipt(page,form),id);});
+test('success DOM without ID stays pending; a later unique ID completes the original receipt',async()=>{
+ await setup();await transition(success,shop+'商品提交成功');assert.equal(await readSubmissionReceipt(page,form),null);
+ await page.setContent(receipt());assert.equal(await readSubmissionReceipt(page,form),id);
+});

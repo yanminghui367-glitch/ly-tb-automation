@@ -3,8 +3,11 @@ import {mkdir,writeFile,rename} from 'node:fs/promises';
 import {join} from 'node:path';
 import {digest,destinationKey} from './source-store.mjs';
 import {RoundWindows} from './round-windows.mjs';
+import {RoundSuccessGoal} from './round-success-goal.mjs';
 import {RoundExecutionAttempts} from './round-execution-attempts.mjs';
 import {RoundSelection} from './round-selection.mjs';
+import {RoundItemPark} from './round-item-park.mjs';
+import {assertUnclaimedSubmissionId} from './result-reconciliation.mjs';
 
 export const ROUND_ITEM_STATES=['EXISTING_VERIFIED','NEW_SUCCESS','FAILED','PREFLIGHT_SKIPPED','MANUAL_SKIPPED','RESULT_UNKNOWN','WAITING_HUMAN','PENDING'];
 const done=new Set(['EXISTING_VERIFIED','NEW_SUCCESS','FAILED','PREFLIGHT_SKIPPED','MANUAL_SKIPPED']);
@@ -17,14 +20,29 @@ const fail=message=>{throw Error(message);};
 const reasonOf=error=>String(error?.message||error||'未知执行错误').slice(0,1600);
 const isEvidence=r=>!!(/^\d{6,30}$/.test(String(r?.itemId||''))&&r.status&&r.rowText&&r.screenshot&&Number.isFinite(Date.parse(r.verifiedAt)));
 const csvCell=value=>'"'+String(value??'').replace(/^[=+@-]/,"'$&").replaceAll('"','""')+'"';
+const detailRetryCode=code=>/^SAFE_RETRY_DETAIL_(?:PANEL|FRAME_ORIGIN|UPLOAD_ENTRY|UPLOAD_PANEL|UPLOAD_RECEIPT|MATERIAL)$/.test(code||'');
+const detailRetryStep=(code,step)=>['SAFE_RETRY_DETAIL_PANEL','SAFE_RETRY_DETAIL_FRAME_ORIGIN'].includes(code)?['open-new-form','open-details'].includes(step)||/^select-detail-\d+$/.test(step||''):/^select-detail-\d+$/.test(step||'');
+const mainRetryCode=code=>['SAFE_RETRY_MAIN_IMAGE_STATE','SAFE_RETRY_MAIN_FRAME_ORIGIN','SAFE_RETRY_MAIN_PANEL'].includes(code);
+const readinessRetryCode=code=>detailRetryCode(code)||mainRetryCode(code);
+const submissionInRun=run=>!!(run&&(['SUBMITTING','RESULT_UNKNOWN','VERIFIED'].includes(run.state)||run.result||run.checkpoint?.itemId||run.checkpoint?.reconciliation));
+const protectedPageReason=reason=>/PAGE_LEDGER_|PAGE_PROTECTION_|PINNED_PAGE|PAGE_BUDGET|RESIDUAL_REFILL_|保留页面.*(?:保护|失败)/i.test(reason||'');
 
-// Unknown errors are system blockers, not evidence that a product is invalid.
+// Classification is separate from continuation: only proven pre-submit item
+// failures may be finalized by the bounded, distinct-item circuit below.
 export function classifyRoundFailure(error,{run,preflight=false}={}){
  const reason=reasonOf(error),code=error?.code||'';
  if(['SUBMITTING','RESULT_UNKNOWN'].includes(run?.state))return {kind:'UNKNOWN',reason};
  if(run?.state==='PAUSED_CAPTCHA'||/CAPTCHA|验证码|滑块|风险验证|请人工登录|店铺身份|专用浏览器未运行|登录失效/i.test(reason))return {kind:'HUMAN',reason};
  if(preflight&&/ENOENT|素材.*(?:缺失|变化|改变)|文件.*不存在|图片.*缺失|TASK_DATA|ADAPTER_ISSUE|价格.*缺失|库存.*缺失/i.test(reason))return {kind:'PREFLIGHT',reason};
  if(/^PRODUCT_|^TASK_DATA|^ATTRIBUTE_VALUE_INVALID/.test(code)||/^(?:PRODUCT_DATA|TASK_DATA|ATTRIBUTE_VALUE_INVALID):/.test(reason))return {kind:'PRODUCT',reason};
+ if(/^SAFE_RETRY_DETAIL_/.test(code)){
+  if(!preflight&&detailRetryCode(code)&&run?.state==='PAUSED'&&detailRetryStep(code,run.checkpoint?.step)&&!submissionInRun(run)&&!protectedPageReason(reason))return {kind:'TRANSIENT',reason,fingerprint:code,safe:true};
+  return {kind:'SYSTEM',reason,fingerprint:code};
+ }
+ if(mainRetryCode(code)){
+  if(!preflight&&run?.state==='PAUSED'&&/^main-image-[1-5]$/.test(run.checkpoint?.step||'')&&!submissionInRun(run)&&!protectedPageReason(reason))return {kind:'TRANSIENT',reason,fingerprint:code,safe:true};
+  return {kind:'SYSTEM',reason,fingerprint:code};
+ }
  if(/^SAFE_RETRY_/.test(code))return {kind:'TRANSIENT',reason,fingerprint:code,safe:true};
  return {kind:'SYSTEM',reason,fingerprint:code||reason.replace(/\d+/g,'#')};
 }
@@ -44,6 +62,8 @@ export class ListingRound {
   this.windows=new RoundWindows(this);
   this.executionAttempts=new RoundExecutionAttempts(this);
   this.selections=new RoundSelection(this);
+  this.parking=new RoundItemPark(this);
+  this.successGoals=new RoundSuccessGoal(this);
   this.recover();
  }
  event(id,key,kind,payload={}){this.db.prepare('INSERT INTO round_events(round_id,key,at,kind,payload) VALUES(?,?,?,?,?)').run(id,key,now(),kind,JSON.stringify(payload));}
@@ -91,6 +111,7 @@ export class ListingRound {
   if(unresolved){state=unresolved;reason+='；原商品仍需'+(unresolved==='RESULT_UNKNOWN'?'核验结果':'人工验证')+'，处理完成后停止，禁止重发';}
   if(state==='STOPPED'){const latest=this.windows?.latest(id);if(latest?.continuation_pending)this.windows.finishContinuation(latest.id,'操作者停止自动衔接');}
   this.db.prepare('UPDATE rounds SET state=?,reason=?,updated=? WHERE id=?').run(state,reason,now(),id);this.event(id,null,state,{reason});
+  this.successGoals?.state(id,state,reason);
   const window=this.windows?.open(id);
   if(window){if(['STOPPED','COMPLETED'].includes(state))this.windows.close(window.id,state,reason);else this.windows.state(window.id,state,reason);}
  }
@@ -217,7 +238,7 @@ export class ListingRound {
   }
  }
  reconcileResult(id,key){
-   const x=this.item(id,key),run=x.run_id?this.source.store.run(x.run_id):null;if(!run||contentHeld(x))return;
+   const x=this.item(id,key),run=x.run_id?this.source.store.run(x.run_id):null;if(!run||contentHeld(x)||this.parking.has(id,x))return;
    if(run.state==='VERIFIED'&&x.entered_publish){try{this.assertContentForTask(x.task,x.round_id);}catch(e){this.update(x.round_id,x.key,{state:'RESULT_UNKNOWN',failure_stage:'content-review',result:x.result||run.result,...this.submissionFlags(run,x.round_id),reason:'原商品已发布，主图内容仍需核验：'+reasonOf(e)});return;}}
    if(run.state==='VERIFIED'&&x.entered_publish&&isEvidence(run.result)){try{this.assertResultIdentity(x.round_id,x.key,run.result);}catch(e){this.update(x.round_id,x.key,{state:'RESULT_UNKNOWN',reason:reasonOf(e)});this.state(x.round_id,'RESULT_UNKNOWN',reasonOf(e));return;}this.update(x.round_id,x.key,{state:'NEW_SUCCESS',result:run.result,...this.submissionFlags(run,x.round_id),finished:now(),reason:'从本轮原执行记录恢复核验结果；未再次提交'});this.syncQueue(x,'SUCCEEDED',run.result,'从本轮已核验执行对账，未再次提交');}
    else if(['SUBMITTING','RESULT_UNKNOWN'].includes(run.state))this.update(x.round_id,x.key,{state:'RESULT_UNKNOWN',...this.submissionFlags(run,x.round_id),reason:'提交结果待核验，禁止再次提交',failure_stage:run.checkpoint?.step||''});
@@ -296,6 +317,7 @@ export class ListingRound {
  resume(id,options={}){return this.start(id,options);}
  pause(){if(!this.active)return {pauseRequested:false};this.pauseRequested=true;this.source.pause();this.state(this.active,'PAUSING','正在安全暂停；当前动作检查后停止');return {pauseRequested:true,id:this.active};}
  stop(){
+  const goalRound=this.round();if(goalRound)this.successGoals.stopRequested(goalRound.id);
   if(!this.active){
    this.assertIdle();const r=this.round(),latest=r&&this.windows.latest(r.id),w=r&&(this.windows.open(r.id)||(latest?.continuation_pending?latest:null));
    if(!r||r.state==='COMPLETED'||!w)return {stopped:false};
@@ -357,7 +379,10 @@ export class ListingRound {
   const run=x.run_id?this.source.store.run(x.run_id):null,history=this.source.store.completed(x.task),itemId=history?.itemId||run?.result?.itemId||run?.checkpoint?.itemId||null;
   this.displayPhase(id,x.key,itemId?'known-listing-check':'existing-listing-check');
   const single=this.singleItemExecution?.roundId===id&&this.singleItemExecution.key===x.key?this.singleItemExecution:null;
-  const result=await this.verifyExisting({task:x.task,itemId,history,run,roundId:id,key:x.key,...(single?{executionWindowId:single.windowId,executionAttemptId:single.attemptId}:{})});this.assertLease(id);
+  const missingSubmittedId=!itemId&&['SUBMITTING','RESULT_UNKNOWN'].includes(run?.state);
+  const result=await this.verifyExisting({task:x.task,itemId,history,run,roundId:id,key:x.key,
+   ...(missingSubmittedId?{submissionEvents:this.source.store.events(run.id),assertUnusedItemId:value=>assertUnclaimedSubmissionId(this.source.store,run,value)}:{}),
+   ...(single?{executionWindowId:single.windowId,executionAttemptId:single.attemptId}:{})});this.assertLease(id);
   if(!result){if(itemId||run?.state==='VERIFIED'||['SUBMITTING','RESULT_UNKNOWN'].includes(run?.state))throw Object.assign(Error('已有商品记录未能在原店铺核实，禁止重新发布'),{code:'RESULT_UNKNOWN'});return false;}
   if(!isEvidence(result)||itemId&&String(result.itemId)!==String(itemId))throw Object.assign(Error('已有商品核验缺少完整或一致证据，禁止发布'),{code:'RESULT_UNKNOWN'});
   this.assertResultIdentity(id,x.key,result);
@@ -476,6 +501,7 @@ export class ListingRound {
   this.event(id,null,'INTERNAL_BATCH_CREATED',{batchId:b.id,count:tasks.length,gate:r.gate});return this.batch.store.item(this.item(id,x.key).queue_id);
  }
  async executeItem(id,x){
+  if(this.parking.has(id,x))throw Object.assign(Error('挂起商品仅可核验，禁止重新执行或提交'),{code:'ITEM_PARK_EXECUTION_PROTECTED'});
   this.assertLease(id);let run=x.run_id?this.source.store.run(x.run_id):null;
   this.displayPhase(id,x.key,'content-preflight');
   if(contentHeld(this.item(id,x.key)))throw Object.assign(Error('CONTENT_REVIEW_HELD: 已发布错图保持隔离，禁止重投'),{code:'CONTENT_REVIEW_HELD'});
@@ -495,6 +521,7 @@ export class ListingRound {
   if(q.state==='SUCCEEDED'){if(!await this.verify(id,x))fail('队列成功缺少可核验商品ID');return;}
   if(q.state==='SKIPPED'){this.update(id,x.key,{state:'PREFLIGHT_SKIPPED',reason:'沿用原队列明确跳过：'+q.reason,failure_stage:'previous-decision',finished:now()});return;}
   this.selections.assertExecutionItem(id,x);
+  this.successGoals.assertClaim(id,x);
   if(q.state==='FAILED')this.batch.store.move(q.id,'RETRY','本轮授权从原任务恢复，保留原次数');
   this.batch.store.claim(q.id,{roundId:id});this.batch.store.setBatch(q.batch,'RUNNING','本轮唯一发布执行器');
   x=this.item(id,x.key);run=x.run_id?this.source.store.run(x.run_id):null;
@@ -517,13 +544,57 @@ export class ListingRound {
   }
   throw Object.assign(Error(run.reason||'执行未完成'),{run,code:run.checkpoint?.errorCode});
  }
+ canIsolateFailure(x,run,error,events){
+  // Do not reinterpret infrastructure, identity or preserved-page faults as
+  // product failures, even when they surface through an item callback.
+  if(!x.entered_publish||run?.state!=='PAUSED'||run.mode!=='LIVE'||!run.checkpoint?.step||/^(?:submit|verify-platform)/.test(run.checkpoint.step))return false;
+  if(this.failureStage(x.round_id,x,run)!==run.checkpoint.step)return false;
+  if(x.submitted||x.submission_uncertain||x.result||submissionInRun(run)||events.some(e=>['SUBMITTING','SUBMIT_CLICKED','SUBMIT_EVIDENCE','RESULT_UNKNOWN','VERIFIED','PAGE_LEDGER_PERSISTENCE_FAILED'].includes(e.kind)))return false;
+  if(run.key!==x.key||digest(run.task)!==x.task_hash)return false;
+  const code=String(error.code||''),reason=reasonOf(error);
+  const fault=code+' '+reason;
+  if(/\b(?:SQLITE|ERR_SQLITE|ITEM_RETRY_|SELECTION_|ROUND_|QUEUE_|EXECUTION_|ATTEMPT_|CONTENT_|SOURCE_|KERNEL_|IDENTITY_|SHARED_)/i.test(fault))return false;
+  if(protectedPageReason(fault)||/(?:FRAME_(?:ORIGIN|CHANGED|AMBIGUOUS)|MAIN_IMAGE_(?:FORM_CHANGED|ORIGIN_CHANGED)|FORM_.*(?:IDENTITY|ORIGIN|PAGE_CHANGED)|ANOTHER_TASK_FORM|NEW_ITEMS_ONLY|原任务|快照|清单|归属|身份|额度|哈希|数据库|授权|冻结|事务|台账|记录.*(?:丢失|缺失|冲突))/i.test(fault))return false;
+  if(/(?:UserArea_shopName__|只允许新增商品页|禁止编辑旧链接|辅助页面已关闭或地址改变|执行浏览器没有可用页面|后台页面创建失败)/i.test(fault))return false;
+  if(/(?:Target (?:page|context|browser).*closed|browser.*(?:closed|disconnected)|connectOverCDP|WebSocket|socket hang up|ECONN(?:RESET|REFUSED)|EPIPE|浏览器.*(?:关闭|断开|断连)|连接.*(?:断开|中断))/i.test(fault))return false;
+  return true;
+ }
+ finalizeFailedItem(id,x,patch,{fingerprint,cause='UNCLASSIFIED',code=null}={}){
+  // FAILED and its audit outcome commit together before pump can select again.
+  // Attempts, limits and recovery credits are deliberately not written here.
+  return this.source.store.transaction(()=>{
+   this.syncQueue(x,'FAILED',null,patch.reason);this.update(id,x.key,{...patch,state:'FAILED',finished:now()});this.finishInternal(x.batch_id);
+   const seen=new Set([x.key]);let consecutiveFailures=1,sameFingerprint=1,same=true;
+   const rows=this.db.prepare("SELECT key,kind,payload FROM round_events WHERE round_id=? AND kind IN ('ITEM_FAILURE_FINALIZED','NEW_SUCCESS','EXISTING_VERIFIED','MANUAL_SKIPPED','PREFLIGHT_SKIPPED') ORDER BY seq DESC").iterate(id);
+   for(const e of rows){
+    if(e.kind!=='ITEM_FAILURE_FINALIZED')break;
+    if(seen.has(e.key))continue;seen.add(e.key);consecutiveFailures++;
+    if(same&&parse(e.payload).fingerprint===fingerprint)sameFingerprint++;else same=false;
+    if(consecutiveFailures>=5)break;
+   }
+   this.db.prepare('UPDATE rounds SET system_fingerprint=?,system_count=? WHERE id=?').run(fingerprint||'',sameFingerprint,id);
+   const tripped=sameFingerprint>=3||consecutiveFailures>=5;
+   this.event(id,x.key,'ITEM_FAILURE_FINALIZED',{policy:'distinct-item-circuit-v1',cause,code,fingerprint,sameFingerprint,consecutiveFailures,continued:!tripped,preSubmitConfirmed:true});
+   if(tripped){
+    this.event(id,x.key,'FAILURE_CIRCUIT_OPENED',{sameFingerprint,consecutiveFailures,fingerprint,limits:{sameFingerprint:3,consecutiveFailures:5}});
+    this.state(id,'SYSTEM_BLOCKED',`连续失败已暂停：同类错误 ${sameFingerprint} 条，连续失败 ${consecutiveFailures} 条；已失败商品不自动重投`);
+   }
+   return !tripped;
+  });
+ }
  async failure(id,x,error,{allowRecovery=true}={}){
   x=this.item(id,x.key);const run=x.run_id?this.source.store.run(x.run_id):null;
   if(this.pauseRequested||error.code==='ROUND_PAUSE'){
    this.syncQueue(x,'WAITING_HUMAN',null,'操作者暂停；保留原任务断点');this.update(id,x.key,{state:run&&['SUBMITTING','RESULT_UNKNOWN'].includes(run.state)?'RESULT_UNKNOWN':'PENDING',...this.submissionFlags(run,id),reason:'操作者暂停',failure_stage:run?.checkpoint?.step||''});return false;
   }
-  const c=/^(RESULT_UNKNOWN|DUPLICATE_AMBIGUOUS)$/.test(error.code||'')?{kind:'UNKNOWN',reason:reasonOf(error)}:error.code==='HUMAN_MODE'?{kind:'HUMAN',reason:reasonOf(error)}:this.classifyFailure(error,{run});
+  let c=/^(RESULT_UNKNOWN|DUPLICATE_AMBIGUOUS)$/.test(error.code||'')?{kind:'UNKNOWN',reason:reasonOf(error)}:error.code==='HUMAN_MODE'?{kind:'HUMAN',reason:reasonOf(error)}:this.classifyFailure(error,{run});
+  const detailCode=readinessRetryCode(error.code),events=run?this.source.store.events(run.id):[];
+  if(detailCode&&c.kind==='TRANSIENT'){
+   const protectedEvidence=x.submitted||x.submission_uncertain||x.result||submissionInRun(run)||events.some(e=>['SUBMITTING','SUBMIT_CLICKED','SUBMIT_EVIDENCE','RESULT_UNKNOWN','VERIFIED'].includes(e.kind)||e.kind==='PAGE_LEDGER_PERSISTENCE_FAILED');
+   if(protectedEvidence||!x.entered_publish||this.failureStage(id,x,run)!==run?.checkpoint?.step)c={kind:'SYSTEM',reason:reasonOf(error),fingerprint:error.code};
+  }
   const patch={reason:c.reason||reasonOf(error),failure_stage:this.failureStage(id,x,run),...this.submissionFlags(run,id)};
+  if(detailCode){patch.submitted=x.submitted||patch.submitted;patch.submission_uncertain=x.submission_uncertain||patch.submission_uncertain;}
   if(error.code==='EXISTENCE_AMBIGUOUS'&&error.isolated===true&&!x.entered_publish&&!this.wasSubmitted(run)){
    this.update(id,x.key,{...patch,state:'RESULT_UNKNOWN',failure_stage:'existing-listing-check'});this.event(id,x.key,'EXISTENCE_CHECK_ISOLATED',{reason:patch.reason,candidateIds:error.candidateIds||[],notSubmitted:true});return true;
   }
@@ -531,11 +602,38 @@ export class ListingRound {
    this.syncQueue(x,'WAITING_HUMAN',null,patch.reason);this.update(id,x.key,{...patch,submitted:x.submitted||patch.submitted,submission_uncertain:x.submission_uncertain||patch.submission_uncertain,state:'RESULT_UNKNOWN'});this.state(id,'RESULT_UNKNOWN','资料错误伴有原提交证据，须先核验原商品');return false;
   }
   if(c.kind==='PRODUCT'){
+   if(x.entered_publish&&this.canIsolateFailure(x,run,{message:patch.reason},events))return this.finalizeFailedItem(id,x,patch,{fingerprint:error.code||c.fingerprint||patch.reason,cause:'PRODUCT',code:error.code});
    this.syncQueue(x,'FAILED',null,patch.reason);this.update(id,x.key,{...patch,state:x.entered_publish?'FAILED':'PREFLIGHT_SKIPPED',finished:now()});return true;
   }
   if(c.kind==='UNKNOWN'||c.kind==='HUMAN'){
    this.syncQueue(x,'WAITING_HUMAN',null,patch.reason);this.update(id,x.key,{...patch,state:c.kind==='UNKNOWN'?'RESULT_UNKNOWN':'WAITING_HUMAN'});this.state(id,c.kind==='UNKNOWN'?'RESULT_UNKNOWN':'WAITING_HUMAN',patch.reason);return false;
   }
+  // Explicit detail/main readiness failures keep their two original bounded
+  // recoveries; only their final outcome contributes one item to the circuit.
+  if(allowRecovery&&detailCode&&c.kind==='TRANSIENT'&&c.safe===true){
+   const stage=run.checkpoint.step,tries=x.retry_counts[stage]||0;
+   this.syncQueue(x,'FAILED',null,patch.reason);
+   this.event(id,x.key,'TRANSIENT_FAILURE',{code:error.code,step:stage,retry:tries,reason:patch.reason});
+   let budgetDenied=null;
+   if(tries<2){
+    // Read the existing claim rule; do not grant, reset or reinterpret credit.
+    try{
+     if(x.queue_id)this.batch.store.assertClaimBudget(this.batch.store.item(x.queue_id),{round:this.round(id),entry:x});
+    }catch(error){
+     // Historical claim usage can exceed safe-step retries. End only this
+     // pre-submit detail failure; unknown/store faults still block the round.
+     if(!['ITEM_RETRY_BUDGET_EXHAUSTED','ITEM_RETRY_BUDGET_EXTRA_UNSAFE','ITEM_RETRY_BUDGET_SYSTEM_UNCONFIRMED'].includes(error.code))throw error;
+     budgetDenied={budgetCode:error.code,budgetReason:reasonOf(error)};
+    }
+    if(!budgetDenied){
+     this.update(id,x.key,{...patch,state:'PENDING',retry_counts:{...x.retry_counts,[stage]:tries+1}});
+     this.event(id,x.key,'SAFE_STEP_RECOVERY',{step:stage,retry:tries+1,max:2,repairVersion:this.round(id).repair_version});return true;
+    }
+   }
+   const continued=this.finalizeFailedItem(id,x,patch,{fingerprint:error.code,cause:'SAFE_RECOVERY_EXHAUSTED',code:error.code});
+   this.event(id,x.key,'SAFE_STEP_RECOVERY_EXHAUSTED',{code:error.code,step:stage,retries:tries,max:2,cause:budgetDenied?'CLAIM_BUDGET':'STEP_RECOVERIES',...budgetDenied,continued});return continued;
+  }
+  if(c.kind==='SYSTEM'&&!detailCode&&!/^SAFE_RETRY_/.test(error.code||'')&&this.canIsolateFailure(x,run,error,events))return this.finalizeFailedItem(id,x,patch,{fingerprint:c.fingerprint||patch.reason,code:error.code});
   this.syncQueue(x,'FAILED',null,patch.reason);this.update(id,x.key,{...patch,state:'PENDING'});
   const r=this.round(id),fingerprint=c.fingerprint||patch.reason,count=r.system_fingerprint===fingerprint?r.system_count+1:1;
   this.db.prepare('UPDATE rounds SET system_fingerprint=?,system_count=? WHERE id=?').run(fingerprint,count,id);
@@ -567,13 +665,19 @@ export class ListingRound {
   const initial=this.round(id);if(initial.gate===1&&this.events(id).some(e=>e.kind==='GATE_ONE_VERIFIED')&&!this.events(id).some(e=>e.kind==='GATE_ONE_RESUMED'))this.event(id,null,'GATE_ONE_RESUMED',{manifestHash:initial.manifest_hash,source:'explicit-resume-after-persisted-pause'});
   if(!await this.gate(id))return;
   while(!this.pauseRequested){
+   if(this.successGoals.boundary(id))break;
    const all=this.items(id),window=this.windows.open(id);
    const allowed=window?new Set(this.windows.entries(this.windows.assert(window.id,id).id).map(e=>e.key)):null;
-   let x=all.find(v=>(!allowed||allowed.has(v.key))&&!done.has(v.state)&&!isolated(v));
+   let x=all.find(v=>(!allowed||allowed.has(v.key))&&!done.has(v.state)&&!isolated(v)&&!this.parking.has(id,v));
    if(!x){
     if(window){
      this.windows.close(window.id,'COMPLETED','本轮分配范围已处理；成功、跳过与待核验分别记录');
-     if(all.some(v=>!done.has(v.state)&&!isolated(v))){
+     if(this.successGoals.forWindow(window.id)){
+      const next=await this.nextWindow(window);
+      if(next){this.windows.state(next.id,'RUNNING','按持续成功目标自动衔接');continue;}
+      break;
+     }
+     if(all.some(v=>!done.has(v.state)&&!isolated(v)&&!this.parking.has(id,v))){
       if(window.auto_continue){
        const next=await this.nextWindow(window);
        if(next){this.windows.state(next.id,'RUNNING','按已选范围自动衔接');continue;}
@@ -583,14 +687,14 @@ export class ListingRound {
      }
     }
     if(window)this.windows.finishContinuation(window.id,'总清单无剩余可执行项');
-    if(all.some(isolated))this.state(id,'NEEDS_REVIEW','可安全执行项已处理；商品候选或内容问题保持隔离，需核验，不能称为全部完成');else this.state(id,'COMPLETED','固定清单已完成一轮处理；失败项不会重新投递');break;
+    if(this.parking.list(id).length)this.state(id,'NEEDS_REVIEW','可执行商品已处理；挂起商品提交结果未定，需人工后台确认');else if(all.some(isolated))this.state(id,'NEEDS_REVIEW','可安全执行项已处理；商品候选或内容问题保持隔离，需核验，不能称为全部完成');else this.state(id,'COMPLETED','固定清单已完成一轮处理；失败项不会重新投递');break;
    }
    this.settleInternalBatches(id,{keepBatchId:x.batch_id,phase:'handoff'});
    this.db.prepare('UPDATE rounds SET current_item=?,updated=? WHERE id=?').run(x.key,now(),id);
    x=await this.resumeUnstartedHumanItem(id,x,options);
-   const attempt=this.executionAttempts.begin(id,x.key);let continueLoop=true,disposition='FINISHED';
+   const attempt=this.executionAttempts.begin(id,x.key);let continueLoop=false,disposition='FINISHED';
    try{
-    try{await this.executeItem(id,x);}catch(error){
+    try{await this.executeItem(id,x);continueLoop=true;}catch(error){
      if(/^(?:EXECUTION_ATTEMPT_|ATTEMPT_)/.test(error.code||error.message||'')){disposition='JOURNAL_BLOCKED';throw error;}
      continueLoop=await this.failure(id,x,error);
     }
@@ -607,6 +711,7 @@ export class ListingRound {
   if(this.pauseRequested)this.state(id,this.stopRequested?'STOPPED':'PAUSED',this.stopRequested?'本轮已停止；剩余商品仍未处理':'已安全暂停，恢复将沿用原任务和记录');
  }
  async nextWindow(previous){
+  const goalNext=this.successGoals.next(previous);if(goalNext!==undefined)return goalNext;
   const selected=await this.selections.continueWindow(previous);if(selected!==undefined)return selected;
   const preview=await this.windows.preview(previous.round_id,{startPosition:previous.scope_start,endPosition:previous.scope_end,limit:previous.limit_count,autoContinue:true},{internal:true});
   return preview.count?this.windows.create(preview):null;
@@ -621,13 +726,14 @@ export class ListingRound {
    COALESCE(q.attempts,0) attempts FROM round_items i LEFT JOIN runs s ON s.id=i.run_id LEFT JOIN batch_items q ON q.id=i.queue_id WHERE i.round_id=? AND i.key=?`).get(r.id,r.current_item):null;
   const run=row?.run_id?{id:row.run_id,state:row.run_state,checkpoint:parse(row.run_checkpoint),result:parse(row.run_result)}:null;
   const current=row?{key:row.key,destination:row.destination,title:row.title,state:row.state,stage:this.currentStage(r,row,run),runId:row.run_id,reason:row.reason,submitted:!!row.submitted,submissionUncertain:!!row.submission_uncertain,enteredPublish:!!row.entered_publish,attempts:row.attempts,extraAttempts:row.extra_attempts}:null;
-  return {id:r.id,shop:r.shop,importId:r.import_id,manifestHash:r.manifest_hash,authorizationHash:r.authorization_hash,repairVersion:r.repair_version,state:r.state,gate:r.gate,currentItem:r.current_item,reason:r.reason,at:r.at,updated:r.updated,total,counts,processed,active:this.active===r.id,verificationControl:this.verificationControl?.(r.id)||null,executionRecovery:this.executionAttempts.recoveryView(r.id),captchaRecheck:(({eligible,count})=>({eligible,count}))(this.captchaRecheck(r.id)),current,window:this.windows.view(this.windows.latest(r.id)?.id),windowHistory:this.windows.history(r.id)};
+  return {id:r.id,shop:r.shop,importId:r.import_id,manifestHash:r.manifest_hash,authorizationHash:r.authorization_hash,repairVersion:r.repair_version,state:r.state,gate:r.gate,currentItem:r.current_item,reason:r.reason,at:r.at,updated:r.updated,total,counts,processed,active:this.active===r.id,successGoal:this.successGoals.summary(r.id),verificationControl:this.verificationControl?.(r.id)||null,executionRecovery:this.executionAttempts.recoveryView(r.id),captchaRecheck:(({eligible,count})=>({eligible,count}))(this.captchaRecheck(r.id)),current,parkedCount:this.parking.list(r.id).length,parkedItems:this.parking.list(r.id),window:this.windows.view(this.windows.latest(r.id)?.id),windowHistory:this.windows.history(r.id)};
  }
- view(id){const r=this.round(id);if(!r)return null;const rows=this.items(r.id),counts=Object.fromEntries(ROUND_ITEM_STATES.map(s=>[s,rows.filter(x=>x.state===s).length]));return {id:r.id,shop:r.shop,importId:r.import_id,manifestHash:r.manifest_hash,authorizationHash:r.authorization_hash,repairVersion:r.repair_version,state:r.state,gate:r.gate,currentItem:r.current_item,reason:r.reason,at:r.at,updated:r.updated,total:rows.length,counts,processed:rows.filter(x=>done.has(x.state)).length,active:this.active===r.id,verificationControl:this.verificationControl?.(r.id)||null,executionRecovery:this.executionAttempts.recoveryView(r.id),window:this.windows.view(this.windows.latest(r.id)?.id),windowHistory:this.windows.history(r.id),items:rows.map(x=>({key:x.key,id:x.queue_id||x.key,queueId:x.queue_id,runId:x.run_id,batchId:x.batch_id,position:x.position,taskHash:x.task_hash,destination:x.task.listing.city||x.task.listing.country,title:x.task.listing.title,state:x.state,attempts:x.queue_id?this.batch.store.item(x.queue_id).attempts:0,extraAttempts:x.extra_attempts,enteredPublish:!!x.entered_publish,submitted:!!x.submitted,submissionUncertain:!!x.submission_uncertain,reason:x.reason,stage:this.currentStage(r,x,r.current_item===x.key&&x.run_id?this.source.store.run(x.run_id):null),started:x.started,finished:x.finished,result:x.result?{itemId:x.result.itemId,url:x.result.url,status:x.result.status,verifiedAt:x.result.verifiedAt,screenshot:x.result.screenshot}:null}))};}
+ view(id){const r=this.round(id);if(!r)return null;const rows=this.items(r.id),counts=Object.fromEntries(ROUND_ITEM_STATES.map(s=>[s,rows.filter(x=>x.state===s).length]));return {id:r.id,shop:r.shop,importId:r.import_id,manifestHash:r.manifest_hash,authorizationHash:r.authorization_hash,repairVersion:r.repair_version,state:r.state,gate:r.gate,currentItem:r.current_item,reason:r.reason,at:r.at,updated:r.updated,total:rows.length,counts,processed:rows.filter(x=>done.has(x.state)).length,active:this.active===r.id,successGoal:this.successGoals.summary(r.id),verificationControl:this.verificationControl?.(r.id)||null,executionRecovery:this.executionAttempts.recoveryView(r.id),window:this.windows.view(this.windows.latest(r.id)?.id),windowHistory:this.windows.history(r.id),parkedCount:this.parking.list(r.id).length,parkedItems:this.parking.list(r.id),items:rows.map(x=>({parking:this.parking.record(r.id,x),key:x.key,id:x.queue_id||x.key,queueId:x.queue_id,runId:x.run_id,batchId:x.batch_id,position:x.position,taskHash:x.task_hash,destination:x.task.listing.city||x.task.listing.country,title:x.task.listing.title,state:x.state,attempts:x.queue_id?this.batch.store.item(x.queue_id).attempts:0,extraAttempts:x.extra_attempts,enteredPublish:!!x.entered_publish,submitted:!!x.submitted,submissionUncertain:!!x.submission_uncertain,reason:x.reason,stage:this.currentStage(r,x,r.current_item===x.key&&x.run_id?this.source.store.run(x.run_id):null),started:x.started,finished:x.finished,result:x.result?{itemId:x.result.itemId,url:x.result.url,status:x.result.status,verifiedAt:x.result.verifiedAt,screenshot:x.result.screenshot}:null}))};}
  csv(id){const r=this.round(id);if(!r)fail('轮次不存在');const rows=[['轮次ID','批次ID','任务ID','商品唯一键','店铺','目的地','状态','本轮进入发布','本轮点击提交','失败阶段','原因','开始时间','结束时间','商品ID','链接','平台状态','截图','日志']];for(const x of this.items(id))rows.push([id,x.batch_id,x.run_id||x.queue_id,x.key,r.shop,x.task.listing.city||x.task.listing.country,x.state,x.entered_publish?'是':'否',x.submitted?'是':x.submission_uncertain?'可能已提交（仅有本轮提交意图记录）':'否',x.failure_stage,x.reason,x.started,x.finished,x.result?.itemId,x.result?.url,x.result?.status,x.result?.screenshot,x.run_id?join(this.source.artifacts,x.run_id):'']);return '\ufeff'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n');}
+ parkedCsv(id){const rows=[['轮次ID','窗口ID','序号','商品唯一键','目的地','原状态','提示','确认人','挂起时间','挂起原因','核验记录','核验证据','审计事件']];for(const x of this.parking.list(id))rows.push([id,x.windowId,x.position,x.key,x.destination,x.state,x.notice,x.actor.name,x.at,x.reason,x.evidence.attemptId,x.evidence.reason,x.eventSeq]);return '\ufeff'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n');}
  async report(id){
   const previous=this.reporting.get(id)||Promise.resolve();
-  const operation=previous.catch(()=>{}).then(async()=>{const dir=join(this.artifacts,id);await mkdir(dir,{recursive:true});const view=this.view(id),files={'report.json':JSON.stringify({generatedAt:now(),...view,events:this.events(id)},null,2),'results.csv':this.csv(id)};for(const [name,bytes] of Object.entries(files)){const file=join(dir,name);await writeFile(file+'.tmp',bytes);await rename(file+'.tmp',file);}return {directory:dir,...view};});
+  const operation=previous.catch(()=>{}).then(async()=>{const dir=join(this.artifacts,id);await mkdir(dir,{recursive:true});const view=this.view(id),files={'report.json':JSON.stringify({generatedAt:now(),...view,events:this.events(id)},null,2),'results.csv':this.csv(id),'parked-items.csv':this.parkedCsv(id)};for(const [name,bytes] of Object.entries(files)){const file=join(dir,name);await writeFile(file+'.tmp',bytes);await rename(file+'.tmp',file);}return {directory:dir,...view};});
   this.reporting.set(id,operation);try{return await operation;}finally{if(this.reporting.get(id)===operation)this.reporting.delete(id);}
  }
 }

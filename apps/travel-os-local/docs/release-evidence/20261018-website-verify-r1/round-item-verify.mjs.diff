@@ -1,0 +1,22 @@
+--- baseline/workbench/round-item-verify.mjs
++++ candidate/workbench/round-item-verify.mjs
+@@ -3,6 +3,7 @@
+ import {readFile,realpath} from 'node:fs/promises';
+ import {relative,isAbsolute} from 'node:path';
+ import {RoundManualSkip} from './round-manual-skip.mjs';
++import {assertUnclaimedSubmissionId} from './result-reconciliation.mjs';
+ const hash=x=>createHash('sha256').update(JSON.stringify(x)).digest('hex');
+ const fail=code=>{throw Object.assign(Error(code),{code});};
+ const text=x=>typeof x==='string'&&x.length>0&&x.length<=200;
+@@ -187,7 +188,10 @@
+    const known=s.snapshot.history?.itemId||s.run?.result?.itemId||s.run?.checkpoint?.itemId||null;
+    const context=this.product.owner?.sessions?.get(s.r.shop)?.context;
+    if(!context)fail('ITEM_VERIFY_BROWSER_REQUIRED');
+-   const result=await o.verifyExisting({task:s.x.task,itemId:known,history:s.snapshot.history,run:s.run,roundId:req.roundId,key:req.key,executionWindowId:req.windowId,verificationAttemptId:attempt.id});
++   // The website's verify-only action needs the same original-submit evidence as
++   // round recovery. Read it from the owned store; never accept it from the UI.
++   const result=await o.verifyExisting({task:s.x.task,itemId:known,history:s.snapshot.history,run:s.run,roundId:req.roundId,key:req.key,executionWindowId:req.windowId,verificationAttemptId:attempt.id,
++    ...(!known&&s.run?.state==='RESULT_UNKNOWN'?{submissionEvents:o.source.store.events(s.run.id),assertUnusedItemId:value=>assertUnclaimedSubmissionId(o.source.store,s.run,value)}:{})});
+    this.owned(req);await this.evidence(result,s);this.owned(req);
+    if((await this.product.integrity())?.ok!==true)fail('ITEM_VERIFY_INTEGRITY_CHANGED');this.owned(req);
+    await o.assertExecution();this.owned(req);

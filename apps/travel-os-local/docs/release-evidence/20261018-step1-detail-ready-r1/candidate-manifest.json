@@ -1,0 +1,129 @@
+{
+  "at": "2026-10-18T03:56:23.408409+00:00",
+  "revision": "20261018-step1-detail-ready-r1",
+  "fromRevision": "20261017-single-item-direct-retry3",
+  "scope": "Step 1 only: detail material readiness and phase diagnostics; two runtime files only; candidate not installed",
+  "runtimeFiles": [
+    "workbench/taobao-publisher.mjs",
+    "workbench/publishing-materials.mjs"
+  ],
+  "files": [
+    {
+      "path": "workbench/taobao-publisher.mjs",
+      "baselineSha256": "20d575d7c119b91529d2d54af0295c3f707ccda873b4745d88aba84cdd335565",
+      "sha256": "4abcb31f391e95a13355f97c1a023a52ca3c8abaad6065d87ec51e3db9e618ea"
+    },
+    {
+      "path": "workbench/publishing-materials.mjs",
+      "baselineSha256": "a786dde96a3fba43858650d252498224d44a5718ed0455c80e0defd61799f5c3",
+      "sha256": "735f652636ee65d200ab3b0528b25b468885cd751ee63213b56241f5c2971dc7"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "baseline/workbench/publishing-materials.mjs",
+      "baselineSha256": null,
+      "sha256": "a786dde96a3fba43858650d252498224d44a5718ed0455c80e0defd61799f5c3"
+    },
+    {
+      "path": "baseline/workbench/taobao-publisher.mjs",
+      "baselineSha256": null,
+      "sha256": "20d575d7c119b91529d2d54af0295c3f707ccda873b4745d88aba84cdd335565"
+    },
+    {
+      "path": "docs/kernel-baselines/20261018-before-step1-detail-ready-r1.json",
+      "baselineSha256": null,
+      "sha256": "1d21ba6d5d046376a9a4e285cb081593aee8041d1f17c7ff68794f3b539d46a2"
+    },
+    {
+      "path": "evidence/cold-backup-result.json",
+      "baselineSha256": null,
+      "sha256": "8817e6be3dfa297515bd80006a6725141491ab004ab6c6188caec1af39ffde1f"
+    },
+    {
+      "path": "evidence/diffs/no-sku-fixture.diff",
+      "baselineSha256": null,
+      "sha256": "32405d95a5659ce755c7a1998744efc4b7d1d64bb0ff28cd60040424e16510df"
+    },
+    {
+      "path": "evidence/diffs/publishing-materials.mjs.diff",
+      "baselineSha256": null,
+      "sha256": "d70f2c942cd45b449fafe462c4d8bc5db8055b83d1f3ce7eb2c0507f7d4be864"
+    },
+    {
+      "path": "evidence/diffs/taobao-publisher.mjs.diff",
+      "baselineSha256": null,
+      "sha256": "86790aa1ed71975cd1fc84f6ec9b13be440ca74ab44614464d67090ed46300a1"
+    },
+    {
+      "path": "evidence/existing-regression-r2.log",
+      "baselineSha256": null,
+      "sha256": "d3f324209059007719d923cb1d4da3fc3bc4de2de33b3ae8ac4db52a0ae22b75"
+    },
+    {
+      "path": "evidence/final-deadline-regression.log",
+      "baselineSha256": null,
+      "sha256": "52560cc598eaf3d2925fd8bbf0847308ae6b6706234cbc2830f9c1894b458197"
+    },
+    {
+      "path": "evidence/final-regression.log",
+      "baselineSha256": null,
+      "sha256": "2cb74646e84856689ca019ab2b9b5aab8680948b7aed0447e41a45bdfed2e336"
+    },
+    {
+      "path": "evidence/fixture-provenance.json",
+      "baselineSha256": null,
+      "sha256": "6c3d2d427e8dc31952adb373d9adcd690c81ebefa6994bf81d6de46c3817a4d7"
+    },
+    {
+      "path": "evidence/isolated-reproduction.json",
+      "baselineSha256": null,
+      "sha256": "7902dde0e7a041736a153f93ef219cf3167d94f18223d918dd33315c3f858270"
+    },
+    {
+      "path": "evidence/original-failures.json",
+      "baselineSha256": null,
+      "sha256": "52bb88ae7a22e438f3dd446498d7d6abf901416f4d3b10f05c2bb95a7eb2c7eb"
+    },
+    {
+      "path": "evidence/production-health.json",
+      "baselineSha256": null,
+      "sha256": "1b39637fd9d23d678b743f56320294516a94cc9194b241818ab5912e70e464b7"
+    },
+    {
+      "path": "evidence/production-source-unchanged.json",
+      "baselineSha256": null,
+      "sha256": "b609c989a8a02d5c2d15c68c4d9e54fde4c74e85b819f2d4502d41529b3e9ef8"
+    },
+    {
+      "path": "evidence/tests/no-sku-decoded-fixture.test.mjs",
+      "baselineSha256": null,
+      "sha256": "6c65195e1f013a1bd292b5ec62e293a1d5fca3a7077e09eb191165aae55fcf18"
+    },
+    {
+      "path": "evidence/tests/readiness-edge.test.mjs",
+      "baselineSha256": null,
+      "sha256": "1a6b4a0f92b0c7fe7d89a86f950afbc622638b49542bbceac9133af9b1f8abc8"
+    },
+    {
+      "path": "evidence/tests/readiness.test.mjs",
+      "baselineSha256": null,
+      "sha256": "a467a3c1e4e57dcb62d4c9cdf4bfcddae79890368f9c24a9889a1f05e3f04fcd"
+    }
+  ],
+  "beforeLockSha256": "1d21ba6d5d046376a9a4e285cb081593aee8041d1f17c7ff68794f3b539d46a2",
+  "baselineSnapshot": "docs/kernel-baselines/20261018-before-step1-detail-ready-r1.json",
+  "backupArchiveSha256": "f3b7c00a289409f46eb45480665923302c5265d5dede26f7061d765a9e008a5b",
+  "deploymentAllowed": false,
+  "excludedChanges": [
+    "attempts",
+    "round logic",
+    "submission",
+    "state enums",
+    "new error codes",
+    "source-workflow.mjs",
+    "execution-steps.mjs"
+  ],
+  "testsExecutionRoot": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\output\\step1-detail-ready-20261018",
+  "testsNote": "Archived test source preserves original tested imports. Execute in the supplied local isolated workspace, not directly inside evidence/tests. No dependencies, business databases, images or browser profile are included."
+}

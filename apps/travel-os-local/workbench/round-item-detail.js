@@ -7,6 +7,8 @@ const states = {PENDING:'等待处理',RUNNING:'正在执行',FAILED:'执行异�
 const stateName = state => Object.hasOwn(states,state) ? states[state] : '状态待确认';
 const date = value => value && Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString('zh-CN',{hour12:false}) : '未记录';
 const verifyFields = ['roundId','windowId','key','expectedRevision','requestId'];
+const parkFields = [...verifyFields,'confirmedBy','reason'];
+const parkNotice = '提交结果未定，需人工后台确认';
 const verifyOutcomeNames = {VERIFIED:'核验通过',UNRESOLVED:'仍待核验',INTERRUPTED:'中断记录已整理'};
 const verifyRejections = new Set(['ITEM_VERIFY_REQUEST_INVALID','ITEM_VERIFY_REQUEST_CONFLICT','ITEM_VERIFY_STALE_REVISION','ITEM_VERIFY_STATE_PROTECTED','ITEM_VERIFY_RUN_PROTECTED','ITEM_VERIFY_QUEUE_PROTECTED','ITEM_VERIFY_PARENT_NOT_IDLE','ITEM_VERIFY_EXECUTION_NOT_SETTLED','ITEM_VERIFY_WINDOW_ADAPTER_REQUIRED','ITEM_VERIFY_OTHER_WINDOW_OPEN','ITEM_VERIFY_WINDOW_SNAPSHOT_INVALID','ITEM_HOST_SHOP_REMOVED','ITEM_HOST_INTEGRITY_FAILED']);
 export function candidateEvidenceHtml(proof) {
@@ -40,16 +42,60 @@ export function submissionSummary(item, submissionEvidence) {
 
 // The caller owns the existing dialog, shop context and original-run navigation.
 // Controlled single-item actions use the existing server; never contacts Chrome.
-export function mountRoundItemDetail(root, scope, {request = shopFetch, onRun = null, canContinueAfterSkip = () => false, onContinueAfterSkip = null, labelStep = value => value ? '步骤待确认，查看定位信息' : '尚未开始', makeId = requestId} = {}) {
+export function mountRoundItemDetail(root, scope, {request = shopFetch, onRun = null, canContinueAfterSkip = () => false, onContinueAfterSkip = null, labelStep = value => value ? '步骤待确认，查看定位信息' : '尚未开始', makeId = requestId, storage = globalThis.sessionStorage} = {}) {
   let alive = true, generation = 0, data = null, loading = false, writing = false;
   let draft = '', pending = null, pendingContinueAfterSkip = false, continuePending = null, verifyPending = null, retryPending = null, notice = '', error = '', readFailed = false;
   let controlBusy=false,controlNotice='',controlError='';
+  let parkPending=null,parkActor='',parkReason='';
   const controlFor=v=>v?{id:v.roundId,windowId:v.windowId,key:v.key,verificationRequestId:v.requestId}:null;
   const original = Object.freeze({roundId:scope.roundId,windowId:scope.windowId,key:scope.key});
   const query = new URLSearchParams(original);
   const validScope = v => v && Object.entries(original).every(([k,val]) => v[k] === val) && typeof v.revision === 'string' && !!v.revision && v.current?.key === original.key;
   const validVerifyRequest = v => v && !Array.isArray(v) && Object.keys(v).length === verifyFields.length && verifyFields.every(k=>typeof v[k]==='string' && !!v[k]) && Object.entries(original).every(([k,val])=>v[k]===val);
   const validRetryRequest = (v,executionWindowId) => v && !Array.isArray(v) && Object.keys(v).length===verifyFields.length && verifyFields.every(k=>typeof v[k]==='string' && !!v[k]) && v.roundId===original.roundId && v.key===original.key && (v.windowId===original.windowId || executionWindowId===original.windowId);
+  const retryStorageKey='ly-single-retry-v1:'+JSON.stringify(original);
+  try {const saved=JSON.parse(storage?.getItem(retryStorageKey)||'null');if(validRetryRequest(saved))retryPending=Object.freeze(saved);} catch {}
+  function keepRetry(value){retryPending=value;try{if(value)storage?.setItem(retryStorageKey,JSON.stringify(value));else storage?.removeItem(retryStorageKey);}catch{}}
+  const parkStorageKey='ly-item-park-v1:'+JSON.stringify(original);
+  const nonempty=v=>typeof v==='string'&&!!v.trim();
+  const validParkIntent=v=>v&&!Array.isArray(v)&&Object.keys(v).length===parkFields.length&&parkFields.every(k=>nonempty(v[k]))&&Object.entries(original).every(([k,val])=>v[k]===val)&&v.confirmedBy.length<=80&&v.reason.length<=1000;
+  const validParkContext=v=>v&&nonempty(v.shopId)&&nonempty(v.manifestHash);
+  const validParking=v=>v&&Number.isSafeInteger(v.eventSeq)&&v.eventSeq>0&&v.actor?.identitySource==='LOCAL_OPERATOR_DECLARATION'&&nonempty(v.actor.name)&&v.actor.name.length<=80&&nonempty(v.reason)&&v.reason.length<=1000&&typeof v.at==='string'&&Number.isFinite(Date.parse(v.at))&&v.evidence&&typeof v.evidence==='object'&&!Array.isArray(v.evidence)&&v.notice===parkNotice;
+  const validParkReceipt=(v,p)=>{
+    const c=v?.continueRequest;
+    return v&&typeof v.replayed==='boolean'&&['roundId','windowId','key','requestId'].every(k=>v[k]===p.intent[k])&&v.state==='RESULT_UNKNOWN'&&v.submitted===true&&v.retryBlocked===true&&validParking(v.parking)&&v.eventSeq===v.parking.eventSeq&&v.parking.actor.name===p.intent.confirmedBy&&v.parking.reason===p.intent.reason&&c&&Object.keys(c).length===6&&c.id===p.intent.roundId&&c.windowId===p.intent.windowId&&c.shopId===p.context.shopId&&c.manifestHash===p.context.manifestHash&&nonempty(c.requestId)&&c.humanVerified===false;
+  };
+  const sameParkContext=p=>validScope(data)&&data.shopId===p.context.shopId&&data.manifestHash===p.context.manifestHash;
+  const validParkContinuation=(v,intent)=>{
+    if(!v||typeof v!=='object'||Array.isArray(v)||v.id!==intent.id||v.accepted===false)return false;
+    // The first ProductApi resume response is the bound, running round view.
+    // A replay instead returns the durable acceptance record for this request.
+    const optionalScopeMatches=(!Object.hasOwn(v,'shop')||v.shop===intent.shopId)&&(!Object.hasOwn(v,'shopId')||v.shopId===intent.shopId)&&(!Object.hasOwn(v,'manifestHash')||v.manifestHash===intent.manifestHash)&&(!Object.hasOwn(v,'windowId')||v.windowId===intent.windowId)&&(!Object.hasOwn(v,'window')||v.window?.id===intent.windowId);
+    if(!optionalScopeMatches)return false;
+    if(v.replayed===true)return v.accepted===true;
+    return (!Object.hasOwn(v,'replayed')||v.replayed===false)&&v.shop===intent.shopId&&v.manifestHash===intent.manifestHash&&v.window?.id===intent.windowId&&v.active===true&&v.state==='RUNNING';
+  };
+  try {
+    const saved=JSON.parse(storage?.getItem(parkStorageKey)||'null');
+    if(saved?.version===1&&validParkIntent(saved.intent)&&validParkContext(saved.context)&&(!saved.receipt||validParkReceipt(saved.receipt,saved)))parkPending=saved;
+  } catch {}
+  function keepPark(value){
+    // Save before a POST so an interrupted panel can reuse the same intention.
+    if(value)storage?.setItem(parkStorageKey,JSON.stringify(value));else storage?.removeItem(parkStorageKey);
+    parkPending=value;
+  }
+  const parkIssue=message=>Object.assign(Error(message),{parkMessage:message});
+  const parkError=e=>e.parkMessage||(e.status===409?'当前状态已变化或尚未满足条件，请沿用原请求核对。':'服务回执尚未确认，请沿用原请求核对。');
+  async function startRetry(){
+    await ready;
+    if(!alive||loading||writing||controlBusy||readFailed||pending||verifyPending||parkPending)return;
+    if(retryPending)return retry();
+    const cap=data?.capabilities?.retry,x=data?.current;
+    const recover=cap?.allowed===true&&cap.mode==='RECOVER'&&validRetryRequest(cap.request,cap.executionWindowId);
+    if(!recover&&!(cap?.allowed===true&&cap.mode==='RETRY'&&data.submissionEvidence===false&&x?.submitted===false&&x?.submissionUncertain===false&&['PENDING','FAILED'].includes(x?.state))){error=cap?.reason||'当前商品不能重新执行，请查看任务状态。';render();return;}
+    keepRetry(Object.freeze(recover?{...cap.request}:{...original,expectedRevision:data.revision,requestId:makeId()}));
+    return retry();
+  }
   async function json(url, init = {}) {
     const response = await request(url,{cache:'no-store',...init});
     let value; try {value = await response.json();} catch {throw Error('服务响应无法读取。');}
@@ -64,21 +110,24 @@ export function mountRoundItemDetail(root, scope, {request = shopFetch, onRun = 
     } : submissionSummary(x,data?.submissionEvidence));
     const verifyCap = data?.capabilities?.verify;
     const retryCap = data?.capabilities?.retry;
+    const parking=parkPending?.receipt?.parking||data?.parking;
+    const showPark=data?.capabilities?.park?.allowed===true&&x?.state==='RESULT_UNKNOWN'&&x?.submitted===true&&data?.retryBlocked===true&&!parking&&!parkPending;
+    const canPark=showPark&&!loading&&!writing&&!controlBusy&&!readFailed&&!pending&&!continuePending&&!verifyPending&&!retryPending;
     const retryRecovery = retryCap?.allowed===true && retryCap.mode==='RECOVER' && validRetryRequest(retryCap.request,retryCap.executionWindowId);
     const verifyRecovery = verifyCap?.allowed === true && verifyCap.mode === 'RECOVER' && validVerifyRequest(verifyCap.request);
     const serverControl=data?.verificationControl;
     const boundControl=serverControl?.id===original.roundId&&serverControl?.windowId===original.windowId&&serverControl?.key===original.key&&typeof serverControl.verificationRequestId==='string'&&!!serverControl.verificationRequestId;
     const control=verifyPending?controlFor(verifyPending):boundControl?serverControl:null;
-    const canVerify = !loading && !writing && !readFailed && !pending && !verifyPending && !retryPending && (verifyRecovery || (verifyCap?.allowed === true && verifyCap.mode === 'VERIFY' && x?.state === 'RESULT_UNKNOWN'));
-    const canSkip = data?.capabilities?.skip?.allowed === true && data?.submissionEvidence === false && x?.submitted === false && x?.submissionUncertain === false && ['PENDING','FAILED','WAITING_HUMAN'].includes(x?.state) && !loading && !writing && !pending && !continuePending && !verifyPending && !retryPending;
+    const canVerify = !loading && !writing && !controlBusy && !readFailed && !pending && !verifyPending && !retryPending && !parkPending && (verifyRecovery || (verifyCap?.allowed === true && verifyCap.mode === 'VERIFY' && x?.state === 'RESULT_UNKNOWN'));
+    const canSkip = data?.capabilities?.skip?.allowed === true && data?.submissionEvidence === false && x?.submitted === false && x?.submissionUncertain === false && ['PENDING','FAILED','WAITING_HUMAN'].includes(x?.state) && !loading && !writing && !controlBusy && !pending && !continuePending && !verifyPending && !retryPending && !parkPending;
     const canSkipAndContinue = canSkip && !data?.windowOutcome && typeof onContinueAfterSkip==='function' && !!canContinueAfterSkip({roundId:original.roundId,windowId:original.windowId,key:original.key});
-    const canRetry = !loading && !writing && !readFailed && !pending && !verifyPending && !retryPending && (retryRecovery || retryCap?.allowed===true && retryCap.mode==='RETRY' && data?.submissionEvidence===false && x?.submitted===false && x?.submissionUncertain===false && ['PENDING','FAILED'].includes(x?.state));
-    const budgetReason = !pending && !verifyPending && !retryPending && !control && !verifyRecovery && !['RESULT_UNKNOWN','NEW_SUCCESS','EXISTING_VERIFIED','MANUAL_SKIPPED'].includes(x?.state) && retryCap?.allowed===false && ['ITEM_RETRY_BUDGET_EXHAUSTED','ITEM_RETRY_BUDGET_EXTRA_UNSAFE','ITEM_RETRY_BUDGET_SYSTEM_UNCONFIRMED'].includes(retryCap.code) ? retryCap.reason : '';
+    const canRetry = !loading && !writing && !controlBusy && !readFailed && !pending && !verifyPending && !retryPending && !parkPending && (retryRecovery || retryCap?.allowed===true && retryCap.mode==='RETRY' && data?.submissionEvidence===false && x?.submitted===false && x?.submissionUncertain===false && ['PENDING','FAILED'].includes(x?.state));
+    const budgetReason = !pending && !verifyPending && !retryPending && !control && !verifyRecovery && !['RESULT_UNKNOWN','NEW_SUCCESS','EXISTING_VERIFIED','MANUAL_SKIPPED'].includes(x?.state) && retryCap?.allowed===false && ['ITEM_RETRY_BUDGET_EXHAUSTED','ITEM_RETRY_BUDGET_MANUAL_CAP','ITEM_RETRY_BUDGET_EXTRA_UNSAFE','ITEM_RETRY_BUDGET_SYSTEM_UNCONFIRMED'].includes(retryCap.code) ? retryCap.reason : '';
     const nextStep = retryPending ? '本次操作结果尚未确认；沿用原操作核对，不创建第二次重试。' : canRetry ? retryCap.reason : x?.state === 'MANUAL_SKIPPED' ? '本轮已手动跳过此条，原执行记录与跳过原因均保留。' : x?.state === 'RESULT_UNKNOWN' && x?.stage === 'existing-listing-check' && data?.submissionEvidence === false
       ? '请在目标店铺后台核对上述候选；此条保持隔离，核验完成前不重发。'
       : budgetReason || data?.capabilities?.skip?.reason || '操作条件尚未确认，请刷新状态。';
     root.innerHTML = `<section class="round-item-detail" aria-busy="${loading || writing}">
-      <div class="round-item-toolbar"><strong>当前任务</strong><button type="button" data-item-action="refresh" ${loading || writing || pending || continuePending || verifyPending || retryPending ? 'disabled' : ''}>${loading?'正在读取…':'刷新状态'}</button></div>
+      <div class="round-item-toolbar"><strong>当前任务</strong><button type="button" data-item-action="refresh" ${loading || writing || pending || continuePending || verifyPending || retryPending || parkPending ? 'disabled' : ''}>${loading?'正在读取…':'刷新状态'}</button></div>
       <p role="status" class="round-item-feedback">${escape(notice || (loading?'正在读取任务状态…':''))}</p>
       <p role="alert" class="error">${escape(copy.reason(error))}</p>
       ${x ? `<header><h3>${escape(x.destination || '未记录目的地')}</h3><p class="round-item-title">${escape(x.title)}</p><span class="badge">${retryPending?'请求前状态：':''}${escape(stateName(x.state))}</span></header>
@@ -86,12 +135,16 @@ export function mountRoundItemDetail(root, scope, {request = shopFetch, onRun = 
       <dl class="round-item-facts"><div><dt>${retryPending?'请求前步骤':'当前 / 失败步骤'}</dt><dd>${escape(labelStep(x.stage || ''))}</dd></div><div><dt>${retryPending?'请求前问题':'当前问题'}</dt><dd>${escape(copy.reason(x.reason || '当前没有记录问题原因。'))}</dd></div><div><dt>开始时间</dt><dd>${escape(date(x.started))}</dd></div><div><dt>结束时间</dt><dd>${escape(date(x.finished))}</dd></div></dl>
       ${data.windowOutcome ? `<p class="notice">所选轮次已保存的结果：${escape(stateName(data.windowOutcome.state))}。当前任务状态与历史轮次分别保留。</p>` : ''}
       ${candidateEvidenceHtml(data.candidates)}
+      ${parking ? `<section class="round-item-history" data-item-parking><h4>已挂起 · 仍待核验</h4><p class="notice">${parkNotice}。禁止重发；成功数和统计分母不变。</p><dl><dt>确认人</dt><dd>${escape(parking.actor.name)}</dd><dt>挂起时间</dt><dd>${escape(date(parking.at))}</dd><dt>挂起原因</dt><dd>${escape(parking.reason)}</dd></dl><p class="muted">确认人为操作者自行填写。原提交及执行证据已保留，挂起记录与商品核验结果分别保存。</p></section>` : ''}
       <section class="round-item-next"><h4>下一步</h4><p>${escape(control ? '正在核验此商品，可请求暂停或停止；其他任务保持原状态。' : verifyRecovery ? verifyCap.reason : ['NEW_SUCCESS','EXISTING_VERIFIED'].includes(x.state) ? '商品结果已核验，原记录保留，无需再次发布。' : x.state==='RESULT_UNKNOWN' ? verifyCap?.reason || nextStep : nextStep)}</p>
       ${canVerify ? `<button type="button" class="round-item-primary" data-item-action="verify">${verifyRecovery?'恢复上次核验记录':'核验原商品'}</button><p class="muted">只核对原商品与保存结果，不重新发布，也不自动执行下一条。</p>` : ''}
-      ${canRetry ? `<button type="button" class="round-item-primary" data-item-action="retry">${retryRecovery?'整理上次重试记录':'重新检查并重试此条'}</button>` : ''}
+      ${showPark ? `<form data-item-park><h4>挂起并继续本轮</h4><p class="notice">此商品已提交，结果仍待核验。挂起后禁止重发；成功数和统计分母不变。</p><p>本次操作将撤销原停止意图，并请求继续本轮剩余商品。原商品仍需人工后台确认。</p><label>确认人<textarea name="confirmedBy" rows="1" maxlength="80" required ${canPark?'':'disabled'} placeholder="填写本次操作确认人">${escape(parkActor)}</textarea></label><label>挂起原因<textarea name="reason" maxlength="1000" required ${canPark?'':'disabled'} placeholder="说明保留待核验结果、继续本轮的原因">${escape(parkReason)}</textarea></label><button type="submit" class="round-item-primary" ${canPark?'':'disabled'}>挂起并继续本轮</button></form>` : ''}
+      ${parkPending ? `<p class="notice">${parkPending.receipt?'挂起决定已保存，商品仍待核验；继续本轮的请求尚未确认。':parkPending.unaccepted===true?'此挂起请求未受理，商品仍待核验且禁止重发。':'挂起请求的结果尚未确认，原商品继续禁止重发。'} 核对会沿用原操作编号和确认内容。</p><button type="button" data-item-action="park-reconcile" ${writing||loading||readFailed||controlBusy?'disabled':''}>${writing?'正在处理…':parkPending.receipt?'核对继续本轮结果':'核对挂起并继续结果'}</button>` : ''}
+      ${parkPending?.unaccepted===true&&!parkPending.receipt ? `<p>服务已确认此挂起请求因记录变化未受理。可结束本次请求，刷新后重新确认。</p><button type="button" data-item-action="park-rejected-refresh" ${writing||loading||controlBusy?'disabled':''}>结束未受理请求并刷新</button>` : ''}
+      ${canRetry ? `<button type="button" class="round-item-primary" data-item-action="retry">${retryRecovery?'整理上次重试记录':'重新执行此条'}</button>${retryCap.manualBudget?`<p class="muted">人工追加机会：已用 ${escape(retryCap.manualBudget.used)} / 3。${retryCap.manualBudget.willAdd?'本次追加1次并立即执行。':'本次使用原任务剩余机会。'}单条结束后暂停。</p>`:''}` : budgetReason?`<button type="button" disabled>重新执行此条</button>`:''}
       ${retryPending ? `<p class="notice">${writing?'正在检查并处理所选商品；其他商品不会启动。':'上次请求结果尚未确认。核对将沿用原操作编号，不创建第二次重试。'}</p><button type="button" data-item-action="retry-reconcile" ${writing?'disabled':''}>${writing?'正在处理…':'核对上次重试结果'}</button><p class="muted">需要暂停时，请使用轮次状态区的暂停按钮。</p>` : ''}
       ${verifyPending ? `<p class="notice">${writing?'正在核验或恢复原操作，请等待结果。':'上次请求结果尚未确认。继续核对会沿用原操作编号，不创建新的核验。'}</p><button type="button" class="round-item-primary" data-item-action="verify-reconcile" ${writing?'disabled':''}>${writing?'正在处理…':'核对上次核验结果'}</button>` : ''}
-      ${control ? `<div class="round-item-controls"><p class="muted">仅控制当前商品核验；请求将在安全检查处生效，原商品不重新提交。</p><button type="button" data-item-action="verify-pause" ${controlBusy?'disabled':''}>暂停核验</button><button type="button" data-item-action="verify-stop" ${controlBusy?'disabled':''}>停止核验</button><p role="status">${escape(controlNotice)}</p><p role="alert" class="error">${escape(controlError)}</p></div>` : ''}
+      ${control ? `<div class="round-item-controls"><p class="muted">仅控制当前商品核验；请求将在安全检查处生效，原商品不重新提交。</p><button type="button" data-item-action="verify-pause" ${controlBusy||parkPending?'disabled':''}>暂停核验</button><button type="button" data-item-action="verify-stop" ${controlBusy||parkPending?'disabled':''}>停止核验</button><p role="status">${escape(controlNotice)}</p><p role="alert" class="error">${escape(controlError)}</p></div>` : ''}
       ${canSkip ? `<form data-item-skip><label>跳过原因<textarea name="reason" maxlength="1000" required placeholder="说明本轮不处理此商品的原因">${escape(draft)}</textarea></label><p class="muted">只有系统确认未提交时才可跳过。原商品与失败记录会保留，跳过后不会再次发布。</p><div class="round-item-skip-actions"><button type="submit" name="skipMode" value="skip">仅跳过此条</button>${canSkipAndContinue ? `<button type="submit" name="skipMode" value="continue" class="round-item-primary">跳过此条并继续本轮</button>` : ''}</div></form>` : ''}
       ${continuePending ? `<p class="notice">跳过已记录，继续本轮的请求结果尚未确认；核对会沿用原请求编号。</p><button type="button" data-item-action="continue-reconcile" ${writing?'disabled':''}>${writing?'正在请求继续…':'沿用原请求继续本轮'}</button>` : ''}
       ${pending ? `<p class="notice">${writing?'正在保存跳过决定，请等待结果。':'跳过请求的结果尚未确认。核对将沿用原操作编号和原因，不创建第二次操作。'}</p><button type="button" data-item-action="reconcile" ${writing?'disabled':''}>核对跳过结果</button>` : ''}
@@ -105,14 +158,17 @@ export function mountRoundItemDetail(root, scope, {request = shopFetch, onRun = 
     root.querySelector('[data-item-action="refresh"]')?.addEventListener('click',()=>load());
     root.querySelector('[data-item-action="reconcile"]')?.addEventListener('click',()=>save());
     root.querySelector('[data-item-action="continue-reconcile"]')?.addEventListener('click',()=>continueRound());
+    root.querySelector('[data-item-action="park-reconcile"]')?.addEventListener('click',()=>park());
+    root.querySelector('[data-item-action="park-rejected-refresh"]')?.addEventListener('click',async()=>{
+      if(!alive||writing||loading||controlBusy||parkPending?.unaccepted!==true||parkPending.receipt)return;
+      try{keepPark(null);}catch{error='无法更新本地操作记录，请检查浏览器存储后再试。';render();return;}
+      notice='已结束未受理的挂起请求；请按最新状态重新确认。';return load();
+    });
     root.querySelector('[data-item-action="verify-reconcile"]')?.addEventListener('click',()=>verify());
     root.querySelector('[data-item-action="retry-reconcile"]')?.addEventListener('click',()=>retry());
-    root.querySelector('[data-item-action="retry"]')?.addEventListener('click',()=>{
-      if(!canRetry||writing||retryPending||pending||verifyPending)return;
-      retryPending=Object.freeze(retryRecovery?{...retryCap.request}:{...original,expectedRevision:data.revision,requestId:makeId()});retry();
-    });
+    root.querySelector('[data-item-action="retry"]')?.addEventListener('click',()=>{if(canRetry)startRetry();});
     root.querySelector('[data-item-action="verify"]')?.addEventListener('click',()=>{
-      if (!canVerify || writing || verifyPending || pending) return;
+      if (!canVerify || writing || verifyPending || pending || parkPending) return;
       verifyPending=Object.freeze(verifyRecovery ? {...verifyCap.request} : {...original,expectedRevision:data.revision,requestId:makeId()});
       verify();
     });
@@ -129,9 +185,22 @@ export function mountRoundItemDetail(root, scope, {request = shopFetch, onRun = 
       pending=Object.freeze({...original,expectedRevision:data.revision,requestId:makeId(),reason:draft.trim()});
       save();
     });
+    const parkForm=root.querySelector('[data-item-park]');
+    parkForm?.elements.confirmedBy.addEventListener('input',e=>{parkActor=e.target.value;});
+    parkForm?.elements.reason.addEventListener('input',e=>{parkReason=e.target.value;});
+    parkForm?.addEventListener('submit',e=>{
+      e.preventDefault();if(!canPark||writing||controlBusy||parkPending||pending||continuePending||verifyPending||retryPending)return;
+      parkActor=parkForm.elements.confirmedBy.value;parkReason=parkForm.elements.reason.value;
+      const confirmedBy=parkActor.trim(),reason=parkReason.trim();
+      if(!confirmedBy||confirmedBy.length>80||!reason||reason.length>1000){error='请填写确认人（1–80字）和挂起原因（1–1000字）。';render();return;}
+      if(!validParkContext(data)){error='店铺或资料范围尚未确认，请刷新后核对。';render();return;}
+      try{keepPark({version:1,intent:Object.freeze({...original,expectedRevision:data.revision,requestId:makeId(),confirmedBy,reason}),context:{shopId:data.shopId,manifestHash:data.manifestHash},receipt:null});}
+      catch{error='无法保存本次操作记录，请检查浏览器存储后再试。';render();return;}
+      return park();
+    });
   }
   async function controlVerification(action,scope) {
-    if(!alive||controlBusy||!scope)return;
+    if(!alive||controlBusy||parkPending||!scope)return;
     controlBusy=true;controlError='';controlNotice='正在请求'+(action==='stop'?'停止':'暂停')+'核验…';render();
     try{
       const receipt=await json('/api/v1/rounds/'+action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(scope)});
@@ -141,20 +210,22 @@ export function mountRoundItemDetail(root, scope, {request = shopFetch, onRun = 
     finally{controlBusy=false;if(alive)render();}
   }
   async function load() {
-    if (!alive || writing || pending || continuePending || verifyPending || retryPending) return;
+    if (!alive || writing || pending || continuePending || verifyPending || (retryPending||parkPending)&&data) return;
     const id=++generation;loading=true;error='';render();
     try {
       const value=await json('/api/v1/rounds/item?'+query);
       if (!validScope(value)) throw Error('返回的任务范围不一致，请关闭详情后重新选择。');
       if (value.capabilities?.verify?.allowed === true && (value.capabilities.verify.mode==='RECOVER' ? !validVerifyRequest(value.capabilities.verify.request) : value.capabilities.verify.mode!=='VERIFY')) throw Error('核验恢复范围不一致，当前操作已禁用，请刷新核对。');
       if(value.capabilities?.retry?.allowed===true && (value.capabilities.retry.mode==='RECOVER'?!validRetryRequest(value.capabilities.retry.request,value.capabilities.retry.executionWindowId):value.capabilities.retry.mode!=='RETRY'))throw Error('重试范围不一致，当前操作已禁用，请刷新核对。');
+      if(value.parking&&!validParking(value.parking))throw Error('挂起记录尚未完整返回，请关闭详情后重新核对。');
+      if(parkPending&&(value.shopId!==parkPending.context.shopId||value.manifestHash!==parkPending.context.manifestHash))throw Error('原挂起请求的店铺或资料范围已变化，继续操作已禁用。');
       if (!alive || id!==generation) return;
       data=value;readFailed=false;
     } catch(e) {if (alive && id===generation) {readFailed=true;error=copy.reason(e.message) || '读取失败，请刷新重试。';}}
     finally {if (alive && id===generation) {loading=false;render();}}
   }
   async function verify() {
-    if (!alive || writing || pending || retryPending || !verifyPending) return;
+    if (!alive || writing || pending || retryPending || parkPending || !verifyPending) return;
     const intent=verifyPending;
     writing=true;error='';notice='';render();
     try {
@@ -184,7 +255,7 @@ export function mountRoundItemDetail(root, scope, {request = shopFetch, onRun = 
     }
   }
   async function retry() {
-    if(!alive||writing||pending||verifyPending||!retryPending)return;
+    if(!alive||writing||pending||verifyPending||parkPending||!retryPending)return;
     const intent=retryPending;writing=true;error='';notice='';render();
     try{
       const receipt=await json('/api/v1/rounds/item-retry',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(intent)});
@@ -194,17 +265,17 @@ export function mountRoundItemDetail(root, scope, {request = shopFetch, onRun = 
       const successful=['NEW_SUCCESS','EXISTING_VERIFIED'].includes(outcome?.state);
       const consistent=saved?.key===intent.key&&saved.state===outcome.state&&typeof saved.submitted==='boolean'&&typeof saved.submissionUncertain==='boolean'&&(!successful||saved.submissionUncertain===false&&/^\d{6,30}$/.test(String(saved.result?.itemId||''))&&['出售中','仓库中'].includes(saved.result?.status));
       if(!['roundId','windowId','key','requestId'].every(k=>receipt?.[k]===intent[k])||typeof receipt?.attemptId!=='string'||!receipt.attemptId||typeof receipt.executionWindowId!=='string'||!receipt.executionWindowId||receipt.finished!==true||!['FINISHED','INTERRUPTED'].includes(outcome?.disposition)||!known||!consistent||outcome.snapshot?.parent?.id!==intent.roundId||outcome.snapshot?.window?.id!==receipt.executionWindowId)throw Error('重试回执不完整或与所选商品不一致，请核对原操作结果。');
+      keepRetry(null);
       if(!alive)return;
-      retryPending=null;
       notice=outcome.disposition==='INTERRUPTED'?'上次中断记录已整理，本次未重新执行。请刷新查看当前允许的操作。':`本次单条处理已记录：${stateName(outcome.state)}。其他商品未启动。`;
     }catch(e){
       if(!alive)return;
-      if(!e.retainRequest&&e.status>=400&&e.status<500&&['ITEM_RETRY_REQUEST_INVALID','ITEM_RETRY_REQUEST_CONFLICT','ITEM_RETRY_STALE_REVISION','ITEM_RETRY_SUBMISSION_PROTECTED','ITEM_RETRY_STATE_PROTECTED','ITEM_RETRY_RUN_PROTECTED','ITEM_RETRY_OTHER_RESOLUTION_REQUIRED','ITEM_RETRY_OTHER_WINDOW_OPEN','ITEM_RETRY_RELEASE_GATE_REQUIRED','ITEM_RETRY_NOT_ATTEMPTED','ITEM_RETRY_BUDGET_EXHAUSTED','ITEM_RETRY_BUDGET_EXTRA_UNSAFE','ITEM_RETRY_BUDGET_SYSTEM_UNCONFIRMED'].includes(e.code)){retryPending=null;readFailed=true;}
+      if(!e.retainRequest&&e.status>=400&&e.status<500&&['ITEM_RETRY_REQUEST_INVALID','ITEM_RETRY_REQUEST_CONFLICT','ITEM_RETRY_STALE_REVISION','ITEM_RETRY_SUBMISSION_PROTECTED','ITEM_RETRY_STATE_PROTECTED','ITEM_RETRY_RUN_PROTECTED','ITEM_RETRY_OTHER_RESOLUTION_REQUIRED','ITEM_RETRY_OTHER_WINDOW_OPEN','ITEM_RETRY_RELEASE_GATE_REQUIRED','ITEM_RETRY_NOT_ATTEMPTED','ITEM_RETRY_BUDGET_EXHAUSTED','ITEM_RETRY_BUDGET_MANUAL_CAP','ITEM_RETRY_BUDGET_EXTRA_UNSAFE','ITEM_RETRY_BUDGET_SYSTEM_UNCONFIRMED'].includes(e.code)){keepRetry(null);readFailed=true;}
       error=e.message||'请求结果尚未确认，请核对上次重试结果。';
     }finally{writing=false;if(alive){render();if(!retryPending&&!readFailed)await load();}}
   }
   async function save() {
-    if (!alive || writing || continuePending || verifyPending || retryPending || !pending) return;
+    if (!alive || writing || continuePending || verifyPending || retryPending || parkPending || !pending) return;
     writing=true;error='';render();
     try {
       const skipIntent=pending,continueAfterSkip=pendingContinueAfterSkip;
@@ -228,7 +299,7 @@ export function mountRoundItemDetail(root, scope, {request = shopFetch, onRun = 
     }
   }
   async function continueRound() {
-    if(!alive||writing||pending||!continuePending)return;
+    if(!alive||writing||pending||parkPending||!continuePending)return;
     const intent=continuePending;writing=true;error='';notice='跳过已记录，正在继续本轮剩余商品…';render();
     try{
       const receipt=await onContinueAfterSkip(intent);
@@ -241,8 +312,41 @@ export function mountRoundItemDetail(root, scope, {request = shopFetch, onRun = 
       if(alive){render();if(!continuePending&&!readFailed)await load();}
     }
   }
+  async function park(){
+    if(!alive||loading||writing||controlBusy||readFailed||pending||continuePending||verifyPending||retryPending||!parkPending)return;
+    writing=true;error='';notice='';render();
+    try{
+      if(!sameParkContext(parkPending))throw parkIssue('原挂起请求的商品、店铺或资料范围不一致，未请求继续本轮。');
+      if(!parkPending.receipt){
+        // A prior definitive rejection no longer authorizes local dismissal
+        // once another explicit reconciliation has been sent.
+        keepPark({...parkPending,unaccepted:false});
+        const receipt=await json('/api/v1/rounds/item-park',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(parkPending.intent)});
+        if(!validParkReceipt(receipt,parkPending))throw parkIssue('挂起回执不完整或与原商品范围不一致，请核对原操作结果。');
+        keepPark({...parkPending,receipt});
+      }
+      if(!alive)return;
+      if(!sameParkContext(parkPending)||!validParkReceipt(parkPending.receipt,parkPending))throw parkIssue('已保存挂起决定，但继续范围尚未确认，请核对原操作结果。');
+      notice='挂起决定已保存，商品仍待核验；正在请求继续本轮剩余商品…';render();
+      const intent=parkPending.receipt.continueRequest;
+      // Continue only with the exact server-bound request. Never manufacture a
+      // second resume ID or treat an uncertain response as permission to loop.
+      const receipt=await json('/api/v1/rounds/resume',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(intent)});
+      if(!validParkContinuation(receipt,intent))throw parkIssue('继续回执尚未确认原轮次已受理，请核对原继续请求。');
+      keepPark(null);parkActor='';parkReason='';
+      notice='挂起决定已保存，已请求继续本轮剩余商品。此商品仍待人工核验，禁止重发；成功数和统计分母不变。';
+    }catch(e){
+      // The service replays a saved request before revision checks. This exact
+      // rejection therefore proves no receipt exists for this intention.
+      if(!parkPending?.receipt&&e.status===409&&e.code==='ITEM_PARK_STALE_REVISION')try{keepPark({...parkPending,unaccepted:true});}catch{}
+      if(alive)error=parkPending?.unaccepted===true?'任务记录已变化，本次挂起请求未受理。请核对原请求，或结束本次请求后刷新。':(parkPending?.receipt?'挂起决定已保存，商品仍待核验；继续本轮尚未确认。':'挂起请求结果尚未确认，原商品继续禁止重发。')+parkError(e);
+    }finally{
+      writing=false;
+      if(alive){render();if(!parkPending&&!readFailed)await load();}
+    }
+  }
   const ready=load();
-  return {ready,refresh:load,dispose(){alive=false;generation++;root.replaceChildren();}};
+  return {ready,startRetry,refresh:load,dispose(){alive=false;generation++;root.replaceChildren();}};
 }
 
 // Shared current-item control. Served through the existing round detail module.

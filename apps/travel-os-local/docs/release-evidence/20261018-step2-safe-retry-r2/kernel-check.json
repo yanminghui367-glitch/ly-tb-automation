@@ -1,0 +1,18 @@
+{
+  "at": "2026-10-18T04:47:50.151Z",
+  "production": {
+    "ok": true,
+    "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+    "revision": "20261017-single-item-direct-retry3",
+    "files": 84,
+    "changed": []
+  },
+  "candidate": {
+    "ok": true,
+    "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+    "revision": "20261018-step2-safe-retry-r2",
+    "files": 84,
+    "changed": []
+  },
+  "installed": false
+}

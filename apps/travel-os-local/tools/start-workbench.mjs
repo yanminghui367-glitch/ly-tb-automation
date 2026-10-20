@@ -1,5 +1,5 @@
 import {spawn,execFileSync} from 'node:child_process';
-import {mkdirSync,openSync,closeSync,writeFileSync,readFileSync,existsSync} from 'node:fs';
+import {mkdirSync,openSync,closeSync,writeFileSync,readFileSync,existsSync,renameSync} from 'node:fs';
 import {networkInterfaces} from 'node:os';
 import {createConnection,createServer} from 'node:net';
 import {createRequire} from 'node:module';
@@ -10,6 +10,11 @@ import {setTimeout as delay} from 'node:timers/promises';
 const root=fileURLToPath(new URL('../',import.meta.url)),base='http://127.0.0.1:4318',noOpen=process.argv.includes('--no-open');
 const logs=join(root,'.runtime','launcher');mkdirSync(logs,{recursive:true});
 const configFile=join(logs,'service.json');
+const monitorFile=join(logs,'service-monitor.json');
+const readMonitor=()=>{try{return JSON.parse(readFileSync(monitorFile,'utf8'));}catch{return {lastHealthyAt:0,cleanShutdownAt:0,notifiedAt:0};}};
+const writeMonitor=value=>{const tmp=monitorFile+'.tmp';writeFileSync(tmp,JSON.stringify(value));renameSync(tmp,monitorFile);};
+const noteHealthy=()=>{const s=readMonitor();s.lastHealthyAt=Date.now();s.cleanShutdownAt=0;s.notifiedAt=0;writeMonitor(s);};
+function alertServiceInterruption(){const s=readMonitor(),now=Date.now();if(!s.lastHealthyAt||now-s.lastHealthyAt>180000||s.cleanShutdownAt>=s.lastHealthyAt||s.notifiedAt>=s.lastHealthyAt)return; s.notifiedAt=now;writeMonitor(s);const script=join(root,'tools','notify-workbench.ps1');const child=spawn('powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-STA','-WindowStyle','Hidden','-File',script,'-Title','星途工作台服务中断','-Message','局域网工作台服务意外中断，已尝试自动恢复。请检查执行页面状态。','-Url',base+'/travel-os.html#tasks'],{windowsHide:true,detached:true,stdio:'ignore'});child.once('error',e=>writeFileSync(join(logs,'notification-error.txt'),'Windows 弹窗未发送：'+e.message));child.unref();}
 const service=existsSync(configFile)?JSON.parse(readFileSync(configFile,'utf8')):{};
 if(process.argv.includes('--managed')&&!service.enabled)process.exit(0);
 const lanAddress=service.lanInterface?(networkInterfaces()[service.lanInterface]||[]).find(x=>x.family==='IPv4'&&!x.internal)?.address:'';
@@ -20,6 +25,7 @@ async function waitReady(child){const deadline=Date.now()+45000;while(Date.now()
 const lock=createServer();
 try{
   let h=await health();
+  if(h)noteHealthy();
   if(!h){
     const owned=await new Promise((resolve,reject)=>{lock.once('error',e=>e.code==='EADDRINUSE'?resolve(false):reject(e));lock.listen(4319,'127.0.0.1',()=>resolve(true));});
     if(!owned)h=await waitReady();
@@ -35,6 +41,7 @@ try{
         }
       }
       if(!h){
+        alertServiceInterruption();
         if(Number(process.versions.node.split('.')[0])<24)throw Error('需要安装 Node.js 24 或更新版本。');
         const require=createRequire(new URL('../workbench/package.json',import.meta.url));
         const local=require.resolve('playwright');if(!local.startsWith(join(root,'workbench','node_modules')))throw Error('缺少项目独立依赖，请先完成本机安装。');
@@ -45,6 +52,7 @@ try{
       }
     }
   }
+  noteHealthy();
   open();console.log(JSON.stringify({url:base,pid:h.pid,kernel:h.kernel.ok}));
 }catch(e){
   const file=join(logs,'startup-error.txt');writeFileSync(file,'工作台启动未完成\r\n'+e.message+'\r\n');

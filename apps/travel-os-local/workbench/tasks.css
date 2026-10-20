@@ -137,3 +137,9 @@
 .monitor-title-row h2{margin:0!important}
 .monitor-title-row .monitor-status{flex:0 0 auto}
 @media(max-width:760px){.monitor-title-row{gap:8px 12px}.monitor-title-row .monitor-status{flex-shrink:1}}
+
+.monitor-guidance [data-issue-action]{font-size:13px;line-height:1.8;margin-top:8px}
+.monitor-guidance [data-issue-action] ol{margin:4px 0 0;padding-left:22px}
+.monitor-guidance [data-issue-action] li{padding-left:2px;margin:5px 0;overflow-wrap:anywhere}
+
+.success-goal-progress{padding:20px;margin:0 0 24px;border:1px solid #bfd3ff;border-radius:12px;background:#f5f8ff}.success-goal-progress progress{width:100%;height:12px}.success-goal-counts{display:flex;flex-wrap:wrap;gap:12px 24px;color:#526581}.success-goal-actor{display:grid;gap:8px;margin:16px 0}.success-goal-actor input{max-width:100%;min-height:40px;padding:8px 12px;border:1px solid #cedbf1;border-radius:6px}.success-goal-progress p{overflow-wrap:anywhere}@media(max-width:600px){.success-goal-progress{padding:14px}.success-goal-counts{gap:8px 14px}}

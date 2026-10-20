@@ -1,0 +1,30 @@
+{
+  "at": "2026-10-18T05:04:06.317Z",
+  "userAuthorization": "用户明确批准 Step1 → Step2r2 联合安装；候选 deploymentAllowed:false 保留为当时审计事实，本收据单独记录本次授权与已安装事实",
+  "revision": "20261018-step1-detail-ready-r1",
+  "beforeLockSha256": "1d21ba6d5d046376a9a4e285cb081593aee8041d1f17c7ff68794f3b539d46a2",
+  "lockSha256": "17188e2e59a5bb791bef86ee12b8f32d62aaaeee0f582af7fe8fcc71f238e26a",
+  "kernel": {
+    "ok": true,
+    "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+    "revision": "20261018-step1-detail-ready-r1",
+    "files": 84,
+    "changed": []
+  },
+  "serviceStopped": true,
+  "previousProcessExited": true,
+  "oldPid": 40776,
+  "serviceStartedBetweenSteps": false,
+  "finalProcessId": 11904,
+  "finalProcessCreationDate": "2026-10-18T13:04:08.729776+08:00",
+  "finalHealthKernel": {
+    "ok": true,
+    "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+    "revision": "20261018-step2-safe-retry-r2",
+    "files": 84,
+    "changed": []
+  },
+  "businessDataPreservedBeforeAllowance": true,
+  "localEvidence": "output/step1-step2-install-20261018/",
+  "candidateFilesUnmodified": true
+}

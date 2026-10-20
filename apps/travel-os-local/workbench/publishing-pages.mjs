@@ -22,24 +22,29 @@ export function assertAuxiliaryPage(page,role){
  assert(isAuxiliaryPage(page,role),'辅助页面已关闭或地址改变，请保留原素材库/商品核验页后重试');
 }
 
-export async function createBackgroundPage(context,{timeout=10000,purpose='publish-form'}={}){
+export async function createBackgroundPage(context,{timeout=10000,purpose='publish-form',check=()=>{}}={}){
+ check();
  const before=new Set(context.pages());
  const anchor=[...before].find(p=>!p.isClosed());
  assert(anchor,'执行浏览器没有可用页面，请先连接店铺');
  const control=await context.newCDPSession(anchor);
  const ledger=getPageLedger(context);let reservation,bound=false;
  try{
+  check();
   if(ledger)reservation=ledger.reserveCreation({purpose});
   const {targetInfo}=await control.send('Target.getTargetInfo');
+  check();
   const params={url:'about:blank',background:true};
   if(targetInfo.browserContextId)params.browserContextId=targetInfo.browserContextId;
   const {targetId}=await control.send('Target.createTarget',params);
+  check();
   assert(targetId,'后台页面创建失败；已停止，不切换其他页面');
   const deadline=Date.now()+timeout;
   do{
+   check();
    for(const page of context.pages().filter(p=>!before.has(p)&&!p.isClosed())){
     const session=await context.newCDPSession(page);
-    try{const info=(await session.send('Target.getTargetInfo')).targetInfo;if(info.targetId===targetId){
+    try{const info=(await session.send('Target.getTargetInfo')).targetInfo;check();if(info.targetId===targetId){
      if(ledger)ledger.bindCreated(reservation,page,{targetId,browserContextId:info.browserContextId||null});
      bound=true;backgroundPages.add(page);return page;
     }}
@@ -54,7 +59,10 @@ export async function createBackgroundPage(context,{timeout=10000,purpose='publi
  }finally{await control.detach().catch(()=>{});}
 }
 
-export async function getAuxiliaryPage(context,{role,shopId,url,guard}){
+export async function getAuxiliaryPage(context,{role,shopId,url,guard,deadline,signal}){
+ const check=()=>assert(!signal?.aborted&&(deadline===undefined||Date.now()<deadline),'辅助页只读确认已超时，停止后续页面操作');
+ const budget=maximum=>{check();return deadline===undefined?maximum:Math.max(1,Math.min(maximum,deadline-Date.now()));};
+ check();
  assert(['material','verification'].includes(role)&&shopId,'辅助页面缺少店铺或用途');
  assert(isAuxiliaryPage({isClosed:()=>false,url:()=>url},role),'辅助页面入口不匹配');
  let pool=roles.get(context);if(!pool){pool=new Map();roles.set(context,pool);}
@@ -65,13 +73,14 @@ export async function getAuxiliaryPage(context,{role,shopId,url,guard}){
   const candidates=context.pages().filter(p=>isAuxiliaryPage(p,role));
   // Multiple restored tabs may contain unfinished work. Do not guess which one
   // to take over: create one owned background helper and reuse it thereafter.
-  page=candidates.length===1?candidates[0]:await createBackgroundPage(context,{purpose:role+'-helper'});
+  page=candidates.length===1?candidates[0]:await createBackgroundPage(context,{purpose:role+'-helper',timeout:budget(10000),check});
+  check();
   auxiliaryPages.add(page);
   pool.set(key,page);
-  if(page.url()==='about:blank')await page.goto(url,{waitUntil:'domcontentloaded'});
+  if(page.url()==='about:blank')await page.goto(url,{waitUntil:'domcontentloaded',timeout:budget(30000)});
  }
  // A user-navigated page is never forced back to its previous URL.
- await guard(page);assertAuxiliaryPage(page,role);
+ check();await guard(page);check();assertAuxiliaryPage(page,role);
  getPageLedger(context)?.lease(page,{purpose:role+'-helper'});
  return page;
 }

@@ -1,0 +1,51 @@
+{
+  "at": "2026-10-18T05:52:58.696Z",
+  "userAuthorization": "用户放行Step3并明确选择修复验收后原任务再加1次复测；独立QA通过后维护，样本12–16、limit5、autoContinue=false",
+  "revision": "20261018-step3-main-stability-r1",
+  "beforeLockSha256": "bac37aedc5eff14be3284d9b4b5edc3c21c618758504728f44f233589c362aea",
+  "lockSha256": "17345cf58209b4320d280cde9aefa1dff8c0ac6d8e9e60f3706a2bc9618909df",
+  "kernel": {
+    "ok": true,
+    "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+    "revision": "20261018-step3-main-stability-r1",
+    "files": 84,
+    "changed": []
+  },
+  "serviceStopped": true,
+  "oldPid": 11904,
+  "oldProcessExited": true,
+  "newPid": 15876,
+  "processCreatedAt": "2026-10-18T13:52:58.98407+08:00",
+  "healthKernel": {
+    "ok": true,
+    "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+    "revision": "20261018-step3-main-stability-r1",
+    "files": 84,
+    "changed": []
+  },
+  "businessDataPreservedBeforeAllowance": true,
+  "databases": 9,
+  "item12Allowance": {
+    "shop": "环球领航",
+    "position": 12,
+    "destination": "印度尼西亚",
+    "roundId": "045fe9dc-b0fd-4101-998f-73ad1b75b99b",
+    "key": "bd43c7a733c4afa34062324a6f49a8b40d53b51b5897bd31b6e1b692ecacceac",
+    "requestId": "87620e85-bcbf-41a7-a7f9-d4358e417b52",
+    "before": {
+      "attempts": 4,
+      "max_attempts": 4,
+      "extra_attempts": 0
+    },
+    "after": {
+      "attempts": 4,
+      "max_attempts": 5,
+      "extra_attempts": 0
+    },
+    "grantCount": 1,
+    "goodsExecutionStarted": false
+  },
+  "independentQa": "docs/release-evidence/20261018-step3-main-stability-r1/qa/independent-qa.md",
+  "liveSampleEvidence": "output/step3-sample5-20261018/",
+  "platformAcceptance": "separate; not implied by installation"
+}

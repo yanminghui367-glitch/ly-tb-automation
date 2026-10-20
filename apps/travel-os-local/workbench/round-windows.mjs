@@ -1,5 +1,6 @@
 import {randomUUID} from 'node:crypto';
 import {digest} from './source-store.mjs';
+import {settledSkippedCaptcha} from './round-manual-skip.mjs';
 
 const terminal=new Set(['COMPLETED','STOPPED']);
 const now=()=>new Date().toISOString();
@@ -43,12 +44,14 @@ export class RoundWindows {
  }));}
  resolutionRequired(id){
   const w=this.get(id);if(!w)return null;
+  let human=false;
   for(const e of this.entries(id)){
    const x=this.owner.item(w.round_id,e.key),run=x.run_id?this.owner.source.store.run(x.run_id):null;
+   if(this.owner.parking?.has(w.round_id,x))continue;
    if(['SUBMITTING','RESULT_UNKNOWN'].includes(run?.state)||x.submission_uncertain||x.state==='RESULT_UNKNOWN'&&!['existing-listing-check','content-review'].includes(x.failure_stage))return 'RESULT_UNKNOWN';
-   if(run?.state==='PAUSED_CAPTCHA')return 'WAITING_HUMAN';
+   if(run?.state==='PAUSED_CAPTCHA'&&!settledSkippedCaptcha(this.owner,w.round_id,x))human=true;
   }
-  return null;
+  return human?'WAITING_HUMAN':null;
  }
  async preview(roundId,input={},{internal=false}={}){
   const o=this.owner;
@@ -56,7 +59,7 @@ export class RoundWindows {
   if(this.open(roundId))fail('已有未结束的执行轮次，请继续或停止原轮次');
   const round=o.assertManifest(roundId),config=this.config(roundId,input),rows=o.items(roundId),fingerprint=this.fingerprint(rows);
   if(round.state==='COMPLETED')fail('总清单已完成');
-  if(rows.some(x=>x.state==='RESULT_UNKNOWN'&&!['existing-listing-check','content-review'].includes(x.failure_stage)||x.run_id&&['SUBMITTING','RESULT_UNKNOWN','PAUSED_CAPTCHA'].includes(o.source.store.run(x.run_id).state)&&x.failure_stage!=='content-review'))fail('请先核验原商品或处理人工验证，再配置新轮次');
+  if(rows.some(x=>!o.parking?.has(roundId,x)&&(x.state==='RESULT_UNKNOWN'&&!['existing-listing-check','content-review'].includes(x.failure_stage)||x.run_id&&['SUBMITTING','RESULT_UNKNOWN','PAUSED_CAPTCHA'].includes(o.source.store.run(x.run_id).state)&&x.failure_stage!=='content-review'&&!settledSkippedCaptcha(o,roundId,x))))fail('请先核验原商品或处理人工验证，再配置新轮次');
   const selected=[],excluded=[];
   for(const x of rows){
    if(x.position<config.startPosition||x.position>config.endPosition)continue;
@@ -98,8 +101,11 @@ export class RoundWindows {
   if(this.open(r.id))fail('已有未结束的执行轮次');
   const config=this.config(r.id,preview),rows=preview.items.map(x=>o.item(r.id,x.key));
   const selectionStates=['PENDING','FAILED',...(preview.selectionId&&o.selections.row(preview.selectionId)?.mode==='recheck'?['MANUAL_SKIPPED','PREFLIGHT_SKIPPED']:[])];
-  if(!rows.length||rows.length>config.limit||new Set(rows.map(x=>x.key)).size!==rows.length||rows.some(x=>(preview.selectionId?!selectionStates.includes(x.state):x.state!=='PENDING')||x.position<config.startPosition||x.position>config.endPosition))fail('预检范围失效，请重新检查');
+  if(!rows.length||rows.length>config.limit||new Set(rows.map(x=>x.key)).size!==rows.length||rows.some(x=>(preview.selectionId||preview.successGoalId?!selectionStates.includes(x.state):x.state!=='PENDING')||x.position<config.startPosition||x.position>config.endPosition))fail('预检范围失效，请重新检查');
   if(preview.selectionId)o.selections.validateWindowPreview(preview,rows);
+  if(preview.successGoalId)o.successGoals.validatePreview(preview,rows);
+  const goal=o.successGoals?.latest(r.id);
+  if(goal&&!['TARGET_REACHED','EXHAUSTED','STOPPED'].includes(goal.state)&&preview.successGoalId!==goal.id)fail('已有未结束的持续目标，请继续或停止原目标，不能另建窗口');
   if(preview.manifestHash!==r.manifest_hash||this.assignmentHash(r,config,rows)!==preview.selectionHash)fail('执行轮次清单或资料版本已变化');
   const id=randomUUID(),at=now(),sequence=(this.latest(r.id)?.sequence||0)+1;
   const create=()=>{
@@ -108,6 +114,7 @@ export class RoundWindows {
    const insert=this.db.prepare('INSERT INTO round_window_items(window_id,key,ordinal,task_hash,baseline) VALUES(?,?,?,?,?)');
    rows.forEach((x,i)=>insert.run(id,x.key,i+1,x.task_hash,JSON.stringify(this.observation(x))));
    if(preview.selectionId)o.selections.bindWindow(preview.selectionId,id,rows);
+   if(preview.successGoalId)o.successGoals.bindWindow(preview.successGoalId,id,rows);
    this.db.prepare('UPDATE round_windows SET continuation_pending=0 WHERE round_id=? AND id!=? AND continuation_pending=1').run(r.id,id);
    this.db.prepare('UPDATE rounds SET stopped=0 WHERE id=?').run(r.id);
    o.event(r.id,null,'WINDOW_CREATED',{windowId:id,sequence,count:rows.length,selectionHash:preview.selectionHash,...config});
@@ -123,6 +130,7 @@ export class RoundWindows {
   if(!entries.length||entries.length>w.limit_count||entries.some((e,i)=>e.ordinal!==i+1||e.task_hash!==rows[i].task_hash))fail('执行轮次冻结资料不一致');
   if(this.assignmentHash(r,{startPosition:w.scope_start,endPosition:w.scope_end,limit:w.limit_count,autoContinue:!!w.auto_continue},rows)!==w.selection_hash)fail('执行轮次范围校验失败');
   this.owner.selections?.assertWindow(w,rows);
+  this.owner.successGoals?.assertWindow(w,rows);
   return w;
  }
  state(id,state,reason=''){
@@ -131,7 +139,7 @@ export class RoundWindows {
   this.db.prepare('UPDATE round_windows SET state=?,reason=?,updated=?,started=CASE WHEN ?=\'RUNNING\' THEN COALESCE(started,?) ELSE started END,finished=? WHERE id=?').run(state,reason,at,state,at,terminal.has(state)?at:null,id);
   this.owner.event(w.round_id,null,'WINDOW_'+state,{windowId:id,reason});
  }
- observation(x){return {key:x.key,position:x.position,destination:x.task.listing.city||x.task.listing.country,title:x.task.listing.title,state:x.state,runId:x.run_id,queueId:x.queue_id,
+ observation(x){return {parking:this.owner.parking?.record(x.round_id,x)||null,key:x.key,position:x.position,destination:x.task.listing.city||x.task.listing.country,title:x.task.listing.title,state:x.state,runId:x.run_id,queueId:x.queue_id,
   attempts:x.queue_id?this.owner.batch.store.item(x.queue_id).attempts:0,enteredPublish:!!x.entered_publish,submitted:!!x.submitted,submissionUncertain:!!x.submission_uncertain,stage:x.failure_stage,reason:x.reason,started:x.started,finished:x.finished,result:x.result};}
  close(id,state,reason){
   const w=this.assert(id,this.get(id)?.round_id);
@@ -162,14 +170,14 @@ export class RoundWindows {
   const counts={};for(const x of observations)counts[x.state]=(counts[x.state]||0)+1;
   const ended=observations.filter(x=>['NEW_SUCCESS','EXISTING_VERIFIED','FAILED','PREFLIGHT_SKIPPED','MANUAL_SKIPPED'].includes(x.state)).length;
   return {id:w.id,roundId:w.round_id,sequence:w.sequence,shop:w.shop,state:w.state,reason:w.reason,selectionHash:w.selection_hash,...(this.owner.selections?.forWindow(w.id)?{selectionId:this.owner.selections.forWindow(w.id)}:{}),startPosition:w.scope_start,endPosition:w.scope_end,limit:w.limit_count,autoContinue:!!w.auto_continue,continuationPending:!!w.continuation_pending,
-   at:w.at,started:w.started,finished:w.finished,total:entries.length,ended,counts,submitted:observations.filter((x,i)=>x.submitted&&!entries[i].baseline.submitted).length,
+   at:w.at,started:w.started,finished:w.finished,total:entries.length,ended,counts,parkedCount:observations.filter(x=>x.parking).length,parkedItems:observations.filter(x=>x.parking).map(x=>({key:x.key,position:x.position,destination:x.destination,state:x.state,...x.parking})),submitted:observations.filter((x,i)=>x.submitted&&!entries[i].baseline.submitted).length,
    resumedCount:entries.filter(e=>e.baseline.runId).length,...(items?{items:observations.map((x,i)=>({...x,baseline:entries[i].baseline}))}:{})};
  }
  history(roundId){return this.db.prepare('SELECT id FROM round_windows WHERE round_id=? ORDER BY sequence DESC').all(roundId).map(w=>this.view(w.id));}
  csv(id){
   const w=this.view(id,{items:true});if(!w)fail('执行轮次不存在');
-  const rows=[['总清单ID','执行轮次ID','序号','商品唯一键','店铺','目的地','状态','本轮点击提交','恢复旧任务','步骤','原因','任务ID','开始时间','结束时间','商品ID','平台状态','证据']];
-  for(const x of w.items)rows.push([w.roundId,w.id,x.position,x.key,w.shop,x.destination,x.state,x.submitted&&!x.baseline.submitted?'是':x.submissionUncertain?'待核验':'否',x.baseline.runId?'是':'否',x.stage,x.reason,x.runId,x.started,x.finished,x.result?.itemId,x.result?.status,x.result?.screenshot]);
+  const rows=[['总清单ID','执行轮次ID','序号','商品唯一键','店铺','目的地','状态','本轮点击提交','恢复旧任务','步骤','原因','任务ID','开始时间','结束时间','商品ID','平台状态','证据','是否挂起','挂起说明','挂起审计事件']];
+  for(const x of w.items)rows.push([w.roundId,w.id,x.position,x.key,w.shop,x.destination,x.state,x.submitted&&!x.baseline.submitted?'是':x.submissionUncertain?'待核验':'否',x.baseline.runId?'是':'否',x.stage,x.reason,x.runId,x.started,x.finished,x.result?.itemId,x.result?.status,x.result?.screenshot,x.parking?'是':'否',x.parking?.notice,x.parking?.eventSeq]);
   return '\ufeff'+rows.map(row=>row.map(csv).join(',')).join('\r\n');
  }
 }

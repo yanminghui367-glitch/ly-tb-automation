@@ -1,0 +1,201 @@
+{
+  "description": "复用现有SourceWorkflow/BatchWorkflow单浏览器执行器；固定轮次持久化、官方后台查重与结果核验、安全有限恢复、暂停续跑、首1→5→100门槛、原批次ID与快照保留。",
+  "baselineCommit": "25a47febfe08f8af6bfade20198d787354b76bff",
+  "files": {
+    "workbench/taobao-publisher.mjs": "432e1f77efb0885021b29b3cfc9a0d6bdcd28a7f36bacd37be580f82f1567982",
+    "workbench/source-workflow.mjs": "aecf842c18aded7433e48c55f7e76dcbbcf5b88dfb2e88dfbcb980007378a4ac",
+    "workbench/source-store.mjs": "f2229992bdefdb23e15e1cca53fd405c55e43ba9067fb672cb34826deb828d40",
+    "engine/v2/adapter.py": "086d59dee6c6c832231d7a7ada467aaba4b7dc883ba013a7ab6ac6bb10837cff",
+    "engine/v2/heat_queue_adapter.py": "eb092402a227c4f9258faa3af1b5c2ee609645d06d0c8f55105b4d35e0a89096",
+    "engine/v2/pool_adapter.py": "a10a61eef68d78ebcfd2a8091d93a98c56804d50343d69e87869ea97b251a123",
+    "workbench/batch-workflow.mjs": "129a4d4caadaeb4d181ccd934a945ac4b6b8cda11847357982e72aba387fba31",
+    "workbench/batch-store.mjs": "11bc08027a50da9aaac22929feb5fc567d2b15f1feccc7061c2b3f3883601b7d",
+    "workbench/session-guard.mjs": "4d15ae4a780521f6f5b72dbb8675ead264d8ca27b99e151e6b506480e2320fba",
+    "workbench/browser-environment.mjs": "0750e17ad521819b15320d996e80b54705070369363d3e67f5b4a72b00049b00",
+    "workbench/publishing-attributes.mjs": "acd12a52963628c5ae4e4c908de37932ba46e368391f0fbcf2b7e41d8903d4af",
+    "workbench/task-screenshot.mjs": "8ba331237f2a45001f42543254c0979fae0d844da95760ab6a55ec5ed1cb919c",
+    "workbench/result-reconciliation.mjs": "939c0c37e561bc1f02ced66aca8b782ace951922d016ec844fad103476f40686",
+    "workbench/batch-policy.mjs": "0c719ae35ac9eaf922ad62e97ed64f7fe6e948882e127b7aae4acc8cb1e21df9",
+    "workbench/publishing-materials.mjs": "a786dde96a3fba43858650d252498224d44a5718ed0455c80e0defd61799f5c3",
+    "workbench/publishing-pages.mjs": "1dac4194680ebc9efc305a2f868f6ace54bd1a7cf913816f63a7a277a907dc7f",
+    "workbench/listing-round.mjs": "2c25fe6930aea157ffcf60fc047cc30348647eee309dbb650366b16509897196",
+    "workbench/listing-identity.mjs": "bf6be77ffc5fe95cce27215a5182cb264b7d51f87aef090fdbda99bdc9d495c1",
+    "workbench/listing-verification.mjs": "0e033ee480aa8295d69da349e47a9ba13ce60fd6c707944292f785c798c2cfa5",
+    "workbench/round-verification.mjs": "6410d4954e0d5fb2f4d6ba450f6991862462927a1993954ea60477adadb68ba0",
+    "workbench/product-api.mjs": "bf0e403ead9230152781588a5c78f2fb959e460991a70519aee12088c7904afc",
+    "workbench/server.mjs": "ad792b14ad3becf1b891ed70f9bfcf5c5d611cdc39bf8183652ce86d8f902d3e",
+    "workbench/kernel-integrity.mjs": "422e481abf069cc93622e9eafb7649bb35a3826bbe3e3a43904f2b515ca267d1",
+    "workbench/publishing-content-review.mjs": "14352c10bd5808bc9d936bba595917c02db07859aa4a438559c2be3f1d16a947",
+    "workbench/round-windows.mjs": "1f7a8cc732bc3dc1b9691182b7a737597fd7f2908f1229ce88b49e4d94777cea",
+    "workbench/page-protection.mjs": "700a016e7db04af1e7b789fbe32dba551bcde2e59c321c0e205cd5f781283095",
+    "workbench/page-ownership.mjs": "e084aa11c6761244292c98a221437e6440a147af3adfc3511c37a125a35e47a9",
+    "workbench/publishing-address.mjs": "426c7736b6286589e35016bb036684630730611d4656ac1593efffa47df8d9a8",
+    "workbench/round-item-attempts.mjs": "ac8927413fdf88121d5f53ef6b5beae2ac53e1b4aacf2c0b376cd58d0e51582b",
+    "workbench/round-manual-skip.mjs": "95e2c474dd659674805e008d594a8b56e4018af964a9b4210bc49705493067bf",
+    "workbench/round-item-api.mjs": "93ad9f147cd911c1d83fce26fa3fe5feff41ac7324116b2b80a5d2d8c4e12087",
+    "workbench/round-item-host.mjs": "e92a151a92bc27fc21e17f07e227086462f4df7e6492d20817e6d3b91903b4ba",
+    "workbench/round-item-host-api.mjs": "92b7b341c9802f642100a8f5fe404af078e7b711f8034282d6839dbfa48dab5d",
+    "workbench/round-item-verify.mjs": "104a70c5ccfbe732d8098ce490b49f75c07a2c8c70dddeadde3be27d693de9c6",
+    "workbench/round-item-verify-api.mjs": "2c2908fb7f0fff6df4af0856567321245ae90ba1e41d6d010ca2ed9d3944acc6",
+    "workbench/round-item-candidates.mjs": "681525c7e515fbfd82fe1c141fbe5cb1f4a7413f4e0853383ab45308d66d2399",
+    "workbench/round-execution-attempts.mjs": "286617f77c1b02e890c06769d295c54d88a40067611d502eadd6354e52fcf36b",
+    "workbench/round-item-retry.mjs": "02428c3f4420075daa843629300537710f70c49e37913e0e808bbbd2b28ff5ea",
+    "workbench/round-item-retry-api.mjs": "f916be4165160a8c48855d0d8f7016cf686f32994a33ecbaf70f8d6f1c781141",
+    "workbench/operations-api.mjs": "018fa727a9e82949fb52f3f6f500938be55fb635549b20ff504e8bc2ebbbdcf0",
+    "workbench/operations-catalog.mjs": "89215b98f00c317e746f6ffa31e256634f97ddf5075a9224cc422b13a3d3e50c",
+    "workbench/round-selection.mjs": "bae302c662571121fb954a60934fec5b2a45e323ae95efa28f8d01ff9e5a080f",
+    "workbench/travel-os.js": "ed44b827e38e723b8afe3fb29b530023ff82fb2f8a86ebe94bf108856472d9c2",
+    "workbench/round-item-detail.js": "ada7284032f18d068603dede70fef0fd3d350d10e31754e35d360d1c48d2fcef",
+    "workbench/ui-copy.js": "7cdd799c0f9769c635243dd46d3bb59c1ceb07f8cd07d06523ec9127d9f81303",
+    "workbench/shop-execution.mjs": "aac493caa739bcec0278d24e44765c276edd5d6ef836f1bd451c2b5e1d63c75c",
+    "workbench/shop-scope.js": "d702a0791aca90a1140fbb5e7a95fb2e5b9d55cec2113c9b2fec21ea8fb356d1",
+    "workbench/setup-flow.mjs": "83a14a9a2979e1dd2ee210c29fcd9b5049a117aacac02b48c018aac992d137ba",
+    "workbench/setup-ui.js": "31b5eaa9d564f7fefc263c8e5a90de5a6f542529f7fb5d06f0bebc13e7ce6f9c",
+    "workbench/travel-os-api.mjs": "ec0c2e4c56094df0570f3b81801f303804a981d804b9bdf000d05029d49eb296",
+    "workbench/publishing-rules-ui.js": "43b9b955c7298961f0e670c8a1e73d33b221f24b3538495648cbde78f2b15558",
+    "workbench/operations-catalog-ui.js": "a52fd69143db4fbe7888607e5a13236a68674a0558d304eba0bf882d5b466a12",
+    "workbench/static-files.mjs": "aa976fc7815c5ac43213e897d24715b71b5c00f43e8d8fb1c4af21a015afe251",
+    "workbench/destination-catalog.mjs": "3a076f37352082372c348cfa54792488c5b9c758b91b3284edf64fdf6a9d2e89",
+    "workbench/travel-os.html": "f2c155c4b5d7f3386d989c7a4f004c1c15e779058b31693b11cc9b2d963936bc",
+    "workbench/material-library.mjs": "d3a7814439cd40f446633fbbc3e8cdc7f9d3a6288c915138111106cf6e3d6a1b",
+    "workbench/shop-identity.mjs": "a192eb457de5f7a840fbaed9d3f3809e8bffce40b56d858e404ca00d4ef71f50",
+    "workbench/setup-files.js": "954bf53c5cfc5d74787b7cd75fbd8cb341de4157ce2fc89cc580ec8459d83ce7",
+    "workbench/travel-os-store.mjs": "1993f8a7811743f38662e6276d2d473f37554f7198ca0176490cdadf5e6de702",
+    "workbench/setup-adapter.py": "5501410e999396f22bcd9041f6b1e261ebd5e5077aa70883c4915cd2466aac2b",
+    "workbench/setup-template-v2.json": "60ce56587f501a13186246cef91304efc8f21fe597e3057c9785a1834153c937",
+    "workbench/content-preparation.mjs": "7ba58de7189dc5de72db439c47a2614ff20e34e45c2d15a5b41b86d1e1ff44b9",
+    "workbench/content-preflight-budget.mjs": "55f3ab19a8f7754f2a2fffc1106cc10f1d2efb2eb066d0e84962535ec29f934a",
+    "workbench/content-review-ui.js": "7bce1d0739ca4c362de56598a667ccdec52c5b039e518a033e198136e154dfaf",
+    "workbench/image-review-policy.mjs": "58651d53ab8a474ad3503f5de47bf49151403cb417e95b04f8fa8383871f1a18",
+    "workbench/material-replacement.mjs": "0c850eb9190272b58862d8c57facd1c9f58f4b6206623b5a4aa4ed136ba33ac3",
+    "workbench/material-editor.js": "8dbee31b2b9fae6326c5d978b29dc7635aeb74f63d43a12e8c1442e41035b88e",
+    "workbench/publishing-rules.mjs": "4c7143f81d82bd7bf754769603a5967d60ebc97d259ff816258e27012edd5c1c",
+    "workbench/travel-os.css": "af8a3c81b51a6216bf2270cb388c093bd6ce57e8eee9bab248f8c60f384c56f7",
+    "workbench/package.json": "1e1fc960c601c668b02cf4fac07401f5c3ccf6591a4e6406b6c63dd459c7d10d",
+    "workbench/package-lock.json": "a12064eade140d61691da103bf9dc52f9b12f4d9ad4582e01c9fabdc949e9a1f",
+    "workbench/round-material-binding.mjs": "3418292ba35999ca34a6effbd58c376f2f35ca12b5a3daf1b50292c80312e300",
+    "workbench/tasks.css": "9fc41e551f8c51471a6086c9874dabf974496c4da4bb95722ff0e98510e3cb8d",
+    "workbench/execution-orb.js": "dcc0c4caa66319857206089be9e5735eb21cf7fea0a77b804590beb6a8dc4edf",
+    "workbench/execution-orb.tsx": "f18a1d259fd9e2e54501fbe0018a714154a55404ebdc4fab1b3e9a973762f6b0",
+    "workbench/components/orbkit/orbkit-core.tsx": "2939582268f922ed5ac8d79651b3f1b810533475d593af30ba77f27e971ff598",
+    "workbench/components/orbkit/shdr-12.tsx": "f40f2ac88ae5a4d160b0cfa2a1a0eef972395d954817c56cd6a229730f2829fa",
+    "workbench/components/orbkit/LICENSE": "12b5f7dc79b44074fb398f6856b440df30eb0f90ecff79b81f90886c0850e478",
+    "tools/build-execution-orb.mjs": "02312b6f0c548ca1bd0f51efb9b255fb2ccbb00726b4547e9edc7fe8de101556",
+    "workbench/components/orbkit/UPSTREAM.md": "c4b10331ac962d966cae5cc5b03ea23c39d870122af81d849de67a28693e6143",
+    "workbench/execution-timing.mjs": "72d81eaf89421f22991e6b41c97a884ee14ca5e93f84249fde6e048d8e119bdb",
+    "workbench/execution-steps.mjs": "2b7742e5a616ff76dedf3dbaf35635e658b0b1d2852cdda3a6900a5bd15554f0",
+    "workbench/execution-evidence-policy.mjs": "a6a5cad17d25fa8ec2559b6c62698f6067aacdb874a759154a3cae1d8653ff73"
+  },
+  "revision": "20261017-plain-error-guidance",
+  "previousManifest": "docs/kernel-baselines/20261013-before-user-round-policy.json",
+  "authorization": "原固定700授权保持；20261009新增目标：网站独立100、持久执行轮次、安全暂停及停止；代码与隔离验证不等同真实100验收。目标文件 SHA256 6987926f300acc3190909dbf56979cd4e5f8cb5eaadd3c7b73bce832ad59952f；r15原生页面归属/固定保护/预算/结果落盘后清理，未改变商品资料和提交规则。；r16固定清单旧批次start/retry/skip归属守卫，不改变任务资料或新增发布者。；r17兼容实测item.manager新增发布页，保留双确切来源、同页身份、唯一回执与页面清理保护，不修改资料或新增执行者。；r18登录检查忽略检查期间已关闭页，活页异常仍暂停并保存净化诊断；不缓存登录放行、不更改发布资料。；r19等待同一官方详情素材弹窗就绪，恢复复用原弹窗；保留身份风控、资料和提交保护，不刷新或重复打开。；r20库存稳定观察窗口从首次受保护采样开始，避免前置身份检查耗尽预算；不改库存业务值、稳定阈值、两次填写上限及提交保护。；r21仅价格空值有界补填一次，非空异值立即暂停，逐次身份控件校验和独立证据；不改原商品价格、其他字段或提交保护。；候选：原轮次单条详情、未提交手动跳过、原商品仅核验及原请求恢复；新尝试只追加，原任务资料与发布规则不变。未获生产部署放行。；单条人工重试候选：原执行者、同队列、原任务身份，先查重、只处理所选商品并暂停；追加历史、断线原请求核对和中断记录恢复，不修改商品业务值。独立复查与网站模拟结果不代替真实上架验收。；20261011 P0/P1：兼容实测千牛商品管理入口，保持同店、全部商品、响应与DOM一致及完整分页校验；未改变提交、资料和恢复授权。；20261011 P1单条诊断增量：等待同一官方主图素材面板就绪，主图与详情面板明确区分；保留原任务、提交、防重、上传逻辑及人工风控，不增加发布范围。；20261011 P1单条诊断增量：主图单次点击超时后以原表单全部已插入图片精确对账，禁止重复点击；保留原任务、提交、防重、上传逻辑及人工风控，不增加发布范围。；20261011 P1：自定义属性仅单次点击，超时后在原页面及身份风控校验下精确回读冻结选中值和菜单关闭状态；不重新点击、不变更随机结果或发布范围。；20261011 P1：单条重试按钮、POST受理和实际claim共用原只读预算检查，明确拒绝原因，防止已耗尽任务空跑；不提高次数、不改基线或历史、不新增发布。；20261011网站总表与选择范围：用户授权统一状态、批量执行与异常恢复及网站验收；复用原执行器，原资料/预算/人工与提交保护保持，保存范围不启动，最多100条分窗仅处理勾选项。明确单商品未提交资料错误可继续，其余系统或提交不明暂停。代码验证不是真实100验收。；20261012正式700预检性能：仅同一同步检查内批量读取原事件、授权与店铺元数据，每次revision重新读取，不跨await缓存；哈希、阻塞、预算及执行逻辑保持。；20261012主图恢复核验：仅在原表单、原店铺守卫通过且完整有序图片清单精确匹配时，将已插入主图与执行断点对账；保留原单击、超时暂停和提交边界，不改变任务范围、商品内容或发布规则。独立QA复审与浏览器回归通过，生产恢复仍须网站检查。；20261013仅在主图选择后识别精确的淘宝主图操作菜单并以Escape关闭、验证关闭后再填写标题；不改任务资料、商品状态、执行范围或提交行为。；r22批量任务快照合并SQLite读取，保持原执行范围摘要字段及人工/安全闸门不变，降低状态查询单线程阻塞；未访问执行浏览器或提交商品。；r23将完整SSE快照降为15秒、页面静默断连判断改为45秒；启动器先探测4318监听端口，服务繁忙时等待健康检查而不重复启动。；r24状态视图将队列、核验记录、资料异常和成功事件改为批量索引读取，预检异常列表按导入及持久事件版本缓存，保持数据与筛选口径。；r25 当前轮次单条手动跳过后继续：仅已确认未提交且当前暂停项允许，复用原幂等跳过与原轮次恢复接口；保留提交/结果不明/人工处理保护，不扩展发布范围。隔离模拟验证，不代表正式轮次操作或真实上架。；r26：仅取消‘本执行器新建且成功核验页面’因Chrome当前选中标签而暂停的误判；保持固定/未知页面、挑战、页面身份、成功回执、导航和店铺守卫；不触发历史商品或自动恢复。；r27 用户要求在本轮操作区增加跳过此条：对当前未提交的验证码暂停或卡顿项保存幂等人工跳过决定，再沿原轮次恢复检查；保留提交、结果不明、内容、身份及平台验证码保护，不触发正式轮次操作或改变商品资料。；r28 用户要求当前固定700轮忽略店内同目的地候选阻塞，并将美国戴德姆/德德姆这一单条译名差异按用户确认视为同一地点；仅追加轮次规则审计，不改manifest/授权快照/商品资料，只有确认未提交项可释放；商品ID对账、提交未知、验证码、资料与页面守卫保持，应用规则不自动恢复或提交。；20261013中文交互状态与日志：仅增加显示层状态码/步骤码翻译和异常中文提示，不更改队列状态、执行流程、平台请求或提交行为。；r28 当前验证码未提交人工跳过同时读取原轮次暂停原因与维护恢复后的run原因，保留所有提交和身份保护；用户明确要求本轮操作区一键跳过。；执行监控UI：用户确认合并轮次与当前状态，仅更新travel-os.js界面与只读日志绑定哈希；28项隔离界面、35项轮次回归通过，未改变后台执行或启动正式任务。；20261013中文界面增量修复：异常原因、任务步骤、状态与日志内容统一通过显示层中文化；将ui-copy.js纳入冻结校验，仅改显示文案，不改执行流程与提交行为。；20261013中文交互增量：将旧界面任务状态与批次异常也接入相同中文显示层；仅改状态、步骤和诊断呈现，不改任务执行逻辑。；20261014 仅修复历史提交前查重候选被误判为提交证据：原尝试未绑定run、快照所有提交标记明确为false且有同范围原始未提交隔离事件时，才排除该历史状态；不修改账本或执行发布。；20261014 跳过与单条操作入口复用已有支持局域网HTTP的requestId，保留稳定UUID、防重、历史与所有发布保护；只更新前端，不重启执行浏览器或操作真实商品。；20261015 内容准备修复：网站显式创建完整固定清单，逐条原图审核记录，不自动PASS或启动；LIVE内容检查前移到扣次/创建run/模式转换之前。仅精确未打开填写页的原内容缺失历史可追加一次固定抵扣，保留原始次数、run、快照与事件，抵扣限定原轮次许可；其他提交/验证码/未知保护保持。；20261015 用户明确要求图片默认批量完成且不增加独立审核页面：按user-batch-confirmation记录用户授权及冻结素材/清单版本，缺失记录自动批量确认；保留已有明确结论，不伪造逐图目视记录；移除新增审核入口，原清单/队列/次数保持，不自动启动。；20261015用户要求资料在设置阶段完成核对，启动不再重复整批资料核对：导入记录自动核对状态，任务范围分配取消逐条重复读取文件，单击开始直接沿原范围执行；超过100自动分轮，等待失败有明确结束状态及稳定请求编号，原执行器逐条文件/身份/提交防重保持。",
+  "uiRevision": "20261014-batch-recheck",
+  "uiPreviousManifest": "docs/kernel-baselines/20261014-before-task-batch-list-ui.json",
+  "retainedPagePolicy": {
+    "date": "2026-10-14",
+    "source": "用户先后明确要求删除两张保留页暂停和六张自有页上限",
+    "previousManifest": "docs/kernel-baselines/20261014-before-page-count-limit-removal.json",
+    "retainedCountStop": false,
+    "ownedPageLimit": null
+  },
+  "shopListingDefaultChange": {
+    "date": "2026-10-14",
+    "shopId": "wuzhou-changyou",
+    "scope": "NEW_ROUNDS_SNAPSHOT_SHOP_DEFAULT",
+    "previousManifest": "docs/kernel-baselines/20261014-before-shop-default-save.json",
+    "savedRevision": 1
+  },
+  "batchRecheckPreviousRevision": "20261014-page-count-limits-removed",
+  "websiteListingDefaultChange": {
+    "date": "2026-10-14",
+    "scope": "ALL_CURRENT_AND_FUTURE_SHOPS",
+    "savedRevision": 1,
+    "previousRevision": "20261014-batch-recheck",
+    "previousManifest": "docs/kernel-baselines/20261014-before-website-listing-default.json",
+    "tests": "85 targeted regressions and 13 default tests; execution remains gated"
+  },
+  "hqlhAdaptation": {
+    "scope": [
+      "wuzhou-changyou",
+      "shop-7949a469"
+    ],
+    "previousManifest": "docs/kernel-baselines/20261015-before-hqlh-adaptation.json",
+    "isolation": "request scoped independent data, settings and browser; execution remains gated"
+  },
+  "genericShopOnboarding": {
+    "previousManifest": "docs/kernel-baselines/20261015-before-generic-shop-onboarding.json",
+    "scope": "registered stores using standard v1/v2 templates; independent data and existing per-shop publishing gates",
+    "identity": "URL scope, input, upload session, import binding and task ownership"
+  },
+  "materialKernelSync": {
+    "previousManifest": "docs/kernel-baselines/20261015-before-material-kernel-sync.json",
+    "reason": "Integrate reviewed image full-decoding and modal save feedback patches; preserve execution and history gates",
+    "files": [
+      "workbench/travel-os.js",
+      "workbench/material-replacement.mjs",
+      "workbench/material-editor.js",
+      "workbench/product-api.mjs"
+    ],
+    "health": "Report fresh disk integrity instead of stale startup success; execution gate unchanged",
+    "apng": "Independent final QA 51 backend +19 UI +11 close-dialog scenarios, exact candidate hash"
+  },
+  "materialReplacement": {
+    "previousManifest": "docs/kernel-baselines/20261015-before-material-replacement-final.json",
+    "qaReport": "output/material-replacement-20261015/independent-qa.md",
+    "qaHashes": "output/material-replacement-20261015/independent-qa/final-candidate-hashes.json",
+    "scope": "Shared material images and future task imports only; historical tasks and manifests preserved",
+    "reviewedAt": "2026-10-15T15:22:02.587Z"
+  },
+  "statusReconciliation": {
+    "scope": "Read-only display classifications; no task/budget/history mutation",
+    "qa": "Existing content_ui final review and operations regression",
+    "kernelSync": "output/material-kernel-sync-20261015/"
+  },
+  "errorGuidance": {
+    "previousManifest": "docs/kernel-baselines/20261015-before-error-guidance.json",
+    "scope": "Read-only cause and handling guidance; no task, budget or publishing changes",
+    "qa": "output/error-guidance-20261015/content-ui-qa/qa.json"
+  },
+  "manualRetryBudget": {
+    "scope": "仅限原批次中确认未提交、非人工验证、资料有效且尝试次数耗尽的明确选中失败项",
+    "incrementPerItem": 1,
+    "maximumManualIncrementsPerItem": 1,
+    "behavior": "追加预算审计事件；不自动排队或执行；重新预检和手动确认仍为单独步骤",
+    "qa": "workbench/scripts/batch-recheck.test.mjs; workbench/scripts/batch-recheck-ui-qa.mjs"
+  },
+  "materialBindingReview": {
+    "at": "2026-10-15T16:26:34.093Z",
+    "reason": "Preserve original tasks and skipped items while binding approved saved image revisions",
+    "evidence": "output/round-material-binding-20261016/content-ui-qa/FINAL_QA.md"
+  },
+  "executionOrbReview": {
+    "at": "2026-10-15T16:51:12.518Z",
+    "evidence": "output/orbkit-20261016/content-ui-qa/qa.json",
+    "scope": "SHDR-12 display only, original execution data unchanged",
+    "parallelDetailReview": "output/orbkit-20261016/detail-drift-qa/control-qa.json; independent control 11/11, API 31/31; preexisting retry UI full flow not claimed"
+  },
+  "monitorStatusPositionReview": {
+    "at": "2026-10-15T17:13:13.198Z",
+    "evidence": "output/monitor-status-position-20261016/content-ui-qa/qa.json",
+    "scope": "Move existing monitor status badge beside heading; static UI only"
+  },
+  "listingEfficiencyReview": {
+    "at": "2026-10-16T00:34:33.083Z",
+    "qaAgent": "/root/director_skill_trial/routing_qa",
+    "evidence": "output/listing-efficiency-implementation-20261016/independent-qa.md",
+    "candidateManifestSha256": "5a25912dd216a05b0e236945af470d4f39fff17174367fc8c0af01eb71c758f6",
+    "scope": "Four reviewed runtime files; DRY_RUN full; LIVE key; original publishing checks and task data preserved"
+  },
+  "skippedCaptchaWindowReview": {
+    "at": "2026-10-16T18:44:34.655Z",
+    "qaAgent": "/root/director_skill_trial/routing_qa",
+    "evidence": "output/listing-efficiency-sampling-20261017/qa/independent-qa.md",
+    "candidateManifestSha256": "8e3b09792a71c08d544076cb0af1bc3244981a9e58fe628560d8cbc0a5da7ce3",
+    "scope": "Three reviewed window/selection/skip files; fully audited pre-submit skipped CAPTCHA only; original records and fresh publish gates preserved"
+  },
+  "plainErrorGuidanceReview": {
+    "at": "2026-10-17T14:44:38.470Z",
+    "evidence": "output/plain-error-guidance-20261017/content-ui-qa/",
+    "scope": "Display-only causes and numbered recovery instructions; no execution controls changed"
+  }
+}

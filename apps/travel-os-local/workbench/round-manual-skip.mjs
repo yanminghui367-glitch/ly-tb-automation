@@ -16,7 +16,7 @@ const outcomeHasSubmission=(value,unsubmittedCandidates=new Set())=>{
  return false;
 };
 export class RoundManualSkip {
- constructor(owner){this.owner=owner;this.db=owner.db;this.attempts=new RoundItemAttempts(this.db);}
+ constructor(owner,{readOnly=false}={}){this.owner=owner;this.db=owner.db;this.attempts=readOnly?null:new RoundItemAttempts(this.db);}
  unsubmittedCandidate(a,outcome,{roundId,windowId,key,taskHash,manifestHash}){
   const s=outcome?.snapshot,x=s?.item,q=s?.queue;
   // RESULT_UNKNOWN is also used for pre-publish destination candidates. Exempt
@@ -129,4 +129,21 @@ export class RoundManualSkip {
    return {replayed:false,attemptId:a.id,outcome};
   });
  }
+}
+
+// Read the original immutable skip receipt and all existing submission sources.
+// The paused run is deliberately retained; current browser guards still apply.
+export function settledSkippedCaptcha(owner,roundId,item){
+ if(item.state!=='MANUAL_SKIPPED'||item.failure_stage!=='manual-skip'||!item.run_id)return false;
+ try{
+  const run=owner.source.store.run(item.run_id);if(run.state!=='PAUSED_CAPTCHA')return false;
+  const receipt=owner.db.prepare("SELECT * FROM round_item_attempts WHERE round_id=? AND key=? AND kind='MANUAL_SKIP' AND finished_at IS NOT NULL ORDER BY ordinal DESC LIMIT 1").get(roundId,item.key);
+  if(!receipt||receipt.task_hash!==item.task_hash||receipt.run_id!==item.run_id||receipt.shop_id!==item.task.shopId)return false;
+  const outcome=JSON.parse(receipt.outcome_snapshot),before=JSON.parse(receipt.before_snapshot),round=owner.assertManifest(roundId);
+  if(outcome?.state!=='MANUAL_SKIPPED'||outcome.submitted!==false||outcome.item?.key!==item.key||outcome.item.runId!==item.run_id||outcome.item.submitted!==false||outcome.item.submissionUncertain!==false
+   ||before.snapshot?.parent?.id!==roundId||before.snapshot.parent.manifestHash!==round.manifest_hash||before.request?.windowId!==receipt.window_id||before.request.key!==item.key)return false;
+  const audited=owner.db.prepare("SELECT payload FROM round_events WHERE round_id=? AND key=? AND kind='MANUAL_SKIP_RECORDED'").all(roundId,item.key).some(e=>{const p=JSON.parse(e.payload);return p.attemptId===receipt.id&&p.windowId===receipt.window_id&&p.submitted===false;});
+  if(!audited)return false;
+  return !new RoundManualSkip(owner,{readOnly:true}).read({roundId,windowId:receipt.window_id,key:item.key}).hasSubmit;
+ }catch{return false;}
 }

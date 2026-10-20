@@ -1,0 +1,31 @@
+--- original-no-sku-verification.test.mjs
++++ no-sku-decoded-fixture.test.mjs
+@@ -2,13 +2,14 @@
+ // selector fixture. No production Chrome, profile, platform traffic, or uploads.
+ import test,{before,after} from 'node:test';
+ import assert from 'node:assert/strict';
+-import {chromium} from 'playwright';
++import {createRequire} from 'node:module';
++const {chromium}=createRequire(new URL('./dev/workbench/package.json',import.meta.url))('playwright');
+ import {createHash} from 'node:crypto';
+ import {mkdtemp,rm,readFile,writeFile} from 'node:fs/promises';
+ import {tmpdir} from 'node:os';
+ import {join,sep,resolve,dirname,basename} from 'node:path';
+-import * as publisher from '../taobao-publisher.mjs';
+-import {digest,destinationKey} from '../source-store.mjs';
++import * as publisher from './dev/workbench/taobao-publisher.mjs';
++import {digest,destinationKey} from './dev/workbench/source-store.mjs';
+ 
+ // Source: output/round700-20261008/paused-sku-r12/sales-specifications.html
+ const EMPTY_HTML="<div id=\"struct-saleProp\" class=\"com-struct\"><div></div></div>\n<div id=\"struct-customSaleProp\" class=\"com-struct\"><div></div></div>\n<div id=\"struct-sku\" class=\"com-struct\"><div class=\"sell-component-info-wrapper-wrap sell-horizon-layout-info-wrapper full-width label-horizontal\" id=\"sell-field-sku\"><div class=\"sell-component-info-wrapper-label-wrap label-container label-align-left\" style=\"width: 120px;\"><span class=\"sell-component-info-wrapper-label\" title=\"销售规格\">销售规格</span><i class=\"next-icon next-small\"><svg class=\"next-icon-remote sell-component-info-wrapper-help-icon\" focusable=\"false\"><use xlink:href=\"#qn_question\"></use></svg></i></div><div class=\"sell-component-info-wrapper-component-wrap\"><div class=\"sell-rich-text sell-component-info-wrapper-component-info position-top\">近期已升级SKU面板，优化SKU创建流程提升操作体验。<a href=\"https://helpcenter.taobao.com/servicehall/video_detail\" target=\"_blank\"> 查看详情 </a><a>。</a></div><div class=\"sell-component-info-wrapper-component-child-wrap\"><div class=\"sell-component-info-wrapper-component-child\"><div class=\"sell-new-sku-table-content\"><div class=\"sell-sku-table-wrapper-new is-taobao\"><div><div><button type=\"button\" class=\"next-btn next-medium next-btn-normal\"><span class=\"next-btn-helper\">+ 创建规格</span></button></div></div></div></div></div></div></div></div></div>\n";
+@@ -202,7 +203,9 @@
+ test('partial detail recovery reuses proven inserted prefix even when that asset is absent in the picker',async t=>{
+  const f=await form(t),next={path:join(f.dir,'second.txt'),sha256:f.task.assets.details[0].sha256};await writeFile(next.path,'isolated source');f.task.assets.details.push(next);
+  const picker='https://market.m.taobao.com/app/crs-qn/sucai-selector-ng/index';
+- await page.route(picker,route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<input placeholder="搜索图片名称"><div class="PicList_pic_background__pGTdV"><span class="PicList_tip_title__aQfti">second.txt</span><div class="PicList_pic_imgBox__c0HXw" onclick="document.querySelector('input[type=checkbox]').checked=true"><img src="https://fixture.invalid/second.png"></div><input type="checkbox"></div><button onclick="parent.postMessage('insert-second','https://item.upload.taobao.com')">确定</button>`}));
++ // Step 1 fixture correction: decoded-thumbnail positive case needs local PNG bytes.
++ await page.route('https://fixture.invalid/second.png',route=>route.fulfill({contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jG94AAAAASUVORK5CYII=','base64')}));
++ await page.route(picker,route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<input placeholder="搜索图片名称"><div class="PicList_pic_background__pGTdV"><span class="PicList_tip_title__aQfti">second.txt</span><div class="PicList_pic_imgBox__c0HXw" onclick="document.querySelector('input[type=checkbox]').checked=true"><img style="width:80px;height:60px" src="https://fixture.invalid/second.png"></div><input type="checkbox"></div><button onclick="parent.postMessage('insert-second','https://item.upload.taobao.com')">确定</button>`}));
+  await page.evaluate(url=>{window.addEventListener('message',e=>{if(e.origin==='https://market.m.taobao.com'&&e.data==='insert-second'){document.querySelector('#sell-field-descRepublicOfSell').insertAdjacentHTML('beforeend','<img class="image-item" src="https://fixture.invalid/second.png">');document.querySelector('.media-img-plug').remove();}});document.body.insertAdjacentHTML('beforeend','<div class="media-img-plug"><iframe src="'+url+'"></iframe></div>');},picker);
+  const steps=[];const result=await publisher.fillTask({page,task:f.task,dir:f.dir,target:'ONSALE',guard:async()=>{},step:async(name,fn)=>{steps.push(name);if(name.startsWith('select-detail-')||name==='insert-details'||name==='pre-submit-review')await fn();}});
+  assert.equal(result.details.length,2);assert.equal(result.details[0].source.path,f.task.assets.details[0].path);assert.equal(result.details[1].source.path,next.path);assert.equal(await page.locator('#sell-field-descRepublicOfSell img').count(),2);assert(steps.includes('pre-submit-review'));

@@ -1,0 +1,122 @@
+{
+  "at": "2026-10-18T12:55:21.647870+00:00",
+  "candidateManifestSha256": "e7b6122cdc2e83c50ce4e30a1f38c9f4e1481320acbe28e798f193f669ba8bd9",
+  "runtimeFiles": [
+    {
+      "path": "workbench/taobao-publisher.mjs",
+      "baselineSha256": "6eafc82f2b7236ef0b1b0c0b560b2b9227057303705267adaf2f472f6df1f9a3",
+      "sha256": "94011fc48bd782b281b52342318647177bdde647a8f1cdece772380e16ecdc61"
+    },
+    {
+      "path": "workbench/source-workflow.mjs",
+      "baselineSha256": "aecf842c18aded7433e48c55f7e76dcbbcf5b88dfb2e88dfbcb980007378a4ac",
+      "sha256": "b5c48b87fe8548ed5735c228df07c5411b46bbc3409a469b1852d6521df817ec"
+    },
+    {
+      "path": "workbench/listing-round.mjs",
+      "baselineSha256": "1068c298afd8fb805f4646d553c9d3f491c769c512c1ad1758df50b5fea65308",
+      "sha256": "c2b7c58460980b75fff527cb7b18d593e77cccf7178e81c80130bfe022d9ed6a"
+    }
+  ],
+  "groups": [
+    {
+      "name": "publisher and frame",
+      "passed": 105
+    },
+    {
+      "name": "source workflow and residual refill",
+      "passed": 112
+    },
+    {
+      "name": "round classification, circuit and budget",
+      "passed": 32
+    },
+    {
+      "name": "independent QA",
+      "passed": 14
+    }
+  ],
+  "notes": [
+    "Groups are separate; 28 publisher additions and 25 workflow additions are included, not additive.",
+    "Tests ran against dev final runtime bytes; archived test files preserve sources, the dev tree is the executable test harness.",
+    "Browser regression uses isolated local pages, not production publication."
+  ],
+  "evidence": [
+    {
+      "path": "evidence/main-frame/final-bytes-regression.log",
+      "sha256": "c89749c59c9891e6c41ebc40904c394b79fd2756f072d312ed4534f50fffca4e"
+    },
+    {
+      "path": "evidence/main-frame/before.log",
+      "sha256": "6b6c2750db9fac925532a8f6124e7b84dc0071e5592b0e19375639ca7c9659ff"
+    },
+    {
+      "path": "evidence/main-frame/binding-before.log",
+      "sha256": "a1eb2644fd7e304fced221424c64add3784d63dcdc524260f13117207d324e4a"
+    },
+    {
+      "path": "evidence/residual-refill-before.log",
+      "sha256": "7d3f054ae25a49cc19e23547239d7798811dcbd472adfd098b751f37771d5a4e"
+    },
+    {
+      "path": "evidence/residual-refill-r2-regression.log",
+      "sha256": "4147c7340215e255ab535d4a00127520875b5c658453335d0aa2dbac1baaa76d"
+    },
+    {
+      "path": "evidence/origin-round-before.log",
+      "sha256": "ef435f86494107e90d7eb534b12cb7f6df812557ff612eba2e55b0b0c0e51c54"
+    },
+    {
+      "path": "evidence/round-final-regression.log",
+      "sha256": "b0b02c6f2a0609b91b56b02571ef90aceff4d9549d64096a82a1214e82171942"
+    },
+    {
+      "path": "evidence/qa/independent-residual-before.log",
+      "sha256": "9fb22ad8bff8b8484c0b0c8837decea56d037ad79bccd5402316842736d5c7a2"
+    },
+    {
+      "path": "evidence/qa/independent-final.log",
+      "sha256": "da5b2ac6aa8b4a8ec47175ae2d4e18b429838e76746bd83bddc6857992855958"
+    },
+    {
+      "path": "tests/material-frame-pending.test.mjs",
+      "sha256": "f1e47f8553225663e2a99d740c4ce8e2349d901a74538169a0c7f87867b08eb3"
+    },
+    {
+      "path": "tests/refill-page-binding.test.mjs",
+      "sha256": "bc2e20c29986398f4d7efd05e60bdf52397a7248fa7853d3ad59703d87ab20c8"
+    },
+    {
+      "path": "tests/inserted-detail-mixed.test.mjs",
+      "sha256": "0c849c7a72762fc11cab9746270324cc0558d5bbf89b641870dcd49e2f5a46d0"
+    },
+    {
+      "path": "tests/detail-material-frame.test.mjs",
+      "sha256": "c4ebb5a06cdda154e77048655cbd5c51cff78f7d45957bca8ea4e538258257d2"
+    },
+    {
+      "path": "tests/main-material-frame.test.mjs",
+      "sha256": "360994189a286d505b3d6e0f28d052f2ddd1cfe0ecf8924fa74817fb66a65856"
+    },
+    {
+      "path": "tests/no-sku-verification.test.mjs",
+      "sha256": "b6f6361533f76177717eb0d56571a926d5e90d81f89b699c239f9d8cdbd84c05"
+    },
+    {
+      "path": "tests/residual-refill.test.mjs",
+      "sha256": "4f537bc9740521906c21d510b8867772dc36095430403299372c1f55bb6a3e75"
+    },
+    {
+      "path": "tests/continuous-origin-round.test.mjs",
+      "sha256": "6f3dbeb2892c128ed5b2a7f0922605b962080fc3ab64f74fe7472203f4cd403f"
+    },
+    {
+      "path": "tests/continuous-circuit.test.mjs",
+      "sha256": "dd0f7db8877f4864319abe60e8e98a1b36986cc6a3cf01d14255f97415a89ca2"
+    },
+    {
+      "path": "tests/continuous-budget-exhaustion.test.mjs",
+      "sha256": "c6882118d65046c3425409d51290a3ee3425d2e875299d6e87f77293219c836b"
+    }
+  ]
+}

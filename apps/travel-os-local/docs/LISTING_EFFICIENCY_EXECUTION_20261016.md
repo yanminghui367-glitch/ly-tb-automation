@@ -27,4 +27,26 @@
 
 从当前代码的已有相关测试开始，增加有意义的失败/恢复/嵌套计时/截图策略测试。合成浏览器仅使用独立临时会话和本地页面，不连接真实店铺；性能对照只证明本地机制成本，不能宣称淘宝已提升15%—25%。整合前保存原文件与基线hash，逐项接收独立QA哈希，正常维护后核对旧业务表/设置/原任务保全。
 
-当前：规划已确定，开始E0。证据目录：`output/listing-efficiency-implementation-20261016/`。后续实绩以模块记录更新，不倒改原复盘的历史观察。
+证据目录：`output/listing-efficiency-implementation-20261016/`。后续实绩以模块记录更新，不倒改原复盘的历史观察。
+
+## 首轮实现记录（QA通过，已正常安装并重启）
+
+根最终176项自验通过；独立QA为`/root/director_skill_trial/routing_qa`，164项回归加9项独立组合测试通过，实际对照原执行器与当前key/full的业务轨迹一致，13项候选SHA前后保持、83项隔离锁一致。独立解码110张基准PNG并核对44/11总图数量；该结论范围仅为隔离候选工程验收。报告及受验哈希为证据目录`independent-qa.md`、`qa/final-candidate-hashes.json`。
+
+用户随后明确由本聊天统一安装/重启，root按原维护流程备份并正常shutdown，逐项安装12文件，只在正式锁中合入4项已审运行哈希，旧锁单独归档。现正式PID30284、83项版本`20261016-listing-efficiency`一致；9业务库逐表内容、8店API状态/设置/原任务与轮次及2项实际保存设置文件与维护前严格相同。静态资源HTTP/磁盘字节、本机与局域网地址验证通过，两个原700任务未恢复。生产证据为`production-before.json`、`shutdown-complete.json`、`installed-files.json`、`installed-kernel.json`、`production-after.json`和`website-check.json`；部署后独立复核另记于`qa/production-review.md`。
+
+部署后独立复核已PASS：12文件与候选受验hash一致，正式锁原80项中仅更新source-workflow并新增3模块，其余原条目保持；实际GET确认新PID/83项及8店状态保全，独立核对维护前后9库211表58,912行一致。正式加载完成，当前接收状态为证据目录`acceptance.json`；平台吞吐未纳入该复核。
+
+E0 已从当时工作树白名单导出617项源码并逐项校验；没有复制业务库、浏览器配置或凭证。两处已安装依赖物理复制到隔离目录，没有链接回正式依赖。现正式`tools/isolated-dev.mjs`提供新目录快照和受限测试入口，拒绝覆盖、越界、链接、清单漂移和正式目录测试；测试子进程使用端口0和NO_LISTEN，不启动网站。它是误操作防护，不是操作系统沙箱，也不能代替审查测试源码。
+
+E1 首轮接入原SourceWorkflow，未另建发布执行器。`execution-timing.mjs`使用单调时钟；`execution-steps.mjs`保留原步骤的前后guard、动作、同步日志和checkpoint。新增分类为guard、browser-status、challenge-check、form-identity、file-validation、content-review、profile-read、form-review、result-verification、action、evidence和persistence；每次执行/恢复有独立attemptId、起止时间和计时文件，原STEP事件关联attemptId，不增加逐计时SQLite事件。计时文件写失败作为诊断错误记录，不改变已核验结果或放开未知提交。
+
+E2 正常LIVE默认key：保留打开表单、五图完整布局、运费模板、属性末步、详情插入、提交前、提交及平台核验等8个步骤图；原提交前整页、submit-success、后台核验、缺图上传和所有异常证据另留。普通成功步骤显式记录未请求截图并清空本步图路径，仍同步记录事件/断点；未知新阶段、失败或恢复第一边界强制新图。截图始终await完成后才继续。`TRAVEL_OS_EVIDENCE_MODE=full`提供逐步诊断；无效模式退回full。**P4/DRY_RUN始终full**，继续满足RELEASE_GATES的逐字段留图要求。
+
+验证覆盖真SQLite的41动作/82guard/41断点、真实SourceWorkflow在key/full下的检查与提交事件等价、动作及前后guard失败、慢截图顺序、截图失败、原错误保留、恢复attempt、验证码/错店/提交未知、持久化异常与历史成功防重。独立临时Chrome使用合成内容对照，41步骤及3项固定证据的总图数为full44、key11；这是机制对照，不是淘宝全链路实测，也不包括本次新增上传产生的额外图。
+
+计量边界：step快照在本step持久化前，attempt总计含此前持久化但不含最终两个诊断文件写入；inclusive父子时间不可相加。file-validation仅覆盖SourceWorkflow显式文件检查，publisher内的新鲜检查仍算在动作/复核；evidence也不是所有底层截图总耗时。原publisher直接调用的上传截图/提交前整页图保持原失败语义。本轮没有缓存登录许可、减少检查次数或缩短平台等待预算。
+
+E3/E4 已只读复核：复用现有辅助页、同阶段hash去重、按需上传、详情多选和新版图回执；普通资产尚不能冒称已有全量hash索引。先等真实样本确定剩余热点，必要时再补原有调用的被动分项计时。建议与来源见证据目录`e3-e4-review.md`。E5 已复核原跳过后继续、有限恢复和UNKNOWN只核验的相关回归，未改原清单/次数/队列规则。E6 尚未开始真实取样；正式观察时环球浏览器STOPPED、五洲WRONG_SHOP，两个原700轮次inactive，不能以合成测试替代人工登录及平台验收。
+
+本次正式整合按`candidate-manifest.json`逐文件核对基线与QA哈希；候选kernel-lock没有整份覆盖正式锁，其他聊天已验收条目保持。维护已完成，原清单/任务/预算未改写，真实商品执行未恢复。E3/E4进一步优化和E6采样仍按上文依赖推进，不能将首轮加载写成全部策略或平台吞吐验收完成。

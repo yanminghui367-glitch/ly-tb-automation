@@ -1,0 +1,21 @@
+{
+  "revision": "20261018-website-verify-r1",
+  "fromRevision": "20261018-submit-receipt-r1",
+  "beforeLockSha256": "a8432bd7dd2f1f5a6b34aa6fdae4166c9a81142457603db9623c10beac83497a",
+  "deploymentAllowed": false,
+  "scope": "仅接通网站单条核验按钮的原提交证据与商品归属检查；不提交、不跳过、不加额",
+  "files": [
+    {
+      "path": "workbench/round-item-verify.mjs",
+      "baselineSha256": "104a70c5ccfbe732d8098ce490b49f75c07a2c8c70dddeadde3be27d693de9c6",
+      "sha256": "3364bcc6ac5be7945479dc7df5e36d7f5da7d128db45008172a9fda568d36018",
+      "runtime": true
+    },
+    {
+      "path": "workbench/scripts/round-item-verify.test.mjs",
+      "baselineSha256": "59d57b2c2d5683c1635ab127df900d064eb6b286a8be9223a23818871a5c821a",
+      "sha256": "5628643ea6f3c9e2aaefb2242f3f7c3eed1f9595a6ebd045da6ea01f6f792f07",
+      "runtime": false
+    }
+  ]
+}

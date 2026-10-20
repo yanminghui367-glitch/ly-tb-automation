@@ -24,6 +24,7 @@
     TimeoutError: '操作等待超时', AbortError: '操作已中止', TypeError: '数据格式异常'
   };
   const kinds = {
+    PRE_SUBMIT_PAGE_RECOVERY:'发布页超时后新页恢复', RESIDUAL_PAGE_REFILL:'提交前新页重填', PRE_SUBMIT_REFILL_EXHAUSTED:'新页恢复后仍未就绪', SUCCESS_GOAL_CREATED:'已创建新增成功目标', SUCCESS_GOAL_TARGET_REACHED:'新增成功目标已达到', SUCCESS_GOAL_EXHAUSTED:'目标范围已耗尽', SUCCESS_GOAL_STOPPED:'成功目标已停止', SUCCESS_GOAL_RETRY_PASS:'开始安全失败项重试轮', SUCCESS_GOAL_ITEM_EXCLUDED:'商品不满足本次恢复条件',
     STEP_INTENT: '开始执行步骤', STEP_VERIFIED: '步骤核对通过', STEP_FAILED: '步骤执行异常',
     SUBMITTING: '正在提交商品', SUBMIT_CLICKED: '已点击提交', SUBMIT_EVIDENCE: '已记录提交凭据',
     RESULT_UNKNOWN: '提交结果待核验', PAUSED: '任务已暂停', WAITING_HUMAN: '等待人工处理',
@@ -33,6 +34,7 @@
     SCHEDULER_ERROR: '任务调度异常', BATCH_PREFLIGHT_FAILED: '批次资料检查未通过'
   };
   const steps = {
+    'open-clean-navigation-form':'重新打开干净发布页', 'open-clean-refill-form':'打开新页重新填写',
     'open-new-form': '打开商品发布页', title: '填写商品标题', 'guide-title': '填写导购标题',
     price: '核对价格', inventory: '核对库存', brand: '核对品牌',
     'custom-service': '核对定制服务', 'listing-state': '核对上架方式',
@@ -86,22 +88,25 @@
   // Display guidance only: never grants retry permission or changes a task.
   const diagnose = (value, {state='', stage='', submissionUncertain=false}={}) => {
     const raw=String(value??'');
-    const issue=(title,cause,action,known=true)=>({title,cause,action,known});
-    if(state==='RESULT_UNKNOWN'||submissionUncertain||/提交结果未知|提交可能|结果待核验/.test(raw))return issue('提交结果待核验','尚未确认平台是否已经收到并发布这条商品。','查看原商品详情和后台核验记录，先确认原商品结果；不要再次提交或重新发布。');
-    if(state==='PAUSED_CAPTCHA'||/CAPTCHA|CHALLENGE_PRESENT|验证码|滑块/.test(raw))return issue('需要人工验证','执行页面出现验证码或平台人工验证，自动执行已暂停。','打开执行浏览器，人工完成验证；确认验证消失后，点击“检查并继续本轮”。');
-    if(/内核发生变化|内核校验失败|内核文件变化|内核已改变|KERNEL_(?:CHANGED|MISMATCH)|INTEGRITY_FAILED/.test(raw))return issue('网站执行版本不一致','执行代码与已验收的版本记录不一致。','保留原任务，交维护人员核对代码、同步已验收版本并重载网站；完成后刷新页面再检查。');
-    if(/SOURCE_OR_ASSET_CHANGED|PACKAGE_CHANGED_SINCE_REVIEW/.test(raw))return issue('任务资料与当前文件不一致','当前表格或图片已改变，原任务仍记录修改前的资料版本，执行前核对未通过。','在“资料设置”确认最新资料已保存，再由维护人员核对原任务与新资料的版本绑定；完成后继续原任务。重新开始一轮不会自动更新旧快照。');
-    if(/ENOENT|找不到指定文件|文件不存在|缺图|缺少.*图片/.test(raw))return issue('资料文件缺失','任务引用的表格或图片在原位置找不到。','在资料设置核对文件目录和名称，恢复缺失文件或补齐资料后保存；保留原任务，再检查对应的资料版本。');
-    if(/运费模板.*(?:不存在|未找到|不匹配|未通过)|FREIGHT_TEMPLATE/.test(raw)||(stage==='freight-template'&&/timeout|超时|locator|expect\(/i.test(raw)))return issue('运费模板未核对通过','任务要求的运费模板尚未成功选择或与店铺实际模板不一致。','在店铺后台核对实际模板名称，再检查本店资料的运费模板设置；不要套用其他店铺的模板。');
-    if(/NO_SKU_UNVERIFIED|ROOT_ANCESTRY_CHANGED/.test(raw))return issue('销售规格核对未通过','平台销售规格区域未通过当前无规格商品的结构核对，尚未确认可以安全提交。','打开当前商品详情与步骤截图，交维护人员核对发布页结构；确认适配后再继续，不要跳过提交前检查。');
-    if(/(?:图片|详情图|主图).*(?:尺寸|超长|比例|分割)|IMAGE_(?:SIZE|DIMENSION)|DETAIL_IMAGE_/.test(raw))return issue('图片规格需要处理','当前图片尺寸或详情图插入状态未通过检查。','查看平台图片提示，按提示调整原资料图片并保存；同时核对原任务的图片版本，再检查并继续。');
-    if(/CONTENT_REVIEW_HELD|CONTENT_MISMATCH|主图内容待核验|错图/.test(raw))return issue('商品图片内容需要核对','商品图片与目的地的一致性尚未确认。','核对当前商品的目的地、主图与详情；已有商品应检查平台实际内容，保留原商品记录，不要重新发布。');
-    if(/ITEM_RETRY_BUDGET_EXHAUSTED|ROUND_.*(?:EXHAUSTED|BUDGET)|尝试.*上限|恢复.*耗尽|不具备额外安全恢复条件/.test(raw))return issue('原任务恢复条件未满足','原任务的尝试次数或额外恢复条件未通过检查。','查看当前商品详情中的尝试与恢复记录；可按原计划跳过问题商品，待首轮结束后检查是否允许重试，不重置次数或重建任务绕过限制。');
-    if(/LOGIN|登录|店铺身份|浏览器未运行|BROWSER_UNAVAILABLE|browser.*closed|disconnected/i.test(raw))return issue('店铺登录或浏览器不可用','执行浏览器未连接，或目标店铺的登录身份尚未确认。','打开执行浏览器，确认登录的是当前店铺；如有登录或身份提示，处理后再检查并继续。');
-    if(/MATERIAL_UPLOAD_|MAIN_MATERIAL_FRAME_|ATTRIBUTE_SELECTION_MISMATCH/.test(raw))return issue('页面操作核对未通过','素材上传、图片选择或属性选择的结果未通过回读核对。','查看当前步骤截图，确认上传或选择是否完成；若页面结构变化，交维护人员修复适配后再继续。');
-    if(/TimeoutError|timed?\s*out|超时|locator\.|expect\(|strict mode/i.test(raw))return issue('当前页面步骤未完成','页面控件未在规定时间内出现，或操作后的状态未通过检查；具体触发原因仍需核对页面。','打开执行浏览器和当前商品步骤截图，检查弹窗、加载状态及控件；处理后通过原任务检查恢复条件，持续失败时交维护人员修复。');
-    if(/ECONNRESET|ECONNREFUSED|ETIMEDOUT|连接中断|连接被/.test(raw))return issue('连接中断','当前页面与服务或平台之间的连接未完成。','检查本地服务与执行浏览器的连接，恢复后重新读取最新状态；如已进入提交阶段，应先核验原商品结果。');
-    return issue('异常原因待确认','当前步骤发生异常，现有记录尚不足以确认具体原因。','打开当前商品详情，查看本次异常记录和步骤截图，将记录交维护人员定位；原因明确后再检查恢复条件。',false);
+    const issue=(title,cause,action,known=true)=>({title,cause,action:Array.isArray(action)?action.join(' '):action,actions:Array.isArray(action)?action:[action],known});
+    if(state==='RESULT_UNKNOWN'||submissionUncertain||/提交结果未知|提交可能|结果待核验|已有商品记录未能在原店铺核实/.test(raw))return issue('先核验原商品结果',/existing-listing|known-listing/.test(stage)||/已有商品记录/.test(raw)?'查重时发现已有商品记录，但还没确认它是不是当前店铺里的这条商品。':'系统还没确认淘宝是否已成功上架这条商品，直接重发可能造成重复商品。',['点击下方“查看当前商品详情与处理记录”，在“下一步”点击“核验原商品”；如果显示“核对上次核验结果”或“恢复上次核验记录”，沿用该入口。','只有显示“已有商品已核验”或“新增上架已核验”后，再回到本页点击“检查并继续本轮”。','如果核验入口不可用或仍未通过，查看详情里的原因并交维护人员处理。不要再次提交或重新发布。']);
+    if(state==='PAUSED_CAPTCHA'||/CAPTCHA|CHALLENGE_PRESENT|验证码|滑块/.test(raw))return issue('需要你完成验证码','淘宝页面弹出了验证码或滑块，系统不能代替你完成，所以暂停。',['点击本页“打开执行 Chrome”，在淘宝页面人工完成验证。','确认验证码或滑块已经消失，再回到网站点击“检查并继续本轮”。']);
+    if(/内核发生变化|内核校验失败|内核文件变化|内核已改变|KERNEL_(?:CHANGED|MISMATCH)|INTEGRITY_FAILED/.test(raw))return issue('网站代码改动尚未同步','网站代码被修改，但与已核对的版本记录不一致，系统因此停止执行。',['这项无法靠重复点击“继续”解决。保留原任务，交维护人员核对代码、同步版本并重载网站。','维护完成后刷新网页，再点击“检查并继续本轮”。']);
+    if(/SOURCE_OR_ASSET_CHANGED|PACKAGE_CHANGED_SINCE_REVIEW/.test(raw))return issue('原任务还在使用修改前的资料','表格或图片改过了，但原任务记住的还是修改前的资料版本，所以暂时不能继续。',['在网站“资料设置”确认最新资料已经保存，不必反复上传同一份资料。','交维护人员修复原任务与新资料的版本绑定；完成后回到原任务点击“检查并继续本轮”。','保留原任务和跳过记录。重新开始一轮不会自动更新原任务的资料。']);
+    if(/ENOENT|找不到指定文件|文件不存在|缺图|缺少.*图片/.test(raw))return issue('找不到任务要用的文件','任务要用的表格或图片，在原来的位置找不到了。',['进入网站“资料设置”，核对文件目录和名称，确认文件是否被移动、改名或删除。','恢复缺失文件或补齐资料并保存；若使用了新版本，请先核对原任务的版本绑定，再点击“检查并继续本轮”。']);
+    if(/运费模板.*(?:不存在|未找到|不匹配|未通过)|FREIGHT_TEMPLATE/.test(raw)||(stage==='freight-template'&&/timeout|超时|locator|expect\(/i.test(raw)))return issue('运费模板没选成功','系统没有成功选中这家店铺要求的运费模板，可能是名称不符或列表没有加载出来。',['点击“打开执行 Chrome”，在当前店铺核对运费模板的实际模板名称和列表是否加载完成。','到网站“资料设置”核对本店模板设置；修改业务配置后需核对原任务是否同步，再点击“检查并继续本轮”。']);
+    if(/NO_SKU_UNVERIFIED|ROOT_ANCESTRY_CHANGED/.test(raw))return issue('商品销售规格没检查通过','淘宝页面里的销售规格区域，与系统预期的不一致，系统还不能确认这条无规格商品可以提交。',['点击“查看当前商品详情与处理记录”，查看这一步的报错和截图。','这项通常需要维护人员核对淘宝页面并修复操作；修复后再点击“检查并继续本轮”，不要直接提交。']);
+    if(/(?:图片|详情图|主图).*(?:尺寸|超长|比例|分割)|IMAGE_(?:SIZE|DIMENSION)|DETAIL_IMAGE_/.test(raw))return issue('图片没通过平台检查','当前图片尺寸或详情图添加结果没通过检查，需要先看淘宝给出的具体提示。',['点击“打开执行 Chrome”，查看图片区域的报错。','若平台明确提示尺寸不符，按提示调整原资料图片并保存，再核对原任务的图片版本绑定。','问题处理后，回网站点击“检查并继续本轮”；没有尺寸提示时，不要直接裁图，先查看商品详情中的具体错误。']);
+    if(/CONTENT_REVIEW_HELD|CONTENT_MISMATCH|主图内容待核验|错图/.test(raw))return issue('商品图片需要核对','系统还没确认主图、详情图和当前目的地是否对应，暂时停止处理。',['点击“查看当前商品详情与处理记录”，核对目的地和图片。','若商品已上架，请在执行 Chrome 检查平台实际内容，保留原商品记录，不要重新发布；若图片确实有误，修正并核对资料绑定后再继续。']);
+    if(/ITEM_RETRY_BUDGET_EXHAUSTED|ROUND_.*(?:EXHAUSTED|BUDGET)|尝试.*上限|恢复.*耗尽|不具备额外安全恢复条件/.test(raw))return issue('这条商品暂时不能再试','这条商品没有通过重试次数或恢复条件检查，所以暂时不能再次执行。',['点击“查看当前商品详情与处理记录”，查看已尝试次数和不允许恢复的原因。','只有页面明确允许跳过时，才按原计划跳过；首轮结束后再检查重试入口。不重置次数，也不要重建任务绕过限制。']);
+    if(/LOGIN|登录|店铺身份|浏览器未运行|BROWSER_UNAVAILABLE|browser.*closed|disconnected/i.test(raw))return issue('执行浏览器或店铺登录需要处理','执行浏览器没有连接，或系统还没确认当前登录身份属于这家店铺。',['点击本页“打开执行 Chrome”，确认浏览器已打开，且登录的是当前店铺。','完成登录或身份提示后，回网站点击“检查并继续本轮”。']);
+    if(/MATERIAL_UPLOAD_|MAIN_MATERIAL_FRAME_|ATTRIBUTE_SELECTION_MISMATCH/.test(raw))return issue('当前操作没确认成功',`${stage?'卡在“'+stepName(stage)+'”：':''}系统没有确认图片上传、选图或属性选择已经成功，具体哪一项失败还要看当前页面。`,['点击“打开执行 Chrome”，查看当前页面是否有未加载的图片、遮挡弹窗或选中结果不符。','处理页面提示后，回网站点击“检查并继续本轮”。','如果仍停在同一步，点击“查看当前商品详情与处理记录”，查看报错和步骤截图，交维护人员修复，不要反复点击继续。']);
+    if(/TimeoutError|timed?\s*out|超时|locator\.|expect\(|strict mode/i.test(raw)){
+      const selecting=/^select-detail-\d+$/.test(stage),label=stage?stepName(stage):'当前页面操作';
+      return issue(selecting?'详情图没选成功':'当前页面操作没完成',selecting?`卡在“${label}”：系统没有完成选图，或选完后没检测到成功，所以暂停。现有记录还不能确定是图片窗口没打开、图片没加载，还是点击没有生效。`:`卡在“${label}”：系统没等到需要的按钮或图片，或点击后没检测到成功。具体触发原因仍需核对当前页面。`,['点击本页“打开执行 Chrome”，查看淘宝当前页面。','如果图片窗口还在加载，等它加载完成；如果有遮挡弹窗，先关闭；如果要求登录或验证码，手动处理。','回到网站，点击“检查并继续本轮”。','如果仍卡在同一步，点击“查看当前商品详情与处理记录”，查看具体报错和步骤截图；可能需要维护人员修复，反复点继续不一定能恢复。']);
+    }
+    if(/ECONNRESET|ECONNREFUSED|ETIMEDOUT|连接中断|连接被/.test(raw))return issue('连接中断','网站与本地服务或淘宝的连接未完成，当前操作没能继续。',['确认本地服务已连接，并点击“打开执行 Chrome”查看淘宝是否能正常打开。','恢复连接后刷新网站；如已进入提交阶段，应先核验原商品结果，不要直接重新发布。','只有确认未提交且页面允许恢复时，再点击“检查并继续本轮”。']);
+    return issue('异常原因还不能确定',`${stage?'卡在“'+stepName(stage)+'”。':''}现有记录不足以确认具体原因，不能直接判断是图片、登录还是网页操作出了问题。`,['点击“查看当前商品详情与处理记录”，查看本次异常记录和步骤截图。','将具体报错交维护人员定位；修复后再点击“检查并继续本轮”。不要重建原任务或反复发布。'],false);
   };
   globalThis.LyUiCopy = Object.freeze({ text: safeText, reason: reasonText, diagnose, step: stepName, event: eventName, state: value => {const text=states[value]||safeText(value);return /[A-Za-z]{2,}/.test(text)?'状态待确认':text;} });
 })();

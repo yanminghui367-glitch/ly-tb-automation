@@ -1,0 +1,55 @@
+--- baseline/workbench/taobao-publisher.mjs
++++ workbench/taobao-publisher.mjs
+@@ -242,17 +242,28 @@
+  return actual;
+ }
+ 
+-export async function clickMainImageAndVerify(page,card,expectedUrls,guard,{onEvent=async()=>{}}={}) {
++export async function clickMainImageAndVerify(page,card,expectedUrls,guard,{onEvent=async()=>{},stabilityTimeout=5000}={}) {
+  assert(Array.isArray(expectedUrls)&&expectedUrls.length>=1&&expectedUrls.length<=5,'MAIN_IMAGE_EXPECTATION_INVALID');
+  assert(expectedUrls.every(u=>typeof u==='string'&&u.length>0),'MAIN_IMAGE_EXPECTATION_INVALID');
++ assert(Number.isFinite(stabilityTimeout)&&stabilityTimeout>0&&stabilityTimeout<=5000,'MAIN_IMAGE_WAIT_BUDGET_INVALID');
+  const images=page.locator('#sell-field-mainImagesGroup img');
+  const read=()=>images.evaluateAll(es=>es.map(e=>e.src));
+  const expected=expectedUrls.map(mainImageKey),formUrl=page.url();
+  const check=async()=>{await guard();assert.equal(page.url(),formUrl,'MAIN_IMAGE_FORM_CHANGED');};
+- const stableRead=async()=>{
+-  await check();const first=(await read()).map(mainImageKey);
+-  await check();const second=(await read()).map(mainImageKey);
+-  await check();assert.deepEqual(second,first,'MAIN_IMAGE_STATE_CHANGED');return second;
++ const same=(left,right)=>left.length===right.length&&left.every((value,index)=>value===right[index]);
++ const timedOut=()=>Object.assign(Error('主图状态等待超时：原页面图片未在限定时间内稳定，未重复点击或提交'),{code:'SAFE_RETRY_MAIN_IMAGE_STATE'});
++ const remaining=deadline=>{const ms=deadline-performance.now();if(ms<=0)throw timedOut();return ms;};
++ const stableRead=async(deadline=performance.now()+stabilityTimeout)=>{
++  await check();let previous=(await read()).map(mainImageKey);
++  for(;;){
++   // A pending render is not a state conflict. Observe only, with a shared
++   // deadline and fresh guards; neither the card click nor upload is retried.
++   await delay(Math.min(100,remaining(deadline)));
++   await check();const current=(await read()).map(mainImageKey);
++   await check();remaining(deadline);
++   if(same(current,previous))return current;
++   previous=current;
++  }
+  };
+  const initial=await stableRead();
+  if(initial.length===expected.length&&initial.every((value,index)=>value===expected[index])){
+@@ -264,8 +275,16 @@
+  try{await card.locator('.PicList_pic_imgBox__c0HXw').click();}
+  catch(error){if(error.name!=='TimeoutError')throw error;clickTimeout=error;}
+  try{
+-  await expect.poll(stableRead,{timeout:5000}).toEqual(expected);
+-  const final=await stableRead();assert.deepEqual(final,expected,'MAIN_IMAGE_PREFIX_CHANGED');
++  const deadline=performance.now()+stabilityTimeout;
++  for(;;){
++   const current=await stableRead(deadline);
++   if(same(current,expected))break;
++   // The unchanged original prefix can precede the new image. A stable
++   // different image, order, or count is a real conflict, not a safe timeout.
++   assert.deepEqual(current,expected.slice(0,-1),'MAIN_IMAGE_STATE_CHANGED');
++   await delay(Math.min(100,remaining(deadline)));
++  }
++  const final=await stableRead(deadline);assert.deepEqual(final,expected,'MAIN_IMAGE_STATE_CHANGED');
+  }catch(error){
+   // Keep the original click diagnostic alongside a failed result check.
+   if(clickTimeout)error.mainImageClickTimeout=clickTimeout.message;

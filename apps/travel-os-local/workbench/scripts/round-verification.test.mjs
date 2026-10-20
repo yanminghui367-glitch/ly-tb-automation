@@ -41,7 +41,11 @@ test('historical ID lookup is strict on title and unknown-submit recovery checks
 });
 
 test('unknown submission without captured ID still requires strict new-publication verification',async t=>{
- const f=await fixture(t);const args={...f.args(f.tasks[1]),run:{state:'RESULT_UNKNOWN'}};
+ const f=await fixture(t),task=f.tasks[1];
+ const submissionEvents=[{seq:1,kind:'SUBMITTING',at:'2026-10-18T14:00:00Z'},{seq:2,kind:'SUBMIT_CLICKED',at:'2026-10-18T14:00:10Z'},{seq:3,kind:'RESULT_UNKNOWN',at:'2026-10-18T14:01:00Z'}];
+ f.setFresh([{itemId:'100001',title:task.listing.title,status:'出售中',text:task.listing.title,cells:[{label:'价格',text:'20'},{label:'库存',text:'999999'},{label:'创建时间',text:'2026-10-18 22:00:30'}]}]);
+ const args={...f.args(task),run:{state:'RESULT_UNKNOWN'},submissionEvents,assertUnusedItemId:async()=>{}};
+ const base=f.verifier.evidence;f.verifier.evidence=async(...args)=>({...await base(...args),rowText:task.listing.title,screenshot:'fixture.png',verifiedAt:new Date().toISOString()});
  await f.verifier.verify(args);assert.equal(f.options().newSubmission,true);
  f.verifier.evidence=async(table,row,task,dir,options)=>{assert.equal(options.newSubmission,true);throw Error('后台商品价格与提交快照不符');};
  await assert.rejects(f.verifier.verify(args),/价格与提交快照不符/);

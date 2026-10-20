@@ -1,0 +1,519 @@
+{
+  "at": "2026-10-18T06:12:37.034880+00:00",
+  "ok": true,
+  "verdict": "PASS_REAL_SAMPLE_5",
+  "scope": "Independent read-only source DB, immutable evidence and range-code review; no browser, POST, or production write",
+  "shopId": "shop-7949a469",
+  "roundId": "045fe9dc-b0fd-4101-998f-73ad1b75b99b",
+  "windowId": "84bb9ec6-9de0-45bf-ab5e-151286f27e9b",
+  "repairVersion": "20261018-step3-main-stability-r1",
+  "window": {
+    "state": "COMPLETED",
+    "positions": [
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "limit": 5,
+    "autoContinue": false,
+    "finished": "2026-10-18T06:07:23.291Z"
+  },
+  "counts": {
+    "NEW_SUCCESS": 5,
+    "FAILED": 0,
+    "RESULT_UNKNOWN": 0,
+    "WAITING_HUMAN": 0,
+    "newSystemBlockedEvents": 0,
+    "newBudgetGrantEvents": 0,
+    "otherItemsUnchanged": 695
+  },
+  "roundEventsAfterBaseline": {
+    "REPAIR_VERSION_UPDATED": 1,
+    "RUNNING": 1,
+    "WINDOW_RUNNING": 1,
+    "START_ACCEPTED": 1,
+    "EXECUTION_ATTEMPT_STARTED": 5,
+    "PENDING": 5,
+    "WINDOW_EXECUTION_BOUND": 5,
+    "NEW_SUCCESS": 5,
+    "EXECUTION_ATTEMPT_FINISHED": 5,
+    "WINDOW_COMPLETED": 1,
+    "PAUSED": 1,
+    "INTERNAL_BATCH_SETTLED": 1
+  },
+  "repairVersionEvents": [
+    {
+      "seq": 1080,
+      "round_id": "045fe9dc-b0fd-4101-998f-73ad1b75b99b",
+      "key": null,
+      "at": "2026-10-18T05:53:44.607Z",
+      "kind": "REPAIR_VERSION_UPDATED",
+      "payload": {
+        "from": "20261018-step2-safe-retry-r2",
+        "to": "20261018-step3-main-stability-r1",
+        "authorizationHash": "2d739f60e9dc4fa5f26daa74c4de445344efd7612826d7c39156d749ccee7786",
+        "attemptsPreserved": true
+      }
+    }
+  ],
+  "rows": [
+    {
+      "position": 12,
+      "runId": "ea9b9ee6-2070-4360-80fc-538013fb2c3b",
+      "itemId": "1094028052022",
+      "state": "NEW_SUCCESS",
+      "attempts": 5,
+      "maxAttempts": 5,
+      "extraAttempts": 0,
+      "submitIntents": 1,
+      "submitClicks": 1,
+      "newPauses": 0,
+      "attemptId": "167594a0-8f33-482b-9306-abbc68ba42c3",
+      "attemptRepairVersion": "20261018-step3-main-stability-r1",
+      "verifiedAt": "2026-10-18T05:55:51.334Z"
+    },
+    {
+      "position": 13,
+      "runId": "74a6d592-8cad-49e2-b6e0-15b6d8b92210",
+      "itemId": "1090966919176",
+      "state": "NEW_SUCCESS",
+      "attempts": 1,
+      "maxAttempts": 3,
+      "extraAttempts": 0,
+      "submitIntents": 1,
+      "submitClicks": 1,
+      "newPauses": 0,
+      "attemptId": "7eaa4c76-af24-45a6-a289-6ea902576a6e",
+      "attemptRepairVersion": "20261018-step3-main-stability-r1",
+      "verifiedAt": "2026-10-18T05:58:28.798Z"
+    },
+    {
+      "position": 14,
+      "runId": "c0bf178a-0c3f-41b1-b5be-8d50087d4d08",
+      "itemId": "1090967099628",
+      "state": "NEW_SUCCESS",
+      "attempts": 1,
+      "maxAttempts": 3,
+      "extraAttempts": 0,
+      "submitIntents": 1,
+      "submitClicks": 1,
+      "newPauses": 0,
+      "attemptId": "922d99e4-8125-44fe-93e0-28de8a100582",
+      "attemptRepairVersion": "20261018-step3-main-stability-r1",
+      "verifiedAt": "2026-10-18T06:01:18.695Z"
+    },
+    {
+      "position": 15,
+      "runId": "36ad719c-0236-4581-8e3e-83aae0574557",
+      "itemId": "1092971329097",
+      "state": "NEW_SUCCESS",
+      "attempts": 1,
+      "maxAttempts": 3,
+      "extraAttempts": 0,
+      "submitIntents": 1,
+      "submitClicks": 1,
+      "newPauses": 0,
+      "attemptId": "8cc3d136-a54a-49cc-81ce-05846def8c74",
+      "attemptRepairVersion": "20261018-step3-main-stability-r1",
+      "verifiedAt": "2026-10-18T06:04:25.682Z"
+    },
+    {
+      "position": 16,
+      "runId": "ee3d539d-281c-4b37-b9c3-96c6ffbaed50",
+      "itemId": "1091888642091",
+      "state": "NEW_SUCCESS",
+      "attempts": 1,
+      "maxAttempts": 3,
+      "extraAttempts": 0,
+      "submitIntents": 1,
+      "submitClicks": 1,
+      "newPauses": 0,
+      "attemptId": "7be179b8-d474-432c-a7fa-d9f350a6a315",
+      "attemptRepairVersion": "20261018-step3-main-stability-r1",
+      "verifiedAt": "2026-10-18T06:07:22.462Z"
+    }
+  ],
+  "timingsRecomputed": {
+    "upload-entry": {
+      "observations": 0,
+      "ready": 0,
+      "failedOrInterrupted": 0,
+      "readyP50Ms": null,
+      "readyP90Ms": null,
+      "failedDurationsMs": [],
+      "timeoutBudgetsMs": []
+    },
+    "upload-panel": {
+      "observations": 0,
+      "ready": 0,
+      "failedOrInterrupted": 0,
+      "readyP50Ms": null,
+      "readyP90Ms": null,
+      "failedDurationsMs": [],
+      "timeoutBudgetsMs": []
+    },
+    "upload-receipt": {
+      "observations": 0,
+      "ready": 0,
+      "failedOrInterrupted": 0,
+      "readyP50Ms": null,
+      "readyP90Ms": null,
+      "failedDurationsMs": [],
+      "timeoutBudgetsMs": []
+    },
+    "thumbnail": {
+      "observations": 45,
+      "ready": 45,
+      "failedOrInterrupted": 0,
+      "readyP50Ms": 431.364,
+      "readyP90Ms": 574.271,
+      "failedDurationsMs": [],
+      "timeoutBudgetsMs": [
+        30000
+      ]
+    },
+    "detail-panel": {
+      "observations": 5,
+      "ready": 5,
+      "failedOrInterrupted": 0,
+      "readyP50Ms": 778.199,
+      "readyP90Ms": 1119.819,
+      "failedDurationsMs": [],
+      "timeoutBudgetsMs": [
+        20000
+      ]
+    }
+  },
+  "evidenceChecks": {
+    "timingFilesReadable": 50,
+    "sourceTargetAndTimingHashesMatch": 50,
+    "screenshotsPresent": 5,
+    "screenshots": [
+      {
+        "position": 12,
+        "path": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ea9b9ee6-2070-4360-80fc-538013fb2c3b\\verified-in-list.png",
+        "sha256": "66a6935ce0325fab5b976573c0fb79c2d527c64137c5260534e4d8be9f6178d2"
+      },
+      {
+        "position": 13,
+        "path": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\74a6d592-8cad-49e2-b6e0-15b6d8b92210\\verified-in-list.png",
+        "sha256": "3045b86e68fbec350a0983631704b99cc3fb3868d24eab820f43f6a3f676f220"
+      },
+      {
+        "position": 14,
+        "path": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\c0bf178a-0c3f-41b1-b5be-8d50087d4d08\\verified-in-list.png",
+        "sha256": "930da7ab1d4ad444fe633594cb5a3e6165f24a79af7e66df6f501fa23fb94794"
+      },
+      {
+        "position": 15,
+        "path": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\36ad719c-0236-4581-8e3e-83aae0574557\\verified-in-list.png",
+        "sha256": "70d66ff1ddb2d7f4d0b0092f50abb1238d02cc2abd87a530ee57c5fd07ed6d87"
+      },
+      {
+        "position": 16,
+        "path": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ee3d539d-281c-4b37-b9c3-96c6ffbaed50\\verified-in-list.png",
+        "sha256": "5ad5c3263a4c4b8cd2b3c43d790e6ede310a8c78bb8bab562a076b9db088c07d"
+      }
+    ],
+    "stageHashes": [
+      {
+        "position": 12,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ea9b9ee6-2070-4360-80fc-538013fb2c3b\\detail-readiness-0e2b47ca-3e70-424a-a2a3-fdfbe846fa91.json",
+        "sha256": "abd55741a43bf8eb05ffa8c9351ad26577c506e066622673a8fa44a940428470"
+      },
+      {
+        "position": 12,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ea9b9ee6-2070-4360-80fc-538013fb2c3b\\detail-readiness-0e5c3eb8-6c86-4253-b86a-cd9686252532.json",
+        "sha256": "6442ec75682e2beee14dd475e8f2b44bb892beed2d03c2abc5556ce5a41d49d1"
+      },
+      {
+        "position": 12,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ea9b9ee6-2070-4360-80fc-538013fb2c3b\\detail-readiness-19a07202-ead4-4d9b-b8c2-8b1c340cb29a.json",
+        "sha256": "2ee0fc1136081178a569a88c958d4487f5c77d47d226429ec8dc36a8c6b94f3d"
+      },
+      {
+        "position": 12,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ea9b9ee6-2070-4360-80fc-538013fb2c3b\\detail-readiness-5483ac40-4fd1-455a-8afd-1432724a8cbf.json",
+        "sha256": "e5b21f9629bea3b27276168605193b432041984f629b700dcb9b072e00505855"
+      },
+      {
+        "position": 12,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ea9b9ee6-2070-4360-80fc-538013fb2c3b\\detail-readiness-632f582f-3872-4ecb-a080-e22fa3350208.json",
+        "sha256": "9829b2cd0191a13a97989e6f8ff008dcc1cc7d233216a5c1b16b366fc9ff2390"
+      },
+      {
+        "position": 12,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ea9b9ee6-2070-4360-80fc-538013fb2c3b\\detail-readiness-90626241-0cac-417f-b7a2-e59a6cc3890d.json",
+        "sha256": "3b8aa0bc0ea22d1314e9150298b40ba535a6afaf71fadcd90d589e536e67633c"
+      },
+      {
+        "position": 12,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ea9b9ee6-2070-4360-80fc-538013fb2c3b\\detail-readiness-922002ce-f1ef-4a7a-9293-2f5164a1ae93.json",
+        "sha256": "3c14696259b4305aead64f59398710c5d53f1900aa1f557ac53cea9e4540b518"
+      },
+      {
+        "position": 12,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ea9b9ee6-2070-4360-80fc-538013fb2c3b\\detail-readiness-9a3c4b72-0c0f-4fd2-9f7c-50d8e1dbb531.json",
+        "sha256": "4abe5c5dd92bd60782075e96973952818223870d42e56bb333d99e79f008499a"
+      },
+      {
+        "position": 12,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ea9b9ee6-2070-4360-80fc-538013fb2c3b\\detail-readiness-d1d21df4-a9ae-4735-8cb8-1ef26b7b7afd.json",
+        "sha256": "30d8c42502869712e79ffcbccb7409efe40f300ccd8474ea10b93f6f2421d66c"
+      },
+      {
+        "position": 12,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ea9b9ee6-2070-4360-80fc-538013fb2c3b\\detail-readiness-efbbcc25-3083-45b9-812b-223e4d087f14.json",
+        "sha256": "7b9f36055367c99b78c489ae8cfe4fb81fdba1d8d566f2eb9f78255ef86060d8"
+      },
+      {
+        "position": 13,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\74a6d592-8cad-49e2-b6e0-15b6d8b92210\\detail-readiness-1b545df0-3132-480f-a855-3101870f4ddf.json",
+        "sha256": "8c2855fcf4822809f78d835d521e5d8e05495fee2b75ff304ccd3bfd4251dd15"
+      },
+      {
+        "position": 13,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\74a6d592-8cad-49e2-b6e0-15b6d8b92210\\detail-readiness-69a43be8-f27b-4a2b-8ecc-e14e9fbdd07c.json",
+        "sha256": "8b9d1d4007b707c7561c36a3353eb642cf6ab41d65ad5dd7850702dbc65eeeac"
+      },
+      {
+        "position": 13,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\74a6d592-8cad-49e2-b6e0-15b6d8b92210\\detail-readiness-6e2759a5-5176-4707-81d6-79cb18857a47.json",
+        "sha256": "75a2010ae28293f090630cb989661493b971e93809ab7dc2c871bfe76c202ecb"
+      },
+      {
+        "position": 13,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\74a6d592-8cad-49e2-b6e0-15b6d8b92210\\detail-readiness-734c5377-285f-4711-be00-016e085cb240.json",
+        "sha256": "afe3b84dd0a5b31cb653d798a70203a6d93be0007f78eb99df3fd513b561875f"
+      },
+      {
+        "position": 13,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\74a6d592-8cad-49e2-b6e0-15b6d8b92210\\detail-readiness-775958f6-72a3-40a5-9e88-801b89be24be.json",
+        "sha256": "012eba8c2c49672ef96142743866521c5adf3fe924676b0f093b95003d230bcf"
+      },
+      {
+        "position": 13,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\74a6d592-8cad-49e2-b6e0-15b6d8b92210\\detail-readiness-8140bfa7-b242-4b21-bafe-108d831ac29c.json",
+        "sha256": "af38981393b403824c02f95b6463ca074d5f46f60ef0a2a390c55c7384554707"
+      },
+      {
+        "position": 13,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\74a6d592-8cad-49e2-b6e0-15b6d8b92210\\detail-readiness-a8299a32-a509-49ec-8477-22eea791968f.json",
+        "sha256": "098b9184ef33aea5a0adc45771d13429ed830a1115312c9de5215bd10ad7deb9"
+      },
+      {
+        "position": 13,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\74a6d592-8cad-49e2-b6e0-15b6d8b92210\\detail-readiness-ccbf47ee-68a9-4bb2-aa3e-a6624b9f0940.json",
+        "sha256": "0678359ffed131f4a4f98e7691a091e1f73cc18237ea8ca442369196d98c32c8"
+      },
+      {
+        "position": 13,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\74a6d592-8cad-49e2-b6e0-15b6d8b92210\\detail-readiness-d0a85a3b-24b1-45a1-9011-0d349f893809.json",
+        "sha256": "3b8b16b675c974d9ddf9ba2b8adba2b80233e80a7d5ea8ff5a97321003cefe7c"
+      },
+      {
+        "position": 13,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\74a6d592-8cad-49e2-b6e0-15b6d8b92210\\detail-readiness-ffe00c1f-9bdc-4528-9ec4-d3a4e1a84159.json",
+        "sha256": "bab4f2aaeaf5e3c3261abb9384b63c333264fced3a4df00f9978710cf77731b8"
+      },
+      {
+        "position": 14,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\c0bf178a-0c3f-41b1-b5be-8d50087d4d08\\detail-readiness-1a2be1fb-b2e4-4072-9db6-b81e82c47d37.json",
+        "sha256": "bba55e04830c23d68bbd5e800c5feab46f32a1662a3dbfb6144bcaf97eb6cb84"
+      },
+      {
+        "position": 14,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\c0bf178a-0c3f-41b1-b5be-8d50087d4d08\\detail-readiness-22ecbadc-7397-4f7a-9625-55b5b8763bae.json",
+        "sha256": "524204f20a6722afbca511695267658b814e7d27f356fac8760624a46d35539c"
+      },
+      {
+        "position": 14,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\c0bf178a-0c3f-41b1-b5be-8d50087d4d08\\detail-readiness-2cb2548b-2b2d-4ebd-b0e1-43df81d40412.json",
+        "sha256": "75a928adb3aca898dfe09c42e5804f0e16ebe2c09bda4d9271820d9bcc0d5fb4"
+      },
+      {
+        "position": 14,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\c0bf178a-0c3f-41b1-b5be-8d50087d4d08\\detail-readiness-38ef0335-ad1d-41dd-8bb0-98f39b487abe.json",
+        "sha256": "92c78d778a8ae5dc9a8a2a9e7bee7afb7fc1f498f865cc8ed41d6d4b7f66df97"
+      },
+      {
+        "position": 14,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\c0bf178a-0c3f-41b1-b5be-8d50087d4d08\\detail-readiness-3bfe3037-0186-457f-ace8-9921480081fe.json",
+        "sha256": "5e646383c0f4c04100571c848efc644723976e7daebfe5bde751bbd597b5f5d4"
+      },
+      {
+        "position": 14,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\c0bf178a-0c3f-41b1-b5be-8d50087d4d08\\detail-readiness-49b51c59-a036-40c2-a748-06d4ee0414c6.json",
+        "sha256": "c6542ffd16a78fed1d659cbd35b4dba3c7fbad318776146b6225ac2be50c5e3e"
+      },
+      {
+        "position": 14,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\c0bf178a-0c3f-41b1-b5be-8d50087d4d08\\detail-readiness-7a27b560-ca02-4d70-8946-68c49c7c00c3.json",
+        "sha256": "b3ef172b3cb06bd927863820ebc50e4bee4dd88c76575540b0517729ea6ec907"
+      },
+      {
+        "position": 14,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\c0bf178a-0c3f-41b1-b5be-8d50087d4d08\\detail-readiness-9a61e401-383d-4edc-8ae6-f8707043d7bb.json",
+        "sha256": "b66f26921ba4bb769f3fe4640bd88c4f23db510b86bd57280b04e7af441add99"
+      },
+      {
+        "position": 14,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\c0bf178a-0c3f-41b1-b5be-8d50087d4d08\\detail-readiness-e8745021-fdef-446a-969a-39c3b94aa40a.json",
+        "sha256": "00c8e19224ab9bee4e559e393676341694cb6c429cd0df997efff7a345e11be2"
+      },
+      {
+        "position": 14,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\c0bf178a-0c3f-41b1-b5be-8d50087d4d08\\detail-readiness-f5ea5e65-a059-45c7-bbec-b9357efa8b76.json",
+        "sha256": "9f2b4e0bb7823f2d0caa2c0882c9913b8f91bcb7dce790ecc2d17425dff3ef79"
+      },
+      {
+        "position": 15,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\36ad719c-0236-4581-8e3e-83aae0574557\\detail-readiness-3811c285-1966-4c3d-b339-17daba59274d.json",
+        "sha256": "85f90d86c475461807ef9d418e8331fb38bd168949c1cc85f7277587644b901b"
+      },
+      {
+        "position": 15,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\36ad719c-0236-4581-8e3e-83aae0574557\\detail-readiness-42faf6bd-4644-4776-9811-3b2b2bfa33c2.json",
+        "sha256": "738d4346c242c3ee79a0d86188d9b0a1e5e9a10cc556fdb5a257ec99c23800e0"
+      },
+      {
+        "position": 15,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\36ad719c-0236-4581-8e3e-83aae0574557\\detail-readiness-58567078-bcea-4da1-aed4-57beec584073.json",
+        "sha256": "98c46466457361435af8ae01b5b3848e2aba5562d8f96f056aaac57cefb4956d"
+      },
+      {
+        "position": 15,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\36ad719c-0236-4581-8e3e-83aae0574557\\detail-readiness-64fbc858-4dfb-4f4b-8944-f9d0b7fb5426.json",
+        "sha256": "3941c49946b47f65d0953a5ae60e3f9dacde6d6b302769d0f48dc82578be975d"
+      },
+      {
+        "position": 15,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\36ad719c-0236-4581-8e3e-83aae0574557\\detail-readiness-bf641987-58c3-4426-ab80-ddbf71f61aa3.json",
+        "sha256": "d12c88c125273700a17022e9babff8567a254741eba766157afb1cb01c36ca20"
+      },
+      {
+        "position": 15,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\36ad719c-0236-4581-8e3e-83aae0574557\\detail-readiness-d0490920-02ab-4934-bbd7-627cc3277f3c.json",
+        "sha256": "8f21d956aa59b07089be94cbf49bdf754e1a3197cac4bb2118e43f253f666bbe"
+      },
+      {
+        "position": 15,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\36ad719c-0236-4581-8e3e-83aae0574557\\detail-readiness-db797a32-3355-4f11-a64f-fd5431a2fab2.json",
+        "sha256": "77c63ad2e2e6ea9e477a43b681dac4cba0e52a3dba193ec5eb6a9dde045bd0b8"
+      },
+      {
+        "position": 15,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\36ad719c-0236-4581-8e3e-83aae0574557\\detail-readiness-e27ece06-4ad1-4353-8cf6-4dfe730da067.json",
+        "sha256": "9e9aae165b2d84afa96021abe8ded42b57bc4feaad392ca208257ba3f15b8f29"
+      },
+      {
+        "position": 15,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\36ad719c-0236-4581-8e3e-83aae0574557\\detail-readiness-e43351b8-1baf-4189-b84d-5d7c7fe3b416.json",
+        "sha256": "5090113f41bf520784d8beeb5f773c8a46410366c12a409d2324990afbd189df"
+      },
+      {
+        "position": 15,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\36ad719c-0236-4581-8e3e-83aae0574557\\detail-readiness-e8d1560a-26bf-4170-b3f1-f80acb53353a.json",
+        "sha256": "e17e25164b225dc612f97a0eb93abca3616aaac7f39c8fede9097a44bf23242c"
+      },
+      {
+        "position": 16,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ee3d539d-281c-4b37-b9c3-96c6ffbaed50\\detail-readiness-1614a4d4-33fa-4e42-8483-c9f98c25e6f3.json",
+        "sha256": "a1ce17ccef2aca988c20d46d58b14e1550314f09e39f913dbd1578c938a807b3"
+      },
+      {
+        "position": 16,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ee3d539d-281c-4b37-b9c3-96c6ffbaed50\\detail-readiness-1eb1794b-b36b-4001-87f6-0c0cf24a28f6.json",
+        "sha256": "1892b4cae439e7ad2bb05e19b9fd32c3c1487efaf103307e8a0c5620ce24a386"
+      },
+      {
+        "position": 16,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ee3d539d-281c-4b37-b9c3-96c6ffbaed50\\detail-readiness-492997f9-eb51-4f3d-b244-7b17196d50d7.json",
+        "sha256": "b9ef028b9887893a490b0a650aed29452028b00772f11122550146e255a2d303"
+      },
+      {
+        "position": 16,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ee3d539d-281c-4b37-b9c3-96c6ffbaed50\\detail-readiness-4b7a6444-046d-4088-9557-f9ad67f22adc.json",
+        "sha256": "4ce9e7fa492deacb1d00bee036b4e710dba1ecbae09274c84bfe04e5be93971f"
+      },
+      {
+        "position": 16,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ee3d539d-281c-4b37-b9c3-96c6ffbaed50\\detail-readiness-51213f12-80e6-43f3-adf8-7e1e1fada464.json",
+        "sha256": "5c6b10791864afdaa37dd888c2b2d235761220facd9237bc261adc1e125fef00"
+      },
+      {
+        "position": 16,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ee3d539d-281c-4b37-b9c3-96c6ffbaed50\\detail-readiness-a2374fe6-c448-4204-9f9c-a58407e61183.json",
+        "sha256": "5d7cf976558cf749dc91a3f74328cec4766c2c7b1e67176e91b49b4ec7b1c3e8"
+      },
+      {
+        "position": 16,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ee3d539d-281c-4b37-b9c3-96c6ffbaed50\\detail-readiness-b7ee380b-bc3b-4b24-9f2f-99180eddb793.json",
+        "sha256": "778935e877c392e0b041286b9c3ea873cffe09a8ea442ec1438417900c1e14fc"
+      },
+      {
+        "position": 16,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ee3d539d-281c-4b37-b9c3-96c6ffbaed50\\detail-readiness-c0e46336-94ba-49dd-a589-dcce8ca8c1f7.json",
+        "sha256": "20022acc9cf23bd0aa06dc50a0d507b2b5780e4430afe293f4146d3ab1162a17"
+      },
+      {
+        "position": 16,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ee3d539d-281c-4b37-b9c3-96c6ffbaed50\\detail-readiness-d4284510-4769-46d8-9caa-e211aaad534b.json",
+        "sha256": "c19f3994c7e02e72f9ce888edc61260c294b8804afca38f6c2c215884667e5d5"
+      },
+      {
+        "position": 16,
+        "source": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\workbench\\output\\tasks\\ee3d539d-281c-4b37-b9c3-96c6ffbaed50\\detail-readiness-ea29cb79-a36c-494a-9952-8ac28f04971a.json",
+        "sha256": "20595ccd712b8ab0e36df63919044c7ea56ef5ffa3f85a03be226a3311d2753d"
+      }
+    ]
+  },
+  "pathCorrection": {
+    "timingsInitialDefectFixed": true,
+    "stagesUnchanged": true,
+    "indexWasNotCorrupted": true,
+    "note": "The initial timing files contained invalid decoded paths. The separate stage index was intact; earlier terminal-rendering suspicion concerning that index was incorrect."
+  },
+  "run1Review": {
+    "range": [
+      17,
+      191
+    ],
+    "total": 175,
+    "firstWindow": [
+      17,
+      116
+    ],
+    "secondWindow": [
+      117,
+      191
+    ],
+    "limit": 100,
+    "autoContinue": true,
+    "all175PendingAndUnsubmitted": true,
+    "previousSuccessfulSamplesExcluded": true,
+    "scriptReviewedNotExecuted": true,
+    "references": [
+      "workbench/round-windows.mjs:33-36,64,95,103-109,125-126",
+      "workbench/listing-round.mjs:478,659-661,695-698"
+    ],
+    "boundsPreservedByContinuation": true
+  },
+  "limitations": [
+    "Three upload stages have zero observations because existing materials were reused; no real upload-branch result or timeout retuning is inferred.",
+    "QA inspected saved platform success URL/returned ID, verified source events and backend receipt snapshots; it did not perform an additional browser re-query.",
+    "Only the completed five samples are accepted; the next 175 have not been run by QA."
+  ],
+  "artifacts": {
+    "pre-start.json": "8b46a0b74c0f554d089b2f5ee96e0e49fe3df69246e5245cc078d28b1555931b",
+    "sample-after.json": "1d12701af5dd12b51f6db10991cdc1ef41295fa8b486082d04b3464036cd518f",
+    "result.json": "9d209efc4bc424ef0d45dda75b4f787dfb1712edbc4dc65b5cd8c92a563a162d",
+    "timings.json": "430d11de3c787d8befe644fe961fb1809acfb66b2eb2d2046a277443dc17d716",
+    "stage-evidence-index.json": "9486d4e99275279ce8364e57118855bcb48d95aee4928efd75b54be6481fcfdd",
+    "timing-path-repair.json": "7dd5b3d03d9fd8f6c4406902a70acac11649f63decae6aeed3c1832c4546dcac",
+    "timings-initial-path-encoding.json": "87d8f6928230682b994205f1a7cf550ddd22d121bf984cdb88ecc2b6781640fb",
+    "start-run1.mjs": "f704f467eb6c0f0b81843774d02576a9f46b32b625144cb0c9a9f0ed38374aa1"
+  }
+}

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {registerHooks} from 'node:module';
+import {readFileSync} from 'node:fs';
 import {mkdtemp,readFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join,resolve,sep} from 'node:path';
@@ -11,6 +12,10 @@ import {SourceStore,digest} from '../source-store.mjs';
 const fixtureKey='__ly_submission_pause_fixture';
 const hooks=registerHooks({load(url,ctx,next){
  const common=`const f=()=>globalThis.${fixtureKey};`;
+ if(url.endsWith('/source-workflow.mjs')){
+  const source=readFileSync(new URL(url),'utf8').replace('readFile, writeFile, mkdir','readFile, writeFile as nativeWriteFile, mkdir');
+  return {format:'module',shortCircuit:true,source:source+`\nasync function writeFile(path,...args){if(globalThis.${fixtureKey}?.failTimingWrite&&String(path).includes('execution-timing-'))throw Error('ISOLATED_TIMING_WRITE_FAILURE');if(globalThis.${fixtureKey}?.failFinalCheckpoint&&String(path).endsWith('checkpoint.json'))throw Error('ISOLATED_CHECKPOINT_WRITE_FAILURE');return nativeWriteFile(path,...args);}`};
+ }
  if(url.endsWith('/taobao-publisher.mjs'))return {format:'module',shortCircuit:true,source:common+`
  export const MAPPING_VERSION='isolated-pause-boundary';
  export const newForm=page=>page?.kind==='form';
@@ -24,12 +29,12 @@ const hooks=registerHooks({load(url,ctx,next){
  export const openTaskPage=async(_context,_task,_checkpoint,guard,_record,onPage)=>{
   f().opens++;onPage(f().page,{createdThisExecution:true});await guard(f().page);return f().page;
  };
- export const fillTask=async({guard})=>{f().fills++;await guard();return {};};
+ export const fillTask=async({guard,step})=>{f().fills++;await guard();await step('title',guard);return {};};
  export const verifyForm=async()=>{await f().afterFormCheck();};
- export const submitTask=async(_page,guard,onClicked)=>{
+ export const submitTask=async(_page,guard,onClicked,options)=>{
   f().submitCalls++;await f().beforeSubmitGuard();await guard();
   f().clicks++;await f().afterDispatch();await onClicked();await f().afterRecord();
-  await guard();f().receipts++;return f().itemId;
+  await guard();if(f().missingReceipt)return options.readBackend();f().receipts++;return f().itemId;
  };
  export const verifyResult=async(_context,task,itemId,_target,_dir,guard)=>{
   f().verifications++;await f().duringVerification();await guard(f().verificationPage);
@@ -47,19 +52,26 @@ const hooks=registerHooks({load(url,ctx,next){
   await guard();if(!options.verifiedPersisted)throw Error('CLEANUP_BEFORE_PERSIST');
   f().cleanups++;return {closed:true};
  };`};
+ if(url.endsWith('/listing-verification.mjs'))return {format:'module',shortCircuit:true,source:common+`
+ export const sellerTable=async(_context,task,guard)=>({page:f().verificationPage,guard:()=>guard(f().verificationPage),search:async query=>{
+  await guard(f().verificationPage);f().backendQueries=(f().backendQueries||0)+1;
+  if(query.title!==task.listing.title)throw Error('FROZEN_TITLE_REQUIRED');return {records:f().backendRows||[]};
+ }});
+ export const listingEvidence=async(table,row,_task,_dir,options)=>{await table.guard();if(!options.newSubmission)throw Error('STRICT_VERIFICATION_REQUIRED');return {itemId:row.itemId,status:row.status,screenshot:'isolated-read-only.png',rowText:row.text,verifiedAt:new Date().toISOString()};};`};
  if(url.endsWith('/task-screenshot.mjs'))return {format:'module',shortCircuit:true,source:common+`
  export const captureTaskScreenshot=async(_page,_dir,name)=>{f().screenshots.push(name);return {screenshot:'isolated-'+name+'.png'};};`};
  return next(url,ctx);
 }});
 const {SourceWorkflow}=await import('../source-workflow.mjs');
+await import('../listing-verification.mjs');
 hooks.deregister();
 
-async function fixture(t){
+async function fixture(t,{mode='key',runMode='LIVE'}={}){
  const dir=await mkdtemp(join(tmpdir(),'ly-submit-pause-'));
  assert(resolve(dir).startsWith(resolve(tmpdir())+sep));
  const store=new SourceStore(join(dir,'state.sqlite'));
  t.after(async()=>{delete globalThis[fixtureKey];store.close();await rm(dir,{recursive:true,force:true});});
- const task={shopId:'isolated-pause-shop',priority:1,source:{},listing:{type:'country',country:'隔离国家',title:'隔离国家服务'},business:{shop_name:'隔离店',listing_time:'立刻上架'},assets:{main:[],secondary:[],details:[]},adapterIssues:[]};
+ const task={shopId:'isolated-pause-shop',priority:1,source:{},listing:{type:'country',country:'隔离国家',title:'隔离国家服务'},business:{shop_name:'隔离店',listing_time:'立刻上架',price_cny:20,inventory:999999},assets:{main:[],secondary:[],details:[]},adapterIssues:[]};
  const noop=async()=>{};
  const state={itemId:'123456789',opens:0,fills:0,submitCalls:0,clicks:0,receipts:0,verifications:0,cleanups:0,fileChecks:0,contentChecks:0,finalChecks:0,challengeChecks:0,identityChecks:[],screenshots:[],
   beforeSubmitGuard:noop,afterDispatch:noop,afterRecord:noop,duringVerification:noop,beforeVerificationReturns:noop,afterFormCheck:noop,duringStatus:noop,duringIdentity:noop,
@@ -69,10 +81,10 @@ async function fixture(t){
  };
  globalThis[fixtureKey]=state;
  const owner={status:async()=>{await state.duringStatus();return state.login;},sessions:new Map([[task.shopId,{context:{pages:()=>[state.page]}}]])};
- const flow=new SourceWorkflow(owner,{store,runtime:dir,artifacts:join(dir,'artifacts')});
+ const flow=new SourceWorkflow(owner,{store,runtime:dir,artifacts:join(dir,'artifacts'),evidenceMode:mode});
  flow.assertContentForLive=async()=>{state.contentChecks++;if(state.contentError)throw Object.assign(Error(state.contentError),{code:state.contentError});};
  flow.beforeVerified=async()=>{state.finalChecks++;if(state.finalError)throw Object.assign(Error(state.finalError),{code:state.finalError});};
- const run=store.create('isolated-import',task,'LIVE','SOURCE',{reviewed:true,taskHash:digest(task)}),shop={id:task.shopId,name:task.business.shop_name};
+ const run=store.create('isolated-import',task,runMode,'SOURCE',{reviewed:true,taskHash:digest(task)}),shop={id:task.shopId,name:task.business.shop_name};
  const execute=async()=>{flow.launch(run.id,shop);await flow.pending;return store.run(run.id);};
  const resume=async()=>{await flow.resume({id:run.id},shop);await flow.pending;return store.run(run.id);};
  const count=kind=>store.events(run.id).filter(e=>e.kind===kind).length;
@@ -175,4 +187,50 @@ test('revoked content still blocks intent even with the new pause boundary',asyn
  const x=await fixture(t);x.state.afterFormCheck=async()=>{x.state.contentError='CONTENT_REVIEW_INVALID';};
  const r=await x.execute();assert.equal(r.state,'PAUSED');assert.equal(r.checkpoint.errorCode,'CONTENT_REVIEW_INVALID');
  assert.equal(x.state.contentChecks,2);assert.equal(x.count('SUBMITTING'),0);assert.equal(x.state.clicks,0);
+});
+
+test('actual workflow key/full modes keep guard, file/content review and submission behavior equivalent',async t=>{
+ const outcomes=[];
+ for(const mode of ['key','full']){
+  const x=await fixture(t,{mode});await x.execute();await assertVerified(x);
+  const s=x.state;outcomes.push({opens:s.opens,fills:s.fills,submitCalls:s.submitCalls,clicks:s.clicks,receipts:s.receipts,verifications:s.verifications,cleanups:s.cleanups,fileChecks:s.fileChecks,contentChecks:s.contentChecks,finalChecks:s.finalChecks,challengeChecks:s.challengeChecks,identityChecks:s.identityChecks,events:x.store.events(x.run.id).map(e=>[e.kind,e.payload.name||null])});
+  assert(s.screenshots.includes('submit-success'));assert(s.screenshots.includes('submit-once'));assert(s.screenshots.includes('verify-platform-result'));
+  assert.equal(s.screenshots.includes('title'),mode==='full');
+  const timing=(await x.saved()).executionTiming;assert(Number.isFinite(Date.parse(timing.startedAt)));assert(Number.isFinite(Date.parse(timing.finishedAt)));
+  assert(x.store.events(x.run.id).filter(e=>e.kind.startsWith('STEP_')).every(e=>e.payload.attemptId===timing.attemptId));
+ }
+ assert.deepEqual(outcomes[0],outcomes[1]);
+});
+test('timing artifact write failure cannot change verified business state or permit resubmission',async t=>{
+ const x=await fixture(t);x.state.failTimingWrite=true;await x.execute();await assertVerified(x);
+ assert.match((await x.saved()).timingWriteError,/ISOLATED_TIMING_WRITE_FAILURE/);
+ await assert.rejects(x.resume(),/已有成功核验记录/);assert.equal(x.state.clicks,1);
+});
+test('final checkpoint write failure after durable verification cannot make the task publishable again',async t=>{
+ const x=await fixture(t),original=x.flow.beforeVerified;
+ x.flow.beforeVerified=async(...args)=>{await original(...args);x.state.failFinalCheckpoint=true;};
+ await x.execute();assert.equal(x.store.run(x.run.id).state,'VERIFIED');assert(x.store.completed(x.task));assert.equal(x.state.clicks,1);
+ assert(x.store.events(x.run.id).some(e=>e.kind==='UNEXPECTED_ERROR'));await assert.rejects(x.resume(),/已有成功核验记录/);
+});
+test('P4 dry run retains full per-field evidence and never submits with key configured',async t=>{
+ const x=await fixture(t,{mode:'key',runMode:'DRY_RUN'});await x.execute();
+ assert.equal(x.store.run(x.run.id).state,'DRY_RUN_COMPLETE');assert.equal(x.state.clicks,0);assert(x.state.screenshots.includes('title'));assert.equal((await x.saved()).executionTiming.evidenceMode,'full');
+});
+async function backendRowAfterClick(x){
+ await new Promise(resolve=>setTimeout(resolve,1100));
+ const created=new Date(Date.now()+8*3600000).toISOString().slice(0,19).replace('T',' ');
+ return {itemId:x.state.itemId,title:x.task.listing.title,status:'出售中',text:x.task.listing.title+'\nID: '+x.state.itemId,cells:[{label:'价格',text:'20'},{label:'库存',text:'999999'},{label:'创建时间',text:created}]};
+}
+test('receipt fallback persists VERIFIED/history on the original run; never performs an extra ID query',async t=>{
+ const x=await fixture(t),snapshot=digest(x.run.task);x.state.missingReceipt=true;
+ x.state.afterRecord=async()=>{x.state.backendRows=[await backendRowAfterClick(x)];};
+ const result=await x.execute();assert.equal(result.state,'VERIFIED',result.reason);await assertVerified(x);
+ assert.equal(x.state.backendQueries,1);assert.equal(x.state.verifications,0);assert.equal(digest(x.store.run(x.run.id).task),snapshot);
+ assert.equal(x.count('SUBMITTING'),1);assert.equal(x.count('SUBMISSION_BACKEND_LOOKUP_STARTED'),1);assert.equal(x.count('SUBMISSION_BACKEND_LOOKUP_CONFIRMED'),1);
+ assert.equal(x.store.run(x.run.id).checkpoint.submissionRecovery.method,'frozen-title-read-only');
+});
+test('backend mismatch remains RESULT_UNKNOWN with one click and no success checkpoint',async t=>{
+ const x=await fixture(t);x.state.missingReceipt=true;x.state.afterRecord=async()=>{const row=await backendRowAfterClick(x);row.cells[0].text='999';x.state.backendRows=[row];};
+ const r=await x.execute();assert.equal(r.state,'RESULT_UNKNOWN');assert.equal(x.state.clicks,1);assert.equal(x.state.verifications,0);assert.equal(x.state.backendQueries,1);
+ assert.equal(x.store.completed(x.task),null);assert.equal(r.checkpoint.itemId,undefined);assert.equal(x.count('VERIFIED'),0);
 });

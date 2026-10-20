@@ -93,7 +93,7 @@ export class ProductApi {
   }
   async handleRound(req,res,url,{body,json}){
     if(await handleOperationsSelection(this,req,res,url,{body,json}))return true;
-    if(['/api/v1/rounds/item','/api/v1/rounds/item-skip','/api/v1/rounds/item-verify','/api/v1/rounds/item-retry'].includes(url.pathname)){
+    if(['/api/v1/rounds/item','/api/v1/rounds/item-skip','/api/v1/rounds/item-verify','/api/v1/rounds/item-retry','/api/v1/rounds/item-park'].includes(url.pathname)){
       if(!this.roundItems){json(res,503,{code:'ITEM_HOST_NOT_CONFIGURED',error:'单条操作尚未完成服务接入。'});return true;}
       const scoped=new URL(url),shops=scoped.searchParams.getAll('executionShop');
       if(shops.length>1||shops.length===1&&shops[0]!==this.shop.id)throw err('单条操作与当前执行店铺不一致');
@@ -108,6 +108,7 @@ export class ProductApi {
       if(action==='window'){const window=this.round.windows.view(id,{items:true});if(!window)throw err('执行轮次不存在',404);json(res,200,window);return true;}
       if(action==='window.csv'){const value=this.round.windows.csv(id);res.writeHead(200,{'content-type':'text/csv; charset=utf-8','content-disposition':'attachment; filename="execution-window-results.csv"','cache-control':'no-store'});res.end(value);return true;}
       if(action==='results.csv'){const round=this.round.round(id);if(!round)throw err('轮次不存在',404);res.writeHead(200,{'content-type':'text/csv; charset=utf-8','content-disposition':'attachment; filename="listing-round-results.csv"','cache-control':'no-store'});res.end(this.round.csv(round.id));return true;}
+      if(action==='parked-items.csv'){const round=this.round.round(id);if(!round)throw err('轮次不存在',404);res.writeHead(200,{'content-type':'text/csv; charset=utf-8','content-disposition':'attachment; filename="parked-items.csv"','cache-control':'no-store'});res.end(this.round.parkedCsv(round.id));return true;}
     }
     if(req.method!=='POST')throw err('轮次操作不存在',404);
     if(['pause','stop'].includes(action)){
@@ -122,18 +123,22 @@ export class ProductApi {
       if(input.id&&input.id!==r?.id||input.windowId&&input.windowId!==w?.id)throw err('原执行轮次已结束，不能操作其他轮次');
       json(res,200,this.round[action]());return true;
     }
-    if(!['create','start','resume','content-review','rules-apply','window-preview','window-create'].includes(action))throw err('轮次操作不存在',404);
+    if(!['create','start','resume','content-review','rules-apply','window-preview','window-create','success-goal-preview','success-goal-create'].includes(action))throw err('轮次操作不存在',404);
     const input=await body(req),target=action==='create'?input.importId:input.id;
     assertShopInput(input,this.shop.id);
     if(!/^[a-f0-9-]{36}$/i.test(input.requestId||''))throw err('缺少有效操作编号');
     const previous=this.source.store.db.prepare('SELECT * FROM product_actions WHERE id=?').get(input.requestId);
-    if(previous){if(previous.action!=='rounds/'+action||previous.target!==target)throw err('请求编号不能用于其他操作');const result=JSON.parse(previous.result);if((['content-review','rules-apply','window-create'].includes(action)||result.attemptId)&&result.inputHash!==digest(input))throw err(action==='content-review'?'请求编号对应的审核内容已改变':'请求编号对应的范围内容已改变');json(res,200,{...result,replayed:true});return true;}
+    if(previous){if(previous.action!=='rounds/'+action||previous.target!==target)throw err('请求编号不能用于其他操作');const result=JSON.parse(previous.result);if((['content-review','rules-apply','window-create','success-goal-create'].includes(action)||result.attemptId)&&result.inputHash!==digest(input))throw err(action==='content-review'?'请求编号对应的审核内容已改变':'请求编号对应的范围内容已改变');json(res,200,{...result,replayed:true});return true;}
     if(action==='rules-apply'){
       this.assertRulesIdle();this.round.assertIdle();const round=this.round.assertManifest(input.id);if(input.manifestHash!==round.manifest_hash)throw err('固定轮次范围已变化');
       const kernel=await this.integrity();if(!kernel.ok)throw err('内核校验失败，不能追加本轮规则');
       const result=this.round.applyUserRules(round.id,{manifestHash:input.manifestHash,ignoreDestinationDuplicates:input.ignoreDestinationDuplicates===true,acceptDedhamTransliteration:input.acceptDedhamTransliteration===true,confirmedBy:input.confirmedBy||'用户'});
       result.inputHash=digest(input);this.source.store.db.prepare('INSERT INTO product_actions VALUES(?,?,?,?,?)').run(input.requestId,'rounds/'+action,target,new Date().toISOString(),JSON.stringify(result));
       await this.round.report(round.id);json(res,200,{...result,round:this.round.summary(round.id)});return true;
+    }
+    if(action==='success-goal-preview'){
+      this.assertRulesIdle();this.round.assertIdle();const r=this.round.assertManifest(input.id);if(input.manifestHash!==r.manifest_hash)throw err('固定清单范围已变化');
+      this.capturing=true;try{json(res,200,await this.round.successGoals.preview(r.id,input));}finally{this.capturing=false;}return true;
     }
     if(action==='window-preview'){
       this.assertRulesIdle();this.round.assertIdle();const r=this.round.assertManifest(input.id);if(input.manifestHash!==r.manifest_hash)throw err('固定清单范围已变化');
@@ -168,6 +173,15 @@ export class ProductApi {
     const browser=await this.owner.status(this.shop);if(!browser.running||!browser.loggedIn)throw err(browser.reason||'请先登录目标店铺');
     this.assertRulesIdle();this.round.assertIdle();
     let result;
+    if(action==='success-goal-create'){
+      const r=this.round.assertManifest(input.id);if(input.manifestHash!==r.manifest_hash)throw err('固定清单范围已变化');
+      this.capturing=true;let created;
+      try{created=await this.round.successGoals.create(r.id,input,{commit:result=>this.source.store.db.prepare('INSERT INTO product_actions VALUES(?,?,?,?,?)').run(input.requestId,'rounds/'+action,target,new Date().toISOString(),JSON.stringify({accepted:true,id:r.id,windowId:result.window.id,goal:result.goal,inputHash:digest(input),executionStarted:false}))});}finally{this.capturing=false;}
+      // Durable creation precedes execution. Replayed requests never start a
+      // second publisher, including after a crash between commit and start.
+      this.roundVerifier.reset();this.round.start(r.id,{windowId:created.window.id,repairVersion:kernel.revision});
+      json(res,200,{accepted:true,id:r.id,windowId:created.window.id,goal:this.round.successGoals.summary(r.id),round:this.round.summary(r.id),executionStarted:true});return true;
+    }
     if(action==='window-create'){
       const r=this.round.assertManifest(input.id);if(input.manifestHash!==r.manifest_hash)throw err('固定清单范围已变化');
       this.capturing=true;

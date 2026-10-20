@@ -1,0 +1,148 @@
+{
+  "at": "2026-10-18T15:59:47.849177+00:00",
+  "reviewer": "/root/submitted_recovery_qa",
+  "conclusion": "PASS_DEPLOYMENT_ONLY",
+  "health": {
+    "app": "ly-tb-workbench",
+    "version": "1.0.0",
+    "pid": 47768,
+    "kernel": {
+      "ok": true,
+      "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+      "revision": "20261018-website-verify-r1",
+      "files": 84,
+      "changed": []
+    }
+  },
+  "diskKernel": {
+    "ok": true,
+    "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+    "revision": "20261018-website-verify-r1",
+    "files": 84,
+    "changed": []
+  },
+  "processStartedAt": "2026-10-18T15:57:15.6170584Z",
+  "files": [
+    {
+      "path": "workbench/round-item-verify.mjs",
+      "sha256": "3364bcc6ac5be7945479dc7df5e36d7f5da7d128db45008172a9fda568d36018"
+    },
+    {
+      "path": "workbench/scripts/round-item-verify.test.mjs",
+      "sha256": "5628643ea6f3c9e2aaefb2242f3f7c3eed1f9595a6ebd045da6ea01f6f792f07"
+    }
+  ],
+  "lockSha256": "00e588aa8ded8cfeef63614d3c3fdd21a9ec9e9606e5a7ac25dc954d3b0f2336",
+  "beforeSnapshotSha256": "303cf4bbaf94daa4487510fc589d949374386691107bd69afac65c3b1d5ee937",
+  "afterSnapshotSha256": "4f5f43d6b6d7aa913fcda59d619c3ec8d2674c248b2248a67398f037f1adaeee",
+  "databaseCount": 9,
+  "tableCount": 211,
+  "unchangedTables": 209,
+  "wholeDatabaseUnchanged": false,
+  "businessCorePreserved": true,
+  "changesIndependentlyRecomputed": [
+    {
+      "database": "shop-execution\\shop-7949a469\\source-workflow\\state.sqlite",
+      "table": "round_events",
+      "added": [
+        {
+          "seq": 1848,
+          "round_id": "045fe9dc-b0fd-4101-998f-73ad1b75b99b",
+          "key": "6ee7fc7eddeaf3203918d5618d271103e4fe51f58cdd0c5039dcfcdaca263836",
+          "at": "2026-10-18T15:57:16.329Z",
+          "kind": "RESULT_UNKNOWN",
+          "payload": "{\"reason\":\"提交结果待核验，禁止再次提交\",\"stage\":\"submit-once\"}"
+        }
+      ],
+      "removed": [],
+      "updated": []
+    },
+    {
+      "database": "shop-execution\\shop-7949a469\\source-workflow\\state.sqlite",
+      "table": "round_items",
+      "added": [],
+      "removed": [],
+      "updated": [
+        {
+          "key": {
+            "round_id": "045fe9dc-b0fd-4101-998f-73ad1b75b99b",
+            "key": "6ee7fc7eddeaf3203918d5618d271103e4fe51f58cdd0c5039dcfcdaca263836"
+          },
+          "fields": {
+            "updated": {
+              "before": "2026-10-18T15:48:07.126Z",
+              "after": "2026-10-18T15:57:16.327Z"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "backupHashes": [
+    {
+      "source": "source-workflow\\state.sqlite",
+      "sha256": "63ae0231f18d40368cabe13c697480a263566c84bd36ffe4033cae8570debdaf",
+      "match": true
+    },
+    {
+      "source": "shop-execution\\shop-8a239d1b\\source-workflow\\state.sqlite",
+      "sha256": "8713e987f139dc8775bbf78739dc6e3c3e6c534e4dc6a12affad0709d2bd9e52",
+      "match": true
+    },
+    {
+      "source": "shop-execution\\shop-863c2e33\\source-workflow\\state.sqlite",
+      "sha256": "8713e987f139dc8775bbf78739dc6e3c3e6c534e4dc6a12affad0709d2bd9e52",
+      "match": true
+    },
+    {
+      "source": "shop-execution\\shop-cee4eabf\\source-workflow\\state.sqlite",
+      "sha256": "8713e987f139dc8775bbf78739dc6e3c3e6c534e4dc6a12affad0709d2bd9e52",
+      "match": true
+    },
+    {
+      "source": "shop-execution\\shop-fa0b135e\\source-workflow\\state.sqlite",
+      "sha256": "8713e987f139dc8775bbf78739dc6e3c3e6c534e4dc6a12affad0709d2bd9e52",
+      "match": true
+    },
+    {
+      "source": "shop-execution\\shop-79139216\\source-workflow\\state.sqlite",
+      "sha256": "8713e987f139dc8775bbf78739dc6e3c3e6c534e4dc6a12affad0709d2bd9e52",
+      "match": true
+    },
+    {
+      "source": "shop-execution\\shop-7949a469\\source-workflow\\state.sqlite",
+      "sha256": "e4f2c628e1efb3dea55b78afa7114c56880564ac05e6826edddad0b336b65bb4",
+      "match": true
+    },
+    {
+      "source": "shop-execution\\shop-26d68af6\\source-workflow\\state.sqlite",
+      "sha256": "8713e987f139dc8775bbf78739dc6e3c3e6c534e4dc6a12affad0709d2bd9e52",
+      "match": true
+    },
+    {
+      "source": "travel-os/product.sqlite",
+      "sha256": "a6e3af8f7d7f5d777266a45e9c7335cd6bd64ae6da639f46de81fc0af4d1449d",
+      "match": true
+    }
+  ],
+  "tasks": [
+    {
+      "name": "TravelOS-Internal-KeepAlive",
+      "enabled": true,
+      "state": "Ready"
+    },
+    {
+      "name": "TravelOS-Huanqiu-700-Watchdog-10m",
+      "enabled": true,
+      "state": "Ready"
+    },
+    {
+      "name": "TravelOS-Wuzhou700-Monitor-30m",
+      "enabled": false,
+      "state": "Disabled"
+    }
+  ],
+  "liveVerificationPerformed": false,
+  "productionMutationsByReviewer": false,
+  "browserInspectedByReviewer": false
+}

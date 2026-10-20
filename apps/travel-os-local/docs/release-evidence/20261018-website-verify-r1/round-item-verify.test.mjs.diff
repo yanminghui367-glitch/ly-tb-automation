@@ -1,0 +1,27 @@
+--- baseline/workbench/scripts/round-item-verify.test.mjs
++++ candidate/workbench/scripts/round-item-verify.test.mjs
+@@ -36,6 +36,24 @@
+  const f=await fixture(t,{submitted:true}),x=f.round.item(f.r.id,f.scope().key),launches=f.flow.launches.length;
+  const receipt=await f.action.verify(f.request());assert.equal(receipt.outcome.state,'NEW_SUCCESS');assert.equal(f.store.run(x.run_id).state,'VERIFIED');assert.equal(f.batch.store.item(x.queue_id).state,'SUCCEEDED');
+  assert.equal(f.flow.launches.length,launches);assert.equal(f.store.events(x.run_id).filter(e=>e.kind==='SUBMIT_CLICKED').length,1);assert.equal(f.action.attempts.get(receipt.attemptId).run_id,x.run_id);
++});
++
++test('website verify-only recovers a missing ID through the real verifier using original submission evidence',async t=>{
++ const f=await fixture(t,{submitted:true}),o=f.round,x=o.item(f.r.id,f.scope().key),originalQueue=f.batch.store.item(x.queue_id),calls=[];
++ f.store.checkpoint(x.run_id,{itemId:null});
++ for(const [kind,at] of [['SUBMITTING','2026-10-18T13:27:10.103Z'],['SUBMIT_CLICKED','2026-10-18T13:27:11.139Z'],['RESULT_UNKNOWN','2026-10-18T13:27:44.315Z']])f.store.db.prepare('UPDATE events SET at=? WHERE run=? AND kind=?').run(at,x.run_id,kind);
++ const task=x.task,record={itemId:'700001',title:task.listing.title,status:'出售中',text:task.listing.title+' ID: 700001',cells:[{label:'价格',text:'20'},{label:'库存',text:'999999'},{label:'创建时间',text:'2026-10-18 21:27:20'}]};
++ o.db.prepare('INSERT INTO round_policy_overrides(round_id,policy,payload,at) VALUES(?,?,?,?)').run(f.r.id,'ignore-destination-duplicates',JSON.stringify({enabled:true,scope:'THIS_ROUND_ONLY',manifestHash:o.round(f.r.id).manifest_hash,shop:task.shopId}),new Date().toISOString());
++ const verifier=new RoundVerification({context:()=>({}),guard:async()=>o.assertLease(f.r.id),round:()=>({round:o.round(f.r.id),items:o.items(f.r.id)}),artifacts:o.artifacts,
++  tableFactory:async()=>({page:{},search:async query=>{calls.push(query);return {records:[record]};}}),evidence:async()=>f.result});
++ o.verifyExisting=input=>verifier.verify(input);
++ const beforeEvents=f.store.events(x.run_id).filter(e=>['SUBMITTING','SUBMIT_CLICKED'].includes(e.kind));
++ const req=f.request(),receipt=await f.action.verify(req);
++ assert.equal(receipt.outcome.state,'NEW_SUCCESS');assert.equal(f.store.run(x.run_id).state,'VERIFIED');assert.equal(f.batch.store.item(x.queue_id).state,'SUCCEEDED');assert.equal(o.item(f.r.id,x.key).state,'NEW_SUCCESS');
++ assert.equal(o.view(f.r.id).state,'PAUSED');assert.equal(o.item(f.r.id,f.scope(2).key).state,'PENDING');assert.equal(f.flow.submits,0);
++ assert.deepEqual(calls,[{title:task.listing.title}]);assert.deepEqual(f.store.events(x.run_id).filter(e=>['SUBMITTING','SUBMIT_CLICKED'].includes(e.kind)),beforeEvents);
++ const afterQueue=f.batch.store.item(x.queue_id);for(const key of ['attempts','max_attempts','extra_attempts'])assert.equal(afterQueue[key],originalQueue[key]);
++ assert.equal((await f.action.verify(req)).replayed,true);assert.equal(calls.length,1);
+ });
+ 
+ test('ambiguous and absent results preserve unknown and record a sealed unsuccessful attempt',async t=>{

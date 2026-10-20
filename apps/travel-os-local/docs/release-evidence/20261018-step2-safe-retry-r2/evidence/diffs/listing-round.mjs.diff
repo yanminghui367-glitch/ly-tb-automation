@@ -1,0 +1,74 @@
+--- step1-baseline/workbench/listing-round.mjs
++++ step2/workbench/listing-round.mjs
+@@ -17,6 +17,10 @@
+ const reasonOf=error=>String(error?.message||error||'未知执行错误').slice(0,1600);
+ const isEvidence=r=>!!(/^\d{6,30}$/.test(String(r?.itemId||''))&&r.status&&r.rowText&&r.screenshot&&Number.isFinite(Date.parse(r.verifiedAt)));
+ const csvCell=value=>'"'+String(value??'').replace(/^[=+@-]/,"'$&").replaceAll('"','""')+'"';
++const detailRetryCode=code=>/^SAFE_RETRY_DETAIL_(?:PANEL|UPLOAD_ENTRY|UPLOAD_PANEL|UPLOAD_RECEIPT|MATERIAL)$/.test(code||'');
++const detailRetryStep=(code,step)=>code==='SAFE_RETRY_DETAIL_PANEL'?step==='open-details'||/^select-detail-\d+$/.test(step||''):/^select-detail-\d+$/.test(step||'');
++const submissionInRun=run=>!!(run&&(['SUBMITTING','RESULT_UNKNOWN','VERIFIED'].includes(run.state)||run.result||run.checkpoint?.itemId||run.checkpoint?.reconciliation));
++const protectedPageReason=reason=>/PAGE_LEDGER_|PAGE_PROTECTION_|PINNED_PAGE|PAGE_BUDGET|保留页面.*(?:保护|失败)/i.test(reason||'');
+ 
+ // Unknown errors are system blockers, not evidence that a product is invalid.
+ export function classifyRoundFailure(error,{run,preflight=false}={}){
+@@ -25,6 +29,10 @@
+  if(run?.state==='PAUSED_CAPTCHA'||/CAPTCHA|验证码|滑块|风险验证|请人工登录|店铺身份|专用浏览器未运行|登录失效/i.test(reason))return {kind:'HUMAN',reason};
+  if(preflight&&/ENOENT|素材.*(?:缺失|变化|改变)|文件.*不存在|图片.*缺失|TASK_DATA|ADAPTER_ISSUE|价格.*缺失|库存.*缺失/i.test(reason))return {kind:'PREFLIGHT',reason};
+  if(/^PRODUCT_|^TASK_DATA|^ATTRIBUTE_VALUE_INVALID/.test(code)||/^(?:PRODUCT_DATA|TASK_DATA|ATTRIBUTE_VALUE_INVALID):/.test(reason))return {kind:'PRODUCT',reason};
++ if(/^SAFE_RETRY_DETAIL_/.test(code)){
++  if(!preflight&&detailRetryCode(code)&&run?.state==='PAUSED'&&detailRetryStep(code,run.checkpoint?.step)&&!submissionInRun(run)&&!protectedPageReason(reason))return {kind:'TRANSIENT',reason,fingerprint:code,safe:true};
++  return {kind:'SYSTEM',reason,fingerprint:code};
++ }
+  if(/^SAFE_RETRY_/.test(code))return {kind:'TRANSIENT',reason,fingerprint:code,safe:true};
+  return {kind:'SYSTEM',reason,fingerprint:code||reason.replace(/\d+/g,'#')};
+ }
+@@ -522,8 +530,15 @@
+   if(this.pauseRequested||error.code==='ROUND_PAUSE'){
+    this.syncQueue(x,'WAITING_HUMAN',null,'操作者暂停；保留原任务断点');this.update(id,x.key,{state:run&&['SUBMITTING','RESULT_UNKNOWN'].includes(run.state)?'RESULT_UNKNOWN':'PENDING',...this.submissionFlags(run,id),reason:'操作者暂停',failure_stage:run?.checkpoint?.step||''});return false;
+   }
+-  const c=/^(RESULT_UNKNOWN|DUPLICATE_AMBIGUOUS)$/.test(error.code||'')?{kind:'UNKNOWN',reason:reasonOf(error)}:error.code==='HUMAN_MODE'?{kind:'HUMAN',reason:reasonOf(error)}:this.classifyFailure(error,{run});
++  let c=/^(RESULT_UNKNOWN|DUPLICATE_AMBIGUOUS)$/.test(error.code||'')?{kind:'UNKNOWN',reason:reasonOf(error)}:error.code==='HUMAN_MODE'?{kind:'HUMAN',reason:reasonOf(error)}:this.classifyFailure(error,{run});
++  const detailCode=detailRetryCode(error.code);
++  if(detailCode&&c.kind==='TRANSIENT'){
++   const events=run?this.source.store.events(run.id):[];
++   const protectedEvidence=x.submitted||x.submission_uncertain||x.result||submissionInRun(run)||events.some(e=>['SUBMITTING','SUBMIT_CLICKED','SUBMIT_EVIDENCE','RESULT_UNKNOWN','VERIFIED'].includes(e.kind)||e.kind==='PAGE_LEDGER_PERSISTENCE_FAILED');
++   if(protectedEvidence||!x.entered_publish||this.failureStage(id,x,run)!==run?.checkpoint?.step)c={kind:'SYSTEM',reason:reasonOf(error),fingerprint:error.code};
++  }
+   const patch={reason:c.reason||reasonOf(error),failure_stage:this.failureStage(id,x,run),...this.submissionFlags(run,id)};
++  if(detailCode){patch.submitted=x.submitted||patch.submitted;patch.submission_uncertain=x.submission_uncertain||patch.submission_uncertain;}
+   if(error.code==='EXISTENCE_AMBIGUOUS'&&error.isolated===true&&!x.entered_publish&&!this.wasSubmitted(run)){
+    this.update(id,x.key,{...patch,state:'RESULT_UNKNOWN',failure_stage:'existing-listing-check'});this.event(id,x.key,'EXISTENCE_CHECK_ISOLATED',{reason:patch.reason,candidateIds:error.candidateIds||[],notSubmitted:true});return true;
+   }
+@@ -535,6 +550,32 @@
+   }
+   if(c.kind==='UNKNOWN'||c.kind==='HUMAN'){
+    this.syncQueue(x,'WAITING_HUMAN',null,patch.reason);this.update(id,x.key,{...patch,state:c.kind==='UNKNOWN'?'RESULT_UNKNOWN':'WAITING_HUMAN'});this.state(id,c.kind==='UNKNOWN'?'RESULT_UNKNOWN':'WAITING_HUMAN',patch.reason);return false;
++  }
++  // Only the explicitly classified pre-submit detail failures may finish one
++  // item after its existing two safe recoveries. Unknown/legacy errors retain
++  // the original system blocker and fingerprint accounting below.
++  if(allowRecovery&&detailCode&&c.kind==='TRANSIENT'&&c.safe===true){
++   const stage=run.checkpoint.step,tries=x.retry_counts[stage]||0;
++   this.syncQueue(x,'FAILED',null,patch.reason);
++   this.event(id,x.key,'TRANSIENT_FAILURE',{code:error.code,step:stage,retry:tries,reason:patch.reason});
++   let budgetDenied=null;
++   if(tries<2){
++    // Read the existing claim rule; do not grant, reset or reinterpret credit.
++    try{
++     if(x.queue_id)this.batch.store.assertClaimBudget(this.batch.store.item(x.queue_id),{round:this.round(id),entry:x});
++    }catch(error){
++     // Historical claim usage can exceed safe-step retries. End only this
++     // pre-submit detail failure; unknown/store faults still block the round.
++     if(!['ITEM_RETRY_BUDGET_EXHAUSTED','ITEM_RETRY_BUDGET_EXTRA_UNSAFE','ITEM_RETRY_BUDGET_SYSTEM_UNCONFIRMED'].includes(error.code))throw error;
++     budgetDenied={budgetCode:error.code,budgetReason:reasonOf(error)};
++    }
++    if(!budgetDenied){
++     this.update(id,x.key,{...patch,state:'PENDING',retry_counts:{...x.retry_counts,[stage]:tries+1}});
++     this.event(id,x.key,'SAFE_STEP_RECOVERY',{step:stage,retry:tries+1,max:2,repairVersion:this.round(id).repair_version});return true;
++    }
++   }
++   this.update(id,x.key,{...patch,state:'FAILED',finished:now()});this.finishInternal(x.batch_id);
++   this.event(id,x.key,'SAFE_STEP_RECOVERY_EXHAUSTED',{code:error.code,step:stage,retries:tries,max:2,cause:budgetDenied?'CLAIM_BUDGET':'STEP_RECOVERIES',...budgetDenied,continued:true});return true;
+   }
+   this.syncQueue(x,'FAILED',null,patch.reason);this.update(id,x.key,{...patch,state:'PENDING'});
+   const r=this.round(id),fingerprint=c.fingerprint||patch.reason,count=r.system_fingerprint===fingerprint?r.system_count+1:1;

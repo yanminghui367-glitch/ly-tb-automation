@@ -1,0 +1,41 @@
+{
+  "at": "2026-10-18T05:48:56.005560+00:00",
+  "revision": "20261018-step3-main-stability-r1",
+  "fromRevision": "20261018-step2-safe-retry-r2",
+  "files": [
+    {
+      "path": "workbench/taobao-publisher.mjs",
+      "baselineSha256": "0cac2402fb1112c53e22883c4daaf04b59330a15d817934488deecd66159bd66",
+      "sha256": "6eafc82f2b7236ef0b1b0c0b560b2b9227057303705267adaf2f472f6df1f9a3"
+    },
+    {
+      "path": "workbench/listing-round.mjs",
+      "baselineSha256": "658da87504bc6fc7637c0243e0744b8050367613d8e0a4810c8d08ecb8a41dc9",
+      "sha256": "1068c298afd8fb805f4646d553c9d3f491c769c512c1ad1758df50b5fea65308"
+    }
+  ],
+  "runtimeFiles": [
+    "workbench/taobao-publisher.mjs",
+    "workbench/listing-round.mjs"
+  ],
+  "beforeLockSha256": "bac37aedc5eff14be3284d9b4b5edc3c21c618758504728f44f233589c362aea",
+  "baselineSnapshot": "docs/kernel-baselines/20261018-before-step3-main-stability-r1.json",
+  "deploymentAllowed": false,
+  "scope": "Step 3: stable main image observation; terminal pre-submit item failure; three same or five consecutive distinct-item failures circuit; protected infrastructure and identity gates preserved",
+  "attemptsSemanticsUnchanged": true,
+  "detailBudgetsUnchanged": true,
+  "liveSampling": {
+    "shop": "shop-7949a469",
+    "positions": [
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "limit": 5,
+    "autoContinue": false,
+    "originalItem12AdditionalManualIncrement": 1,
+    "requiresIndependentAcceptance": true
+  }
+}

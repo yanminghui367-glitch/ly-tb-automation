@@ -6,6 +6,7 @@ import {join} from 'node:path';
 import {SourceStore,digest,destinationKey} from '../source-store.mjs';
 import {BatchWorkflow} from '../batch-workflow.mjs';
 import {ListingRound,classifyRoundFailure} from '../listing-round.mjs';
+import {RoundVerification} from '../round-verification.mjs';
 
 const shop={id:'wuzhou-changyou',name:'五洲畅游'};
 const task=n=>({schemaVersion:2,taskId:'task-'+n,shopId:shop.id,priority:n,source:{},listing:{type:'city',country:'国家',city:'城市'+n,title:'标题'+n},assets:{main:[],secondary:[],details:[]},business:{shop_name:shop.name,price_cny:20,inventory:999999},adapterIssues:[]});
@@ -79,6 +80,25 @@ test('unknown submission is isolated and only existing lookup can resolve it',as
  const x=await fixture(t,2);x.setBehavior(()=>({state:'RESULT_UNKNOWN'}));const r=await x.create();x.round.start(r.id);await x.round.pending;let v=x.round.view(r.id);
  assert.equal(v.state,'RESULT_UNKNOWN');assert.equal(v.counts.RESULT_UNKNOWN,1);assert.equal(v.counts.PENDING,1);assert.equal(x.flow.submits,1);
  x.setInspect(async({run,history})=>run?.state==='RESULT_UNKNOWN'?result(run.task.priority):history||null);x.setBehavior(()=>({state:'VERIFIED'}));x.round.resume(r.id);await x.round.pending;assert.equal(x.flow.submits,1);assert.equal(x.round.view(r.id).counts.NEW_SUCCESS,1);x.round.resume(r.id);await x.round.pending;assert.equal(x.flow.submits,2);
+});
+test('missing-ID original submit bypasses ignore-destination policy only for strict read-only recovery, then seals NEW_SUCCESS',async t=>{
+ const x=await fixture(t,2);x.setBehavior(()=>({state:'RESULT_UNKNOWN'}));const r=await x.create();x.round.start(r.id);await x.round.pending;
+ const entry=x.round.view(r.id).items[0],run=x.store.run(entry.runId),taskBefore=digest(run.task),manifest=x.round.round(r.id).manifest_hash;
+ x.store.checkpoint(run.id,{itemId:null});
+ x.store.db.prepare("UPDATE events SET at=? WHERE run=? AND kind='SUBMITTING'").run('2026-10-18T14:00:00Z',run.id);
+ x.store.db.prepare("UPDATE events SET at=? WHERE run=? AND kind='SUBMIT_CLICKED'").run('2026-10-18T14:00:10Z',run.id);
+ x.store.db.prepare("UPDATE events SET at=? WHERE run=? AND kind='RESULT_UNKNOWN'").run('2026-10-18T14:01:00Z',run.id);
+ let queries=0;const evidence={...result(1),status:'出售中',createdAt:'2026-10-18 22:00:30'};
+ const verifier=new RoundVerification({context:()=>({}),guard:async()=>{},round:()=>({round:{...x.round.round(r.id),policies:{'ignore-destination-duplicates':{enabled:true,scope:'THIS_ROUND_ONLY',manifestHash:manifest,shop:run.task.shopId}}},items:x.round.items(r.id)}),artifacts:x.dir,
+  tableFactory:async()=>({page:{},search:async query=>{queries++;assert.deepEqual(query,{title:run.task.listing.title});return {records:[{itemId:evidence.itemId,title:run.task.listing.title,status:'出售中',text:'原商品证据',cells:[{label:'价格',text:'20'},{label:'库存',text:'999999'},{label:'创建时间',text:evidence.createdAt}]}]};}}),evidence:async()=>evidence});
+ x.setInspect(args=>verifier.verify(args));
+ // This test exercises the original lease and reconciliation without dispatching
+ // another source execution or automatically proceeding to the second item.
+ x.round.active=r.id;x.flow.queueLease='round:'+r.id;x.batch.active='round:'+r.id;
+ try{await x.round.verify(r.id,x.round.item(r.id,entry.key));}finally{x.round.active=null;x.flow.queueLease=null;x.batch.active=null;}
+ const after=x.round.item(r.id,entry.key);assert.equal(after.state,'NEW_SUCCESS');assert.equal(x.store.run(run.id).state,'VERIFIED');assert.equal(x.batch.store.item(after.queue_id).state,'SUCCEEDED');
+ assert.equal(queries,1);assert.equal(x.flow.submits,1);assert.equal(x.flow.launches.length,1);assert.equal(x.batch.store.item(after.queue_id).attempts,1);assert.equal(x.round.items(r.id)[1].state,'PENDING');
+ assert.equal(x.round.round(r.id).manifest_hash,manifest);assert.equal(digest(x.store.run(run.id).task),taskBefore);
 });
 
 test('crash after original VERIFIED repairs round without resubmission or new run',async t=>{

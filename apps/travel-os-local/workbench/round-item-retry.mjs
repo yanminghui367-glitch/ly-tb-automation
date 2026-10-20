@@ -1,7 +1,8 @@
 // One-item action on the existing round owner, source executor and queue.
 // No browser ownership or alternative publishing implementation.
 import {createHash} from 'node:crypto';
-import {RoundManualSkip} from './round-manual-skip.mjs';
+import {RoundManualSkip,settledSkippedCaptcha} from './round-manual-skip.mjs';
+import {MANUAL_RETRY_ADDITIONS_LIMIT} from './round-selection.mjs';
 const hash=x=>createHash('sha256').update(JSON.stringify(x)).digest('hex');
 const fail=code=>{throw Object.assign(Error(code),{code});};
 const fields=['roundId','windowId','key','expectedRevision','requestId'];
@@ -60,7 +61,7 @@ export class RoundItemRetry {
   if(!w&&(!s.w.finished||!s.assignment.outcome||!['FAILED','PENDING'].includes(s.assignment.outcome.state)))fail('ITEM_RETRY_HISTORY_PROTECTED');
   for(const x of o.items(s.r.id)){
    const run=x.run_id?o.source.store.run(x.run_id):null;
-   if(['SUBMITTING','RESULT_UNKNOWN','PAUSED_CAPTCHA'].includes(run?.state)&&x.failure_stage!=='content-review'||x.state==='RESULT_UNKNOWN'&&!['existing-listing-check','content-review'].includes(x.failure_stage)||x.state==='WAITING_HUMAN'&&x.failure_stage!=='content-preflight')fail('ITEM_RETRY_OTHER_RESOLUTION_REQUIRED');
+   if((['SUBMITTING','RESULT_UNKNOWN','PAUSED_CAPTCHA'].includes(run?.state)&&x.failure_stage!=='content-review'||x.state==='RESULT_UNKNOWN'&&!['existing-listing-check','content-review'].includes(x.failure_stage)||x.state==='WAITING_HUMAN'&&x.failure_stage!=='content-preflight')&&!settledSkippedCaptcha(o,s.r.id,x))fail('ITEM_RETRY_OTHER_RESOLUTION_REQUIRED');
    if(x.key!==s.x.key&&x.state==='PENDING'&&x.entered_publish)fail('ITEM_RETRY_OTHER_CHECKPOINT_OPEN');
    if(x.state==='NEW_SUCCESS')o.assertContentForTask(x.task,s.r.id);
   }
@@ -68,7 +69,12 @@ export class RoundItemRetry {
   if(s.x.task.adapterIssues?.length)fail('ITEM_RETRY_DATA_INVALID');
   // The button and the later transactional claim share the unchanged budget.
   // This read never reserves, increments, resets, or extends an attempt.
-  if(s.q)o.batch.store.assertClaimBudget(s.q,{round:s.r,entry:s.x});
+  const used=s.q?o.selections.manualBudgetUsed(s.q.id):0;
+  const effective=s.q?o.batch.store.preflightBudget(s.q.id).effectiveAttempts:0;
+  const willAdd=!!s.q&&s.q.state!=='WAITING_HUMAN'&&effective>=s.q.max_attempts;
+  if(willAdd&&used>=MANUAL_RETRY_ADDITIONS_LIMIT)fail('ITEM_RETRY_BUDGET_MANUAL_CAP');
+  if(s.q&&!willAdd)o.batch.store.assertClaimBudget(s.q,{round:s.r,entry:s.x});
+  return {used,remaining:Math.max(0,MANUAL_RETRY_ADDITIONS_LIMIT-used),max:MANUAL_RETRY_ADDITIONS_LIMIT,willAdd,attempts:s.q?.attempts||0,maxAttempts:s.q?.max_attempts||3};
  }
  inspect(scope){const s=this.reader.read(scope);try{this.allowed(s);return {allowed:true,revision:s.revision};}catch(e){return {allowed:false,revision:s.revision,code:e.code||'ITEM_RETRY_STATE_CHECK_FAILED'};}}
  owned(req,{allowPause=false}={}){
@@ -119,8 +125,9 @@ export class RoundItemRetry {
   const o=this.owner;let token;
   // All identity changes and the immutable intent commit before execution.
   o.source.store.transaction(()=>{
-   const current=this.reader.read(req);this.allowed(current);if(current.revision!==req.expectedRevision)fail('ITEM_RETRY_STALE_REVISION');
+   const current=this.reader.read(req),budget=this.allowed(current);if(current.revision!==req.expectedRevision)fail('ITEM_RETRY_STALE_REVISION');
    let w=o.windows.open(req.roundId);
+   if(budget.willAdd)o.selections.grantSingleRetryBudget(current,{requestId:'manual-retry:'+req.requestId});
    o.update(req.roundId,req.key,{state:'PENDING',reason:'操作者请求单条重试；原失败记录保留',finished:null});
    if(!w){
     const row=o.item(req.roundId,req.key),config={startPosition:row.position,endPosition:row.position,limit:1,autoContinue:false};

@@ -1,0 +1,122 @@
+{
+  "ok": true,
+  "verdict": "PASS_CANDIDATE_ONLY",
+  "reviewer": "/root/step05_runbook_qa",
+  "reviewedAt": "2026-10-18T12:55:18.475Z",
+  "revision": "20261018-continuous-origin-refill-r1",
+  "candidateManifestSha256": "e7b6122cdc2e83c50ce4e30a1f38c9f4e1481320acbe28e798f193f669ba8bd9",
+  "candidateLockSha256": "8d76315c1d09abb28e29b1e684f76c4451bf88bc59abd7083e5dd73565ab3e9d",
+  "beforeLockSha256": "17345cf58209b4320d280cde9aefa1dff8c0ac6d8e9e60f3706a2bc9618909df",
+  "finalRuntimeHashes": {
+    "workbench/taobao-publisher.mjs": "94011fc48bd782b281b52342318647177bdde647a8f1cdece772380e16ecdc61",
+    "workbench/source-workflow.mjs": "b5c48b87fe8548ed5735c228df07c5411b46bbc3409a469b1852d6521df817ec",
+    "workbench/listing-round.mjs": "c2b7c58460980b75fff527cb7b18d593e77cccf7178e81c80130bfe022d9ed6a"
+  },
+  "changedRuntimeFiles": [
+    "workbench/taobao-publisher.mjs",
+    "workbench/source-workflow.mjs",
+    "workbench/listing-round.mjs"
+  ],
+  "kernel": {
+    "candidate": {
+      "ok": true,
+      "files": 84,
+      "changed": [],
+      "revision": "20261018-continuous-origin-refill-r1"
+    },
+    "productionAtReview": {
+      "ok": true,
+      "files": 84,
+      "changed": [],
+      "revision": "20261018-step3-main-stability-r1"
+    },
+    "lockMetadataChanges": [
+      "revision",
+      "continuousOriginRefillReview"
+    ]
+  },
+  "independentTests": {
+    "total": 14,
+    "pass": 14,
+    "fail": 0,
+    "skip": 0,
+    "log": "../../qa/independent-final.log",
+    "previousRed": {
+      "total": 8,
+      "pass": 3,
+      "fail": 5,
+      "log": "../../qa/independent-residual-before.log"
+    }
+  },
+  "evidence": [
+    {
+      "path": "../../qa/independent-final.log",
+      "sha256": "da5b2ac6aa8b4a8ec47175ae2d4e18b429838e76746bd83bddc6857992855958"
+    },
+    {
+      "path": "../../qa/independent-residual-before.log",
+      "sha256": "9fb22ad8bff8b8484c0b0c8837decea56d037ad79bccd5402316842736d5c7a2"
+    },
+    {
+      "path": "../../qa/independent-residual.test.mjs",
+      "sha256": "daa72a35e6827d0d059da2624459e045cf03b8eee0426316fb3b6999c4b5d51e"
+    },
+    {
+      "path": "../../qa/independent-publisher-round.test.mjs",
+      "sha256": "bf255153a238c24a0ab587b950422ce82438c514bcc50b28d4921aec99928ce7"
+    },
+    {
+      "path": "../../INSTALLATION-PLAN.md",
+      "sha256": "b080cbfcb1db477a3feda4ddb545dbae0331dc7fc1c20d7d5479c2fb5df2617a"
+    },
+    {
+      "path": "../../maintenance.mjs",
+      "sha256": "a46fbb491d631b084dfa74b9b8efd5e9db9bfdeac6a08d4f9d257da387b92847"
+    },
+    {
+      "path": "../../manual-page-confirmation.json",
+      "sha256": "75b8d3731a9a32de7728c7f5e83a6b37cf3b0f4d1899fffe501a3ebcacf9f1f8"
+    }
+  ],
+  "checks": {
+    "onlyThreeRuntimeFilesChanged": true,
+    "manifestDevCandidateHashesMatch": true,
+    "productionHashesMatchBaseline": true,
+    "attemptsAndBudgetsUnchanged": true,
+    "onePersistedRefillWithinOriginalClaim": true,
+    "submissionAndHumanProtectionsPreserved": true,
+    "receiptErrorsNotMasked": true,
+    "targetBindingChecked": true,
+    "maintenancePlanNoBlockingIssue": true
+  },
+  "readOnlyProductionEvidence": {
+    "observedAt": "2026-10-18T12:51:19.563Z",
+    "shop": "shop-7949a469",
+    "roundId": "045fe9dc-b0fd-4101-998f-73ad1b75b99b",
+    "positions": [
+      17,
+      191
+    ],
+    "counts": {
+      "NEW_SUCCESS": 97,
+      "FAILED": 4,
+      "PENDING": 74
+    },
+    "eachSuccess": {
+      "submissionIntents": 1,
+      "submitClicks": 1,
+      "sourceState": "VERIFIED",
+      "matchingResultId": true
+    },
+    "distinctSuccessIds": 97,
+    "currentPosition": 118,
+    "currentSubmitted": false,
+    "currentSubmissionUncertain": false
+  },
+  "limits": [
+    "Candidate and isolated tests only; no claim of real platform repair verification.",
+    "QA did not issue production POST, control browser, change runtime source, kernel lock, business database, task enablement or retry budgets.",
+    "Maintenance must revalidate idle state, backups, browser protection and original success ledger before applying the approved installation.",
+    "Actual installation, new service health and resumed platform outcome require separate evidence."
+  ]
+}

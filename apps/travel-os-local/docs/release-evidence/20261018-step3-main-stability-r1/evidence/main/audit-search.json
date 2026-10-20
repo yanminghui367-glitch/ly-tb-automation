@@ -1,0 +1,1145 @@
+{
+  "scope": [
+    "workbench",
+    "engine",
+    "tools"
+  ],
+  "excluded": [
+    "node_modules",
+    "scripts",
+    "qa-candidate",
+    "vendor",
+    "public",
+    "assets",
+    ".runtime",
+    ".git",
+    "output",
+    "*.test.*",
+    "execution-orb.js (generated bundle)"
+  ],
+  "scannedFiles": 110,
+  "files": [
+    "engine/v2/batch.mjs",
+    "engine/v2/cli.mjs",
+    "engine/v2/contract.mjs",
+    "engine/v2/page.mjs",
+    "engine/v2/runner.mjs",
+    "engine/v2/store.mjs",
+    "engine/v2/tests/audit-inputs.mjs",
+    "engine/v2/tests/fixture.mjs",
+    "engine/v2/tests/stress.mjs",
+    "engine/v2/tests/verify.mjs",
+    "tools/build-execution-orb.mjs",
+    "tools/build-globe-coordinates.mjs",
+    "tools/build_destination_link_pool.mjs",
+    "tools/build_destination_link_pool_700.mjs",
+    "tools/build_destination_link_pool_700_two_stage.mjs",
+    "tools/build_ly_listing_template.mjs",
+    "tools/build_new_image_release.mjs",
+    "tools/check-restored-migration.mjs",
+    "tools/edit_destination_titles.mjs",
+    "tools/fill_global_heat_listing_titles.mjs",
+    "tools/generate_review_packages.mjs",
+    "tools/inspect_700_title_pool.mjs",
+    "tools/inspect_global_heat_titles.mjs",
+    "tools/isolated-dev.mjs",
+    "tools/lookup_table_resize.mjs",
+    "tools/migration-data.mjs",
+    "tools/rebuild_700_listing_titles.mjs",
+    "tools/scan-travel-os.mjs",
+    "tools/start-workbench.mjs",
+    "tools/sync-source.mjs",
+    "tools/verify-installation.mjs",
+    "workbench/app.js",
+    "workbench/batch-policy.mjs",
+    "workbench/batch-store.mjs",
+    "workbench/batch-workflow.js",
+    "workbench/batch-workflow.mjs",
+    "workbench/browser-environment.mjs",
+    "workbench/content-preflight-budget.mjs",
+    "workbench/content-preparation.mjs",
+    "workbench/content-review-ui.js",
+    "workbench/destination-catalog.mjs",
+    "workbench/execution-evidence-policy.mjs",
+    "workbench/execution-notifications.mjs",
+    "workbench/execution-steps.mjs",
+    "workbench/execution-timing.mjs",
+    "workbench/globe-catalog.mjs",
+    "workbench/globe-layout.js",
+    "workbench/image-review-policy.mjs",
+    "workbench/kernel-integrity.mjs",
+    "workbench/listing-identity.mjs",
+    "workbench/listing-round.mjs",
+    "workbench/listing-verification.mjs",
+    "workbench/material-audit.mjs",
+    "workbench/material-editor.js",
+    "workbench/material-library.mjs",
+    "workbench/material-replacement.mjs",
+    "workbench/network-access.mjs",
+    "workbench/operations-api.mjs",
+    "workbench/operations-catalog-ui.js",
+    "workbench/operations-catalog.mjs",
+    "workbench/page-ownership.mjs",
+    "workbench/page-protection.mjs",
+    "workbench/product-api.mjs",
+    "workbench/product-state.mjs",
+    "workbench/product.js",
+    "workbench/publishing-address.mjs",
+    "workbench/publishing-attributes.mjs",
+    "workbench/publishing-content-review.mjs",
+    "workbench/publishing-materials.mjs",
+    "workbench/publishing-pages.mjs",
+    "workbench/publishing-rules-ui.js",
+    "workbench/publishing-rules.mjs",
+    "workbench/result-reconciliation.mjs",
+    "workbench/round-execution-attempts.mjs",
+    "workbench/round-item-api.mjs",
+    "workbench/round-item-attempts.mjs",
+    "workbench/round-item-candidates.mjs",
+    "workbench/round-item-detail.js",
+    "workbench/round-item-host-api.mjs",
+    "workbench/round-item-host.mjs",
+    "workbench/round-item-retry-api.mjs",
+    "workbench/round-item-retry.mjs",
+    "workbench/round-item-verify-api.mjs",
+    "workbench/round-item-verify.mjs",
+    "workbench/round-manual-skip.mjs",
+    "workbench/round-material-binding.mjs",
+    "workbench/round-selection.mjs",
+    "workbench/round-verification.mjs",
+    "workbench/round-windows.mjs",
+    "workbench/server.mjs",
+    "workbench/session-guard.mjs",
+    "workbench/setup-files.js",
+    "workbench/setup-flow.mjs",
+    "workbench/setup-ui.js",
+    "workbench/shop-execution.mjs",
+    "workbench/shop-identity.mjs",
+    "workbench/shop-scope.js",
+    "workbench/source-store.mjs",
+    "workbench/source-workflow.js",
+    "workbench/source-workflow.mjs",
+    "workbench/static-files.mjs",
+    "workbench/taobao-publisher.mjs",
+    "workbench/task-screenshot.mjs",
+    "workbench/task-view-model.mjs",
+    "workbench/travel-globe.js",
+    "workbench/travel-home.js",
+    "workbench/travel-os-api.mjs",
+    "workbench/travel-os-store.mjs",
+    "workbench/travel-os.js",
+    "workbench/ui-copy.js"
+  ],
+  "matches": [
+    {
+      "file": "engine/v2/cli.mjs",
+      "line": 68,
+      "text": "console.log(JSON.stringify(command === 'batch' ? result : { id: result.id, state: result.state, reason: result.reason, result: result.result }, null, 2));"
+    },
+    {
+      "file": "engine/v2/page.mjs",
+      "line": 76,
+      "text": "const names = await loc.allTextContents(); return JSON.stringify(names.map(s => s.trim())) === JSON.stringify(expected);"
+    },
+    {
+      "file": "engine/v2/runner.mjs",
+      "line": 23,
+      "text": "const state = current.state === 'SUBMITTING' ? 'RESULT_UNKNOWN' : 'PAUSED_CAPTCHA';"
+    },
+    {
+      "file": "engine/v2/runner.mjs",
+      "line": 61,
+      "text": "const state = ['SUBMITTING', 'RESULT_UNKNOWN'].includes(current.state) ? 'RESULT_UNKNOWN' : code === 'CAPTCHA_OR_LOGIN' ? 'PAUSED_CAPTCHA' : /MANUAL_FIELD|SHOP|ORIGIN|RESUME_PAGE/.test(code) ? 'PAUSED_REVIEW' : 'FAILED_RETRYABLE';"
+    },
+    {
+      "file": "engine/v2/runner.mjs",
+      "line": 63,
+      "text": "notify(JSON.stringify({ taskId: id, state, reason: code, screenshot: screenshot || null, action: state === 'RESULT_UNKNOWN' ? '先核验平台结果，禁止重新提交' : '人工处理后使用 resume 恢复同一任务' }));"
+    },
+    {
+      "file": "engine/v2/store.mjs",
+      "line": 70,
+      "text": "this.db.prepare('UPDATE tasks SET state=?,checkpoint=?,reason=?,result=?,attempts=attempts+?,updated=? WHERE id=?').run(state, JSON.stringify(checkpoint ?? old.checkpoint), reason, result ? JSON.stringify(result) : (old.result ? JSON.stringify(old.result) : null), old.state === 'READY' && state === 'RUNNING' ? 1 : 0, new Date().toISOString(), id);"
+    },
+    {
+      "file": "tools/check-restored-migration.mjs",
+      "line": 11,
+      "text": "assert.equal(existsSync(join(root,'browser-profile')),false,'restored copy must not have a browser profile');"
+    },
+    {
+      "file": "tools/check-restored-migration.mjs",
+      "line": 21,
+      "text": "const state=await fetch(base+'/api/os/state').then(r=>r.json());assert.equal(state.products.length,700);assert.equal(state.engine.records.length,report.counts.source.history);assert.equal(state.engine.settings.executionEnabled,false);assert(!state.engine.active);checks.push('700 products and original history restored, no execution enabled or active');"
+    },
+    {
+      "file": "tools/check-restored-migration.mjs",
+      "line": 24,
+      "text": "assert.equal(await page.title(),'星途 Travel OS');assert(await page.locator('#page-'+route).isVisible());"
+    },
+    {
+      "file": "tools/check-restored-migration.mjs",
+      "line": 31,
+      "text": "assert.equal(errors.length,0);assert.equal(writes.length,0);assert.equal(existsSync(join(root,'browser-profile')),false);checks.push('no script errors, API writes, browser profile or publication');"
+    },
+    {
+      "file": "tools/generate_review_packages.mjs",
+      "line": 18,
+      "text": "if (previous === undefined) delete process.env.WORKBENCH_NO_LISTEN;"
+    },
+    {
+      "file": "tools/generate_review_packages.mjs",
+      "line": 46,
+      "text": "if (original.result?.item_id || original.result?.item_url || (original.result?.state && original.result.state !== 'not_started')) throw new Error(`已有执行或发布结果，不可生成新的待上架副本：${file}`);"
+    },
+    {
+      "file": "tools/isolated-dev.mjs",
+      "line": 13,
+      "text": "for(;;){try{if((await lstat(current)).isSymbolicLink())throw Error('ISOLATION_LINK_REFUSED');}catch(e){if(e.code!=='ENOENT')throw e;}"
+    },
+    {
+      "file": "tools/isolated-dev.mjs",
+      "line": 14,
+      "text": "const parent=dirname(current);if(parent===current)break;current=parent;}"
+    },
+    {
+      "file": "tools/migration-data.mjs",
+      "line": 52,
+      "text": "const before=await sha(p);await copy(p,target);const actual=await sha(target);if(actual!==before||actual!==await sha(p))throw Error('导出期间文件变化：'+p);"
+    },
+    {
+      "file": "tools/migration-data.mjs",
+      "line": 71,
+      "text": "if([source,product].some((db,i)=>db.prepare('PRAGMA data_version').get().data_version!==versions[i])||JSON.stringify(await json(join(runtime,'product-v1/settings.json')))!==JSON.stringify(settings)||JSON.stringify(await json(join(runtime,'jobs.json'),{jobs:[],tasks:[]}))!==JSON.stringify(jobs))throw Error('业务状态在导出期间变化，请在空闲时重试。');"
+    },
+    {
+      "file": "tools/migration-data.mjs",
+      "line": 95,
+      "text": "try{idle(sourceCheck);if(JSON.stringify({source:counts(sourceCheck),product:counts(productCheck)})!==JSON.stringify(m.counts))throw Error('迁移包状态数量不符');}finally{sourceCheck.close();productCheck.close();}"
+    },
+    {
+      "file": "tools/migration-data.mjs",
+      "line": 100,
+      "text": "try{rebaseDb(s,sourceColumns,mappings,root);rebaseDb(p,productColumns,mappings,root);for(const db of [s,p])if(db.prepare('PRAGMA integrity_check').get().integrity_check!=='ok')throw Error('恢复后 SQLite 完整性检查失败');restoredCounts={source:counts(s),product:counts(p)};if(JSON.stringify(restoredCounts)!==JSON.stringify(m.counts))throw Error('恢复后业务数量变化');}finally{s.close();p.close();}"
+    },
+    {
+      "file": "workbench/batch-store.mjs",
+      "line": 134,
+      "text": "return {...b,review:undefined,total:items.length,counts,failureBlocked,elapsedMs:b.elapsed_ms+(b.segment_started?Math.max(0,Date.now()-Date.parse(b.segment_started)):0),current:items.find(x=>x.state==='RUNNING')?.id||items.find(x=>x.state==='WAITING_HUMAN')?.id||null,"
+    },
+    {
+      "file": "workbench/batch-workflow.js",
+      "line": 8,
+      "text": "const current=b?.items.find(x=>x.id===b.current);$('batchCurrent').textContent=current?`当前：${current.position}/${b.total} · ${current.destination} · ${labels[current.state]||ui.state(current.state)}`:b?.state==='COMPLETED'?'本批执行结束，已自动停止':'暂无运行任务';$('batchReason').textContent=ui.reason(current?.reason||b?.reason||'');"
+    },
+    {
+      "file": "workbench/batch-workflow.mjs",
+      "line": 88,
+      "text": "if(current.state==='RUNNING')this.store.move(item.id,'WAITING_HUMAN',e.message);this.store.setBatch(id,this.stopping?'PAUSED':'WAITING_HUMAN',e.message);"
+    },
+    {
+      "file": "workbench/content-preparation.mjs",
+      "line": 14,
+      "text": "const r=previous?.state==='COMPLETED'&&previous.import_id!==latest?.id?null:previous,imported=r?o.source.store.batch(r.import_id):latest;"
+    },
+    {
+      "file": "workbench/content-preparation.mjs",
+      "line": 53,
+      "text": "if(previous){const saved=JSON.parse(previous.result);if(previous.action!==actionName||previous.target!==target||saved.inputHash!==hash)fail('操作编号对应内容已变化');return {...saved,replayed:true};}"
+    },
+    {
+      "file": "workbench/content-review-ui.js",
+      "line": 98,
+      "text": "if(action==='previous'||action==='next'){const next=offset+(action==='next'?limit:-limit);if(next<0||next>=Number(snapshot?.total))return;offset=next;return load();}"
+    },
+    {
+      "file": "workbench/destination-catalog.mjs",
+      "line": 27,
+      "text": "if(comparable(previous.task)!==comparable(task)){"
+    },
+    {
+      "file": "workbench/destination-catalog.mjs",
+      "line": 30,
+      "text": "}else if((previous.task.adapterIssues||[]).length&&(task.adapterIssues||[]).length===0){"
+    },
+    {
+      "file": "workbench/execution-notifications.mjs",
+      "line": 52,
+      "text": "const decision=notificationDecision(status,reason),wasAlerting=previous.alerting===true;"
+    },
+    {
+      "file": "workbench/execution-notifications.mjs",
+      "line": 53,
+      "text": "const shouldNotify=!!decision&&(!wasAlerting||decision.kind==='complete'&&previous.status!=='COMPLETED');"
+    },
+    {
+      "file": "workbench/listing-round.mjs",
+      "line": 190,
+      "text": "const task=structuredClone(run?.task||queue?.task||((original.listing.type==='city'||original.listing.city)&&heatMap.get(key))||original);"
+    },
+    {
+      "file": "workbench/listing-round.mjs",
+      "line": 246,
+      "text": "if(q.key!==original.key||digest(q.task)!==original.task_hash||q.task.shopId!==r.shop||b?.shop!==r.shop)fail('原队列身份或快照与固定清单不一致');"
+    },
+    {
+      "file": "workbench/listing-round.mjs",
+      "line": 247,
+      "text": "if(original.queue_id&&original.queue_id!==q.id||original.batch_id&&original.batch_id!==q.batch)fail('禁止替换原队列或内部批次身份');"
+    },
+    {
+      "file": "workbench/listing-round.mjs",
+      "line": 248,
+      "text": "if(!original.queue_id&&(b.review?.roundId!==id||b.review?.manifestHash!==r.manifest_hash||b.mode!=='LIVE'))fail('未映射队列并非本轮已提交的内部批次');"
+    },
+    {
+      "file": "workbench/listing-round.mjs",
+      "line": 250,
+      "text": "if(original.run_id&&q.run_id&&original.run_id!==q.run_id)fail('原执行任务与队列关联冲突');"
+    },
+    {
+      "file": "workbench/listing-round.mjs",
+      "line": 251,
+      "text": "if(!runId){const existing=this.db.prepare('SELECT id FROM runs WHERE key=?').get(original.key);if(existing){const created=this.source.store.events(existing.id).find(e=>e.kind==='CREATED');if(created?.payload?.review?.roundId!==id)fail('新出现的执行任务不属于本轮授权');runId=existing.id;}}"
+    },
+    {
+      "file": "workbench/listing-round.mjs",
+      "line": 252,
+      "text": "if(runId){const run=this.source.store.run(runId);if(run.key!==original.key||digest(run.task)!==original.task_hash||run.task.shopId!==r.shop)fail('原执行任务身份或快照不一致');}"
+    },
+    {
+      "file": "workbench/listing-round.mjs",
+      "line": 295,
+      "text": "const captchaCleared=!!checked&&JSON.stringify(checked.keys)===JSON.stringify(proof.keys);"
+    },
+    {
+      "file": "workbench/listing-round.mjs",
+      "line": 470,
+      "text": "if(current.revision!==before.revision||current.hasSubmit||current.run||current.q)throw Object.assign(Error('人工处理检查期间原任务记录已变化，请重新核对'),{code:'HUMAN_RESUME_SCOPE_CHANGED'});"
+    },
+    {
+      "file": "workbench/listing-round.mjs",
+      "line": 649,
+      "text": "const initial=this.round(id);if(initial.gate===1&&this.events(id).some(e=>e.kind==='GATE_ONE_VERIFIED')&&!this.events(id).some(e=>e.kind==='GATE_ONE_RESUMED'))this.event(id,null,'GATE_ONE_RESUMED',{manifestHash:initial.manifest_hash,source:'explicit-resume-after-persisted-pause'});"
+    },
+    {
+      "file": "workbench/listing-round.mjs",
+      "line": 692,
+      "text": "const selected=await this.selections.continueWindow(previous);if(selected!==undefined)return selected;"
+    },
+    {
+      "file": "workbench/listing-verification.mjs",
+      "line": 17,
+      "text": "return body.tab==='all'&&body.pagination?.current===page&&(filter.queryTitle||'')===title&&(filter.queryItemId||'')===itemId&&Object.entries(filter).every(([k,v])=>['queryTitle','queryItemId'].includes(k)||v===null||v===false||v==='');"
+    },
+    {
+      "file": "workbench/listing-verification.mjs",
+      "line": 70,
+      "text": "if(metadata.expectedPage!==undefined&&metadata.expectedPage!==null&&pagination.current!==metadata.expectedPage)fail('page-number',result);"
+    },
+    {
+      "file": "workbench/listing-verification.mjs",
+      "line": 130,
+      "text": "await expect.poll(async()=>rows().evaluateAll(nodes=>nodes.map(n=>n.innerText.match(/ID[:：]\\s*(\\d+)/)?.[1])),{timeout:15000}).toEqual(current.ids);"
+    },
+    {
+      "file": "workbench/listing-verification.mjs",
+      "line": 151,
+      "text": "assert(current.total===total,'后台商品数量在分页期间变化，请重新核验');"
+    },
+    {
+      "file": "workbench/material-replacement.mjs",
+      "line": 99,
+      "text": "const current=await materialEditInfo(p,asset);if(current.revision!==info.revision||current.sha256!==info.sha256)fail('图片已在其他页面修改，请刷新后重试');"
+    },
+    {
+      "file": "workbench/operations-catalog-ui.js",
+      "line": 60,
+      "text": "<div class=\"ops-pagination\"><span>第 ${page} / ${pages} 页 · 每页20条</span><div>${button('previous','上一页',page===1?'disabled':'')}${button('next','下一页',page===pages?'disabled':'')}</div></div>"
+    },
+    {
+      "file": "workbench/operations-catalog-ui.js",
+      "line": 111,
+      "text": "if(action==='previous')page--;if(action==='next')page++;"
+    },
+    {
+      "file": "workbench/page-protection.mjs",
+      "line": 73,
+      "text": "if(original?.type!=='page'||typeof original.targetId!=='string'||typeof original.browserContextId!=='string')throw Error('PROTECTION_PAGE_IDENTITY_UNAVAILABLE');"
+    },
+    {
+      "file": "workbench/page-protection.mjs",
+      "line": 90,
+      "text": "if(Object.hasOwn(original,'parentId')&&original.parentId!==first.targetId)throw Error('PROTECTION_PARENT_ID_MISMATCH');"
+    },
+    {
+      "file": "workbench/page-protection.mjs",
+      "line": 94,
+      "text": "if(page.isClosed()||current?.targetId!==original.targetId||current?.browserContextId!==original.browserContextId||last?.targetId!==first.targetId||last?.type!=='tab'||last?.browserContextId!==original.browserContextId)throw Error('PROTECTION_IDENTITY_CHANGED');"
+    },
+    {
+      "file": "workbench/page-protection.mjs",
+      "line": 95,
+      "text": "if(Object.hasOwn(current,'parentId')&&current.parentId!==first.targetId)throw Error('PROTECTION_PARENT_ID_MISMATCH');"
+    },
+    {
+      "file": "workbench/product-api.mjs",
+      "line": 59,
+      "text": "if((attempt.run_id??null)!==(input.run?.id??null)||(original.run_id??null)!==(attempt.run_id??null)||digest(run)!==digest(input.run??null))throw err('单条核验执行记录与原任务快照不符');"
+    },
+    {
+      "file": "workbench/product-api.mjs",
+      "line": 130,
+      "text": "if(previous){if(previous.action!=='rounds/'+action||previous.target!==target)throw err('请求编号不能用于其他操作');const result=JSON.parse(previous.result);if((['content-review','rules-apply','window-create'].includes(action)||result.attemptId)&&result.inputHash!==digest(input))throw err(action==='content-review'?'请求编号对应的审核内容已改变':'请求编号对应的范围内容已改变');json(res,200,{...result,replayed:true});return true;}"
+    },
+    {
+      "file": "workbench/product-api.mjs",
+      "line": 533,
+      "text": "if(controlled&&input.requestId){const previous=this.source.store.db.prepare('SELECT * FROM product_actions WHERE id=?').get(input.requestId);if(previous){if(previous.action!==action||previous.target!==input.id)throw err('请求编号不能用于其他操作');json(res,200,{...JSON.parse(previous.result),replayed:true});return true;}}"
+    },
+    {
+      "file": "workbench/product-api.mjs",
+      "line": 555,
+      "text": "if(current.shop!==this.shop.id)throw err('批次不属于当前执行店铺');"
+    },
+    {
+      "file": "workbench/product-api.mjs",
+      "line": 556,
+      "text": "if(action==='start'&&current.state!=='READY')throw err('本批已开始或已结束；请从原任务继续，不能重复开始');"
+    },
+    {
+      "file": "workbench/product.js",
+      "line": 24,
+      "text": "document.querySelectorAll('[data-nav]').forEach(a=>{a.classList.toggle('active',a.dataset.nav===route);a.setAttribute('aria-current',a.dataset.nav===route?'page':'false');});$('pageTitle').textContent=$('crumb').textContent=pages[route][0];$('pageDescription').textContent=pages[route][1];html('pageActions',route==='home'||route==='tasks'?'<button data-action=\"import\" class=\"primary\">＋ 导入商品资料</button>':route==='records'?'<a class=\"button secondary\" href=\"/api/v1/records.csv\" download>导出记录</a>':''"
+    },
+    {
+      "file": "workbench/product.js",
+      "line": 72,
+      "text": "html('monitorCurrent',b?`<div class=\"monitor-current\"><div><p class=\"large-status\">${cur?'当前任务 · '+cur.position+' / '+b.total:'当前批次'}</p><h2>${esc(cur?.destination||(b.state==='COMPLETED'?'本批执行结束':'等待开始执行'))}</h2><p class=\"muted\">${esc(uiCopy.reason(cur?.reason)||uiCopy.step(cur?.step)||(b.state==='COMPLETED'?'所有任务已结束，系统不会自动扩展数量。':'核对资料和执行方式后，再开始本批任务。'))}</p></div>${badge(state.execution?.state==='PAUSING'&&state.active===b.id?'PAUSING':b.state)}</div><p class=\"scope-line\">${esc(uiCopy.reason(st"
+    },
+    {
+      "file": "workbench/publishing-attributes.mjs",
+      "line": 12,
+      "text": "assert.equal(v.version,1,'RANDOM_RULE_VERSION');"
+    },
+    {
+      "file": "workbench/publishing-attributes.mjs",
+      "line": 13,
+      "text": "assert.equal(task.business.brand,NO_BRAND,'RANDOM_BRAND_MISMATCH');"
+    },
+    {
+      "file": "workbench/publishing-attributes.mjs",
+      "line": 14,
+      "text": "assert.equal(v.attributes?.length,5,'RANDOM_ATTRIBUTES_INCOMPLETE');"
+    },
+    {
+      "file": "workbench/publishing-attributes.mjs",
+      "line": 15,
+      "text": "assert.equal(new Set(v.attributes.map(a=>a.key)).size,5,'RANDOM_ATTRIBUTES_DUPLICATE');"
+    },
+    {
+      "file": "workbench/publishing-attributes.mjs",
+      "line": 54,
+      "text": "assert.equal(await options(page).count(),0,'页面已有其他候选列表，请人工关闭后重新读取');"
+    },
+    {
+      "file": "workbench/publishing-attributes.mjs",
+      "line": 99,
+      "text": "const check=async()=>{await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');assert.equal(page.url(),formUrl,'ATTRIBUTE_FORM_CHANGED');};"
+    },
+    {
+      "file": "workbench/publishing-attributes.mjs",
+      "line": 104,
+      "text": "assert.equal(await container.count(),1,'ATTRIBUTE_CONTAINER_NOT_UNIQUE');"
+    },
+    {
+      "file": "workbench/publishing-attributes.mjs",
+      "line": 106,
+      "text": "assert.equal(await inputs.count(),1,'ATTRIBUTE_CONTROL_NOT_UNIQUE');"
+    },
+    {
+      "file": "workbench/publishing-attributes.mjs",
+      "line": 115,
+      "text": "assert.equal(page.url(),formUrl,'ATTRIBUTE_FORM_CHANGED');"
+    },
+    {
+      "file": "workbench/publishing-attributes.mjs",
+      "line": 121,
+      "text": "assert.equal(await target.count(),1,'ATTRIBUTE_OPTION_NOT_UNIQUE');"
+    },
+    {
+      "file": "workbench/publishing-attributes.mjs",
+      "line": 123,
+      "text": "assert.equal(await target.getAttribute('data-value')||field.text,field.value,'ATTRIBUTE_OPTION_CHANGED');"
+    },
+    {
+      "file": "workbench/publishing-attributes.mjs",
+      "line": 196,
+      "text": "if(current.text===f.text){await clickCustomAttributeAndVerify(page,null,f,guard,{onEvent});return;}"
+    },
+    {
+      "file": "workbench/publishing-attributes.mjs",
+      "line": 202,
+      "text": "assert.equal(await target.getAttribute('data-value')||f.text,f.value,'原属性选项标识已变化：'+f.label);"
+    },
+    {
+      "file": "workbench/publishing-materials.mjs",
+      "line": 89,
+      "text": "assert.equal(await page.locator('[role=dialog]:visible').count(),0,'MATERIAL_UPLOAD_BLOCKED：存在其他弹窗，请人工处理');"
+    },
+    {
+      "file": "workbench/publishing-materials.mjs",
+      "line": 116,
+      "text": "assert.equal(await input.evaluate(el=>el.files.length),0,'MATERIAL_UPLOAD_BUSY：已有待上传文件，请先人工核对');"
+    },
+    {
+      "file": "workbench/publishing-rules.mjs",
+      "line": 126,
+      "text": "if(previous){if(previous.mode!==input.mode)fail('此预览已用于另一执行模式');return batch.store.batch(previous.id);}"
+    },
+    {
+      "file": "workbench/result-reconciliation.mjs",
+      "line": 74,
+      "text": "if(previous){const result=JSON.parse(previous.result);if(previous.action!=='reconcile'||previous.target!==input.id||result.itemId!==itemId)fail('请求编号不能用于其他关联');return {...result,replayed:true};}"
+    },
+    {
+      "file": "workbench/round-execution-attempts.mjs",
+      "line": 33,
+      "text": "const kind=previous?(this.automaticParent===previous.id?'AUTO_RETRY':'RESUME'):legacy?'RESUME':'INITIAL';"
+    },
+    {
+      "file": "workbench/round-execution-attempts.mjs",
+      "line": 82,
+      "text": "const resumeState=run?.state==='PAUSED_CAPTCHA'||current.state==='WAITING_HUMAN'&&current.failure_stage!=='content-preflight'?'WAITING_HUMAN':current.state==='RESULT_UNKNOWN'?'RESULT_UNKNOWN':'PAUSED';"
+    },
+    {
+      "file": "workbench/round-item-attempts.mjs",
+      "line": 61,
+      "text": "if(previous){if(previous.id!==parentAttemptId||!previous.finished_at||previous.task_hash!==scope.taskHash||kind==='INITIAL')fail('ATTEMPT_PARENT_INVALID');}"
+    },
+    {
+      "file": "workbench/round-item-attempts.mjs",
+      "line": 62,
+      "text": "else if(parentAttemptId!==null||kind==='MANUAL_RETRY'&&before?.historyCoverage!=='PRIOR_HISTORY_NOT_SEGMENTED')fail('ATTEMPT_PARENT_INVALID');"
+    },
+    {
+      "file": "workbench/round-item-detail.js",
+      "line": 50,
+      "text": "const validScope = v => v && Object.entries(original).every(([k,val]) => v[k] === val) && typeof v.revision === 'string' && !!v.revision && v.current?.key === original.key;"
+    },
+    {
+      "file": "workbench/round-item-detail.js",
+      "line": 51,
+      "text": "const validVerifyRequest = v => v && !Array.isArray(v) && Object.keys(v).length === verifyFields.length && verifyFields.every(k=>typeof v[k]==='string' && !!v[k]) && Object.entries(original).every(([k,val])=>v[k]===val);"
+    },
+    {
+      "file": "workbench/round-item-detail.js",
+      "line": 52,
+      "text": "const validRetryRequest = (v,executionWindowId) => v && !Array.isArray(v) && Object.keys(v).length===verifyFields.length && verifyFields.every(k=>typeof v[k]==='string' && !!v[k]) && v.roundId===original.roundId && v.key===original.key && (v.windowId===original.windowId || executionWindowId===original.windowId);"
+    },
+    {
+      "file": "workbench/round-item-detail.js",
+      "line": 83,
+      "text": "const boundControl=serverControl?.id===original.roundId&&serverControl?.windowId===original.windowId&&serverControl?.key===original.key&&typeof serverControl.verificationRequestId==='string'&&!!serverControl.verificationRequestId;"
+    },
+    {
+      "file": "workbench/round-item-detail.js",
+      "line": 283,
+      "text": "if(noticeScope&&!pending&&(r?.id!==noticeScope.roundId||r?.window?.id!==noticeScope.windowId||r?.current?.key!==noticeScope.key)){"
+    },
+    {
+      "file": "workbench/round-item-detail.js",
+      "line": 287,
+      "text": "const skipped=r?.current?.state==='MANUAL_SKIPPED';"
+    },
+    {
+      "file": "workbench/round-item-detail.js",
+      "line": 290,
+      "text": "let allowed=!!recover||!!(shown&&!r.active&&!r.executionRecovery&&!r.verificationControl&&['PAUSED','SYSTEM_BLOCKED','WAITING_HUMAN'].includes(r.state)&&['PENDING','FAILED','WAITING_HUMAN'].includes(r.current.state)&&r.current.submitted===false&&r.current.submissionUncertain===false);"
+    },
+    {
+      "file": "workbench/round-item-detail.js",
+      "line": 308,
+      "text": "if(live?.id!==r.id||live.window?.id!==r.window.id||live.manifestHash!==r.manifestHash||live.current?.key!==scope.key||live.active||detail.roundId!==scope.roundId||detail.windowId!==scope.windowId||detail.key!==scope.key||detail.current?.key!==scope.key)throw Error('当前商品或轮次已变化，请刷新后重新操作。');"
+    },
+    {
+      "file": "workbench/round-item-detail.js",
+      "line": 309,
+      "text": "if(detail.capabilities?.skip?.allowed!==true||detail.submissionEvidence!==false||detail.current.submitted!==false||detail.current.submissionUncertain!==false)throw Error(detail.capabilities?.skip?.reason||'此条已有提交或待核验记录，不能跳过。');"
+    },
+    {
+      "file": "workbench/round-item-retry.mjs",
+      "line": 19,
+      "text": "if(a.kind!=='MANUAL_RETRY'||a.before?.requestIntent!==hash(req)||a.before?.request?.windowId!==req.windowId||a.round_id!==req.roundId||a.key!==req.key)fail('ITEM_RETRY_REQUEST_CONFLICT');"
+    },
+    {
+      "file": "workbench/round-item-retry.mjs",
+      "line": 96,
+      "text": "if(current.revision!==s.revision)fail('ITEM_RETRY_RECOVERY_SCOPE');"
+    },
+    {
+      "file": "workbench/round-item-retry.mjs",
+      "line": 128,
+      "text": "const current=this.reader.read(req),budget=this.allowed(current);if(current.revision!==req.expectedRevision)fail('ITEM_RETRY_STALE_REVISION');"
+    },
+    {
+      "file": "workbench/round-item-retry.mjs",
+      "line": 163,
+      "text": "if(after.revision!==before.revision||after.hasSubmit)fail('ITEM_RETRY_EXECUTION_CHANGED');"
+    },
+    {
+      "file": "workbench/round-item-verify-api.mjs",
+      "line": 46,
+      "text": "if(attempt.kind!=='VERIFY_ONLY'||attempt.round_id!==s.r.id||attempt.window_id!==s.w.id||attempt.key!==s.x.key||attempt.task_hash!==s.x.task_hash||!same(req,s)||attempt.request_id!=='verify-only:'+req.requestId||attempt.before.requestIntent!==digest(req))fail('ITEM_VERIFY_OPEN_ATTEMPT_PROTECTED');"
+    },
+    {
+      "file": "workbench/round-item-verify.mjs",
+      "line": 41,
+      "text": "if(original.key!==s.x.key||original.position!==s.x.position||original.title!==s.x.task.listing.title||original.destination!==(s.x.task.listing.city||s.x.task.listing.country)||(original.runId??null)!==(s.x.run_id??null))fail('ITEM_VERIFY_WINDOW_SNAPSHOT_INVALID');"
+    },
+    {
+      "file": "workbench/round-item-verify.mjs",
+      "line": 57,
+      "text": "if(a.kind!=='VERIFY_ONLY'||a.before?.requestIntent!==hash(req))fail('ITEM_VERIFY_REQUEST_CONFLICT');"
+    },
+    {
+      "file": "workbench/round-item-verify.mjs",
+      "line": 66,
+      "text": "return !!((this.owner.windows.open(req.roundId)?.id===w.id||w.finished&&!this.owner.windows.open(req.roundId))&&a&&a.kind==='VERIFY_ONLY'&&a.round_id===req.roundId&&a.window_id===req.windowId&&a.request_id==='verify-only:'+req.requestId&&a.before?.requestIntent===hash(req));"
+    },
+    {
+      "file": "workbench/round-item-verify.mjs",
+      "line": 143,
+      "text": "if(a.kind!=='VERIFY_ONLY'||a.before?.requestIntent!==intent)fail('ITEM_VERIFY_REQUEST_CONFLICT');"
+    },
+    {
+      "file": "workbench/round-item-verify.mjs",
+      "line": 173,
+      "text": "this.owned(req);const current=this.reader.read(req);if(current.revision!==s.revision)fail('ITEM_VERIFY_STALE_REVISION');"
+    },
+    {
+      "file": "workbench/round-item-verify.mjs",
+      "line": 196,
+      "text": "this.owned(req);const current=this.reader.read(req);if(current.revision!==revision)fail('ITEM_VERIFY_STALE_REVISION');"
+    },
+    {
+      "file": "workbench/round-manual-skip.mjs",
+      "line": 105,
+      "text": "if(prior){const a=this.attempts.get(prior.id);if(a.kind!=='MANUAL_SKIP'||a.before?.requestIntent!==intent||!a.finished_at)fail('ITEM_SKIP_REQUEST_CONFLICT');return {replayed:true,attemptId:a.id,outcome:a.outcome};}"
+    },
+    {
+      "file": "workbench/round-manual-skip.mjs",
+      "line": 144,
+      "text": "||before.snapshot?.parent?.id!==roundId||before.snapshot.parent.manifestHash!==round.manifest_hash||before.request?.windowId!==receipt.window_id||before.request.key!==item.key)return false;"
+    },
+    {
+      "file": "workbench/round-selection.mjs",
+      "line": 148,
+      "text": "const before=this.revision(roundId);if(before!==expectedRevision)fail('SELECTION_BUDGET_STALE','商品或执行记录已变化，请重新检查');"
+    },
+    {
+      "file": "workbench/round-selection.mjs",
+      "line": 165,
+      "text": "if(current.q.id!==q.id||current.q.attempts<current.q.max_attempts||this.manualBudgetUsed(q.id)+addAttempts>MANUAL_RETRY_ADDITIONS_LIMIT)fail('SELECTION_BUDGET_STALE','额度条件已变化，请重新检查');"
+    },
+    {
+      "file": "workbench/round-verification.mjs",
+      "line": 14,
+      "text": "assert(current.round.id===roundId,'核验轮次与当前清单不符');"
+    },
+    {
+      "file": "workbench/round-verification.mjs",
+      "line": 37,
+      "text": "if(duplicatePolicy?.enabled===true&&duplicatePolicy.scope==='THIS_ROUND_ONLY'&&duplicatePolicy.manifestHash===current.round.manifest_hash&&duplicatePolicy.shop===task.shopId){"
+    },
+    {
+      "file": "workbench/round-verification.mjs",
+      "line": 38,
+      "text": "const match={status:'bypassed-by-user-policy',policy:'ignore-destination-duplicates',scope:'THIS_ROUND_ONLY',taskHash:current.items.find(x=>x.key===key)?.task_hash||null,knownItemIdChecked:false};"
+    },
+    {
+      "file": "workbench/round-windows.mjs",
+      "line": 91,
+      "text": "const current=rows.find(x=>x.key===round.current_item&&x.state==='PENDING'&&x.entered_publish);"
+    },
+    {
+      "file": "workbench/round-windows.mjs",
+      "line": 92,
+      "text": "if(current&&!selected.some(x=>x.key===current.key))fail('原商品仍有未结束断点，请先将其纳入本轮：'+(current.task.listing.city||current.task.listing.country));"
+    },
+    {
+      "file": "workbench/server.mjs",
+      "line": 132,
+      "text": "if (previous.snapshotVersion !== current.snapshotVersion) changes.push(\"映射快照格式（需重新核验并新建任务）\");"
+    },
+    {
+      "file": "workbench/server.mjs",
+      "line": 133,
+      "text": "if (previous.platform !== current.platform) changes.push(\"映射平台\");"
+    },
+    {
+      "file": "workbench/server.mjs",
+      "line": 134,
+      "text": "if (previous.version !== current.version) changes.push(\"映射版本\");"
+    },
+    {
+      "file": "workbench/server.mjs",
+      "line": 135,
+      "text": "if (previous.verifiedEvidence !== current.verifiedEvidence) changes.push(\"页面验证证据\");"
+    },
+    {
+      "file": "workbench/server.mjs",
+      "line": 136,
+      "text": "if (previous.draftUrl !== current.draftUrl) changes.push(\"草稿页地址\");"
+    },
+    {
+      "file": "workbench/server.mjs",
+      "line": 138,
+      "text": "if (JSON.stringify((previous.fields || []).map(field => field.id)) !== JSON.stringify((current.fields || []).map(field => field.id))) changes.push(\"字段清单或执行顺序\");"
+    },
+    {
+      "file": "workbench/server.mjs",
+      "line": 139,
+      "text": "for (const id of new Set([...before.keys(), ...after.keys()])) if (JSON.stringify(before.get(id) || null) !== JSON.stringify(after.get(id) || null)) changes.push(mappingFieldLabels[id] || id);"
+    },
+    {
+      "file": "workbench/server.mjs",
+      "line": 154,
+      "text": "if (previous.status !== current.status) changes.push(\"商品包状态\");"
+    },
+    {
+      "file": "workbench/server.mjs",
+      "line": 155,
+      "text": "if (JSON.stringify(previous.listing) !== JSON.stringify(current.listing)) changes.push(\"目的地或标题\");"
+    },
+    {
+      "file": "workbench/server.mjs",
+      "line": 156,
+      "text": "if (JSON.stringify(previous.assets) !== JSON.stringify(current.assets)) changes.push(\"商品素材\");"
+    },
+    {
+      "file": "workbench/server.mjs",
+      "line": 157,
+      "text": "if (JSON.stringify(previous.releaseProfile) !== JSON.stringify(current.releaseProfile)) changes.push(\"类目、价格或履约资料\");"
+    },
+    {
+      "file": "workbench/server.mjs",
+      "line": 158,
+      "text": "if (JSON.stringify(previous.reviewEvidence) !== JSON.stringify(current.reviewEvidence)) changes.push(\"审核证据\");"
+    },
+    {
+      "file": "workbench/session-guard.mjs",
+      "line": 36,
+      "text": "function current(s, shop) { return sessions.get(shop.id) === s && s.browser.isConnected() && s.fingerprint === fingerprint(shop) && activeFingerprint === s.fingerprint; }"
+    },
+    {
+      "file": "workbench/session-guard.mjs",
+      "line": 67,
+      "text": "if (!current(s, shop) || epoch !== turn || s.revision !== revision) fail(\"核验期间会话发生变化，请重新核验。\");"
+    },
+    {
+      "file": "workbench/session-guard.mjs",
+      "line": 71,
+      "text": "if (!current(s, shop) || epoch !== turn || s.revision !== revision) fail(\"会话发生变化，请重新核验。\");"
+    },
+    {
+      "file": "workbench/session-guard.mjs",
+      "line": 94,
+      "text": "if (!current(s, shop) || epoch !== turn || s.revision !== revision || page.url() !== url) fail(\"核验期间页面或店铺发生变化，请重新核验。\");"
+    },
+    {
+      "file": "workbench/session-guard.mjs",
+      "line": 108,
+      "text": "if (!current(s, shop) || epoch !== turn || s.identity !== identity || s.revision !== identity.revision || identity.page.url() !== identity.url || now() - identity.confirmedAt >= ttlMs || pages.length !== identity.pages.length || pages.some(page => !identity.pages.includes(page))) fail(\"执行核验期间会话已变化，请重新核验。\");"
+    },
+    {
+      "file": "workbench/setup-ui.js",
+      "line": 12,
+      "text": "function shell(content){return `<div class=\"page-heading\"><div><h1>资料设置</h1><p>第一次设置清楚，之后只换资料、检查状态、确认执行。</p></div><a class=\"setup-guide-link\" href=\"#settings\" data-setup=\"guide\">新电脑简易教程 ↗</a></div><div class=\"setup-shell\"><nav class=\"setup-steps\" aria-label=\"首次配置步骤\">${['存放位置','导入资料','连接店铺','准备检查'].map((label,i)=>`<button type=\"button\" data-setup=\"step\" data-step=\"${i+1}\" aria-current=\"${step===i+1?'step':'false'}\"><span>${i+1}</span><b>${label}</b></button>`).join('')}</nav><section class=\"setup"
+    },
+    {
+      "file": "workbench/source-workflow.mjs",
+      "line": 204,
+      "text": "const current=this.store.run(id);if(current.state==='VERIFIED'){"
+    },
+    {
+      "file": "workbench/source-workflow.mjs",
+      "line": 212,
+      "text": "const state=['SUBMITTING','RESULT_UNKNOWN'].includes(current.state)?'RESULT_UNKNOWN':reason==='PAUSED_CAPTCHA'?'PAUSED_CAPTCHA':'PAUSED';"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 22,
+      "text": "for(const c of materialBinding?.changes||[]){let hash=cache?.get(c.path);if(!hash){hash=createHash('sha256').update(await readFile(c.path)).digest('hex');cache?.set(c.path,hash);}assert.equal(hash,c.toSha256,'SOURCE_OR_ASSET_CHANGED');}"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 25,
+      "text": "assert.equal(hash,a.sha256,'SOURCE_OR_ASSET_CHANGED');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 31,
+      "text": "assert.equal(task.assets.main.length,1);assert.equal(task.assets.secondary.length,4);assert(Number.isInteger(task.assets.details.length)&&task.assets.details.length>0&&task.assets.details.length<=50,'DETAIL_COUNT_INVALID');validateSelections(task);"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 65,
+      "text": "await guard();assert.equal(page.url(),formUrl,'FORM_PRICE_PAGE_CHANGED');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 66,
+      "text": "assert.equal(await input.count(),1,'FORM_PRICE_CONTROL_CHANGED');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 68,
+      "text": "const actual=await input.inputValue();assert.equal(page.url(),formUrl,'FORM_PRICE_PAGE_CHANGED');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 73,
+      "text": "assert.equal(await read(),expected,'FORM_PRICE_CHANGED_AFTER_CHECK');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 105,
+      "text": "assert.equal(await input.count(),1,'FORM_INVENTORY_CONTROL_CHANGED');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 129,
+      "text": "assert.equal(await hosts.count(),1,'DETAIL_MATERIAL_FRAME_CHANGED');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 130,
+      "text": "assert.equal(await page.locator('iframe#mainImagesGroup:visible').count(),0,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 132,
+      "text": "assert(await hosts.evaluate((el,original)=>el===original,host),'DETAIL_MATERIAL_FRAME_CHANGED');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 139,
+      "text": "if(count)assert.equal(await page.locator('iframe#mainImagesGroup:visible').count(),0,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 145,
+      "text": "if(frame&&current!==frame)throw Error('DETAIL_MATERIAL_FRAME_CHANGED');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 182,
+      "text": "assert.equal(await hosts.count(),1,'MAIN_MATERIAL_FRAME_CHANGED');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 184,
+      "text": "assert(await hosts.evaluate((el,original)=>el===original,host),'MAIN_MATERIAL_FRAME_CHANGED');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 186,
+      "text": "assert.equal(await page.locator('.media-img-plug iframe:not(#mainImagesGroup):visible').count(),0,'MAIN_MATERIAL_FRAME_AMBIGUOUS');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 195,
+      "text": "if(frame&&current!==frame)throw Error('MAIN_MATERIAL_FRAME_CHANGED');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 240,
+      "text": "assert.equal(mainImageKey(url),mainImageKey(receipt.url),'MAIN_IMAGE_ORDER：已有图片与当前商品回执顺序不一致');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 252,
+      "text": "const check=async()=>{await guard();assert.equal(page.url(),formUrl,'MAIN_IMAGE_FORM_CHANGED');};"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 269,
+      "text": "if(initial.length===expected.length&&initial.every((value,index)=>value===expected[index])){"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 273,
+      "text": "assert.deepEqual(initial,expected.slice(0,-1),'MAIN_IMAGE_PREFIX_CHANGED');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 284,
+      "text": "assert.deepEqual(current,expected.slice(0,-1),'MAIN_IMAGE_STATE_CHANGED');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 287,
+      "text": "const final=await stableRead(deadline);assert.deepEqual(final,expected,'MAIN_IMAGE_STATE_CHANGED');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 301,
+      "text": "assert.deepEqual(labels,['裁剪','替换','删除','AI 作图'],'MAIN_IMAGE_MENU_CHANGED');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 312,
+      "text": "const check=async()=>{await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');assert.equal(page.url(),formUrl,'FORM_BRAND_PAGE_CHANGED');};"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 317,
+      "text": "assert.equal(await options.count(),0,'FORM_BRAND_OTHER_MENU：存在其他候选面板，请先关闭');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 364,
+      "text": "const entry=matches[0];assert.equal(entry.sourceSha256,asset.sha256,'FORM_DETAIL_PADDING_SOURCE_CHANGED');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 366,
+      "text": "assert.equal(createHash('sha256').update(original).digest('hex'),asset.sha256,'FORM_DETAIL_PADDING_SOURCE_CHANGED');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 367,
+      "text": "assert.equal(createHash('sha256').update(padded).digest('hex'),entry.sha256,'FORM_DETAIL_PADDING_CHANGED');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 369,
+      "text": "assert.deepEqual([w,h],entry.dimensions,'FORM_DETAIL_PADDING_DIMENSIONS');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 394,
+      "text": "await guard();assert.equal(await area.count(),0,'FORM_SHIPPING_AREA_CHANGED');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 403,
+      "text": "return !!receipt&&receipt.sha256===asset.sha256&&receipt.path===asset.path&&JSON.stringify(receipt.materialVersion)===JSON.stringify(asset.materialVersion)&&receipt.url===url;"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 413,
+      "text": "assert.equal(r.source?.path,a.path,'DETAIL_SOURCE_MISMATCH');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 414,
+      "text": "assert.equal(r.source?.sha256,a.sha256,'DETAIL_SOURCE_MISMATCH');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 415,
+      "text": "assert.deepEqual(r.source?.materialVersion,a.materialVersion,'DETAIL_SOURCE_MISMATCH');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 416,
+      "text": "assert.deepEqual(r.source?.padding,a.padding,'DETAIL_SOURCE_MISMATCH');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 417,
+      "text": "assert.equal(norm(url),norm(r.url),'EXISTING_DETAIL_MISMATCH');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 462,
+      "text": "await writeFile(a.path+'.upload.json',JSON.stringify(receipt,null,2),{flag:'wx'}).catch(async e=>{if(e.code!=='EEXIST'||!await verifyMaterialUploadReceipt(a,card))throw e;});"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 482,
+      "text": "assert.equal(existing.length,i,'MAIN_IMAGE_COUNT_CHANGED：前序主图尚未插入，请保留原页面');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 506,
+      "text": "await step('shipping-region',async()=>{const current=await inspectShippingArea(p,task,executionProfile,guard);if(shippingArea)assert.equal(current.mode,shippingArea.mode,'FORM_SHIPPING_AREA_CHANGED');shippingArea=current;if(shippingArea.rendered)await radio('#sell-field-shippingArea',/^大陆及港澳台$/);});"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 507,
+      "text": "await step('single-origin',async()=>{if(shippingArea.rendered)await radio('#sell-field-shippingArea',/^单一发货地$/);else{await guard();assert.equal(await p.locator('#sell-field-shippingArea').count(),0,'FORM_SHIPPING_AREA_CHANGED');}});"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 508,
+      "text": "await step('ship-from',async()=>{if(!shippingArea.rendered){await guard();assert.equal(await p.locator('#sell-field-shippingArea').count(),0,'FORM_SHIPPING_AREA_CHANGED');return;}const l=p.locator('#sell-field-shippingArea input[role=combobox]');if(await l.getAttribute('aria-valuetext')!=='北京 / 北京'){await l.click();await p.getByText('北京',{exact:true}).first().click();await p.getByText('北京',{exact:true}).last().click();}await expect(l).toHaveAttribute('aria-valuetext','北京 / 北京');});"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 616,
+      "text": "assert.equal(reason,null,'NO_SKU_UNVERIFIED：销售规格空结构未通过（'+reason+'），已停止提交');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 623,
+      "text": "if(materialBinding)assert.equal(receipts.materialBindingSha256,materialBinding.sha256,'SOURCE_OR_ASSET_CHANGED: 图片回执与原任务绑定版本不一致');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 632,
+      "text": "if(receipts.shippingArea)assert.equal(shippingArea.mode,receipts.shippingArea.mode,'FORM_SHIPPING_AREA_CHANGED：发货控件模式在填写后变化');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 643,
+      "text": "assert.equal(main.length,5);assert.equal(details.length,expectedDetails.length);"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 646,
+      "text": "assert.equal(receipts.details[i]?.source?.path,asset.path,'DETAIL_SOURCE_MISMATCH');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 647,
+      "text": "assert.equal(receipts.details[i]?.source?.sha256,asset.sha256,'DETAIL_SOURCE_MISMATCH');"
+    },
+    {
+      "file": "workbench/taobao-publisher.mjs",
+      "line": 648,
+      "text": "assert.equal(receipts.details[i]?.source?.padding?.profileSha256,asset.padding?.profileSha256,'DETAIL_SOURCE_MISMATCH');"
+    },
+    {
+      "file": "workbench/travel-globe.js",
+      "line": 340,
+      "text": "if(e.key==='Tab'){const items=[...stage.querySelectorAll('button:not(:disabled),canvas[tabindex]')].filter(x=>x.getClientRects().length&&getComputedStyle(x).visibility!=='hidden');const first=items[0],end=items.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();end?.focus();}else if(!e.shiftKey&&document.activeElement===end){e.preventDefault();first?.focus();}}"
+    },
+    {
+      "file": "workbench/travel-home.js",
+      "line": 41,
+      "text": "function remember(item){try{const raw=JSON.parse(localStorage.getItem('travel-os:recent')||'[]'),old=Array.isArray(raw)?raw:[];localStorage.setItem('travel-os:selected',item.key);localStorage.setItem('travel-os:recent',JSON.stringify([item.key,...old.filter(k=>k!==item.key)].slice(0,5)));}catch{}}"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 47,
+      "text": "const current=windows.length?options.find(w=>w.id===r.window?.id)||options.at(-1):options.find(b=>b.id===(overviewEngine||e).batch?.id)||options.at(-1);"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 86,
+      "text": "const service=data.engine.service?.startedAt||'current';if(queueRecheckService===service)return;queueRecheckService=service;queueRecheckSupported=null;"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 166,
+      "text": "const current=queueRecheckPreview;if(!current||current.scope!==queueBatchContext().scope)throw Error('批次或页面状态已变化，请重新检查');"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 207,
+      "text": "function route(){operationsUI?.setActive(false);page=location.hash.slice(1).split('?')[0]||'overview';if(!modules.some(m=>m[0]===page))page='overview';tablePage=1;query='';document.querySelectorAll('.page').forEach(el=>el.hidden=el.id!=='page-'+page);document.querySelectorAll('.nav-item').forEach(el=>el.setAttribute('aria-current',el.hash==='#'+page?'page':'false'));$('breadcrumb').textContent='工作空间 / '+modules.find(m=>m[0]===page)[1];document.title='星途 Travel OS';$('checkBrowser').hidden=page=="
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 285,
+      "text": "const signature=JSON.stringify([selectedKey,d,snapshot.quotes,snapshot.attempts,e.batch,e.batches,e.exceptions,e.active,e.execution?.state,snapshot.shops.map(x=>[x.id,x.name,shopState({...x,browser:x.id===e.shop.id?e.browser:x.browser})]),summary,connected,overviewShopId]);"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 347,
+      "text": "const options=(items,current)=>items.map(([value,label])=>`<option value=\"${value}\" ${String(current)===value?'selected':''}>${label}</option>`).join('');"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 362,
+      "text": "function pager(total){const pages=Math.max(1,Math.ceil(total/20));tablePage=Math.min(tablePage,pages);return `<div class=\"pagination\"><span>${total} 条 · 第 ${tablePage} / ${pages} 页</span>${btn('previous-page','上一页',tablePage===1?'disabled':'')}${btn('next-page','下一页',tablePage===pages?'disabled':'')}</div>`;}"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 391,
+      "text": "$('page-products').innerHTML=heading('产品库','集中管理店铺产品与素材，核对资料与发布状态。')+`<section class=\"library-shop\"><div class=\"library-identity\"><span class=\"library-platform\" aria-label=\"淘宝平台\">淘</span><div><h2>${esc(shop?.name||'还没有店铺')}</h2><div class=\"library-shop-meta\"><span>淘宝平台</span><small>${shop?'独立店铺产品库':'添加店铺后导入产品'}</small></div></div></div><div class=\"library-stats\">${[['',products.length,'产品总数'],['published',products.filter(d=>d.state==='VERIFIED').length,'已发布'],['needs',products.filter(productNeed"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 654,
+      "text": "const rowsHtml=visible.map(x=>{const s=directoryStats(x);return `<tr class=\"${x.key===d?.key?'dc-selected':''}\" data-directory-row=\"${x.key}\"><td><button class=\"dc-destination\" data-action=\"directory-select\" data-key=\"${x.key}\" aria-label=\"查看${esc(x.destination)}详情\" ${x.key===d?.key?'aria-current=\"true\"':''}><span><strong>${esc(x.destination)}</strong><small>${esc(x.country)} · ${destinationContinent(x)}</small></span></button></td><td>${x.type==='city'?'城市':'国家'}</td>${[['products','destination"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 717,
+      "text": "return !r.active&&!r.executionRecovery&&!r.verificationControl&&r.current?.state==='MANUAL_SKIPPED'&&['PAUSED','SYSTEM_BLOCKED','WAITING_HUMAN'].includes(r.state)&&roundBrowserClear()&&(!r.captchaRecheck?.count||r.captchaRecheck.eligible);"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 722,
+      "text": "if(!r.active&&!r.executionRecovery&&r.current?.state==='MANUAL_SKIPPED'&&data?.engine.browser?.loginState==='PAUSED_CAPTCHA')return {title:'此条已跳过，执行页面仍需验证',text:'请打开执行 Chrome 完成当前验证码。验证结束后检查并继续本轮，已跳过商品不会再次发布。'};"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 745,
+      "text": "const manualRetry=r.current&&w&&r.current.runId&&r.current.submitted===false&&r.current.submissionUncertain===false&&['PENDING','FAILED'].includes(r.current.state)&&['PAUSED','SYSTEM_BLOCKED','STOPPED'].includes(r.state)&&!r.active&&!r.executionRecovery?btn('round-current-retry','重新执行此条',`data-write data-round=\"${esc(r.id)}\" data-window=\"${esc(w.id)}\" data-key=\"${esc(r.current.key)}\" ${connected?'':'disabled data-locked=\"true\"'}`):'';"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 757,
+      "text": "<details id=\"monitorExecutionDetails\" data-round=\"${esc(r.id)}\" ${foldOpen('monitorExecutionDetails')}><summary>当前商品执行阶段与日志</summary>${roundMonitorSteps(r)}<h3>本商品执行日志（含历史）</h3><p class=\"form-note\">日志只对应上方商品的原任务，可能包含此前尝试；本轮暂停原因以上方提示为准。</p>${r.current?.runId&&monitorDetail?.id===r.current.runId?renderLogs({runId:r.current.runId},monitorDetail):`<p class=\"form-note\">${monitorDetailError?'日志读取失败，请重试；不影响已保存的执行记录。':r.current?.runId?'展开后读取本商品日志。':'尚无对应的执行日志。'}</p>`}${r.current?.runId?btn('monitor-logs"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 766,
+      "text": "if([now?.shop,now?.id,now?.window?.id,now?.current?.key,now?.current?.runId].join('|')===scope){monitorDetail=detail.id===id?detail:null;monitorDetailError=detail.id!==id;renderTasks();}"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 781,
+      "text": "if(!items.some(x=>x.id===selectedTask))selectedTask=items.find(x=>x.id===b?.current)?.id||items.find(x=>taskGroup(x)==='running')?.id||(b?.state==='COMPLETED'?items.at(-1)?.id:items[0]?.id);"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 795,
+      "text": "<section class=\"current-listing panel\"><div class=\"section-title\"><h2>${same&&e.round?'原执行批次（含历史）':active?'当前执行批次':'最近执行批次'}</h2>${task?btn('task-details','查看详情 ›','class=\"text-button\"'):''}</div><div class=\"task-product-summary\"><span class=\"task-destination-icon\">${icon('map-pin')}</span><div><small>${task?.kind==='preparation'?'所选准备单':'所选商品'}</small><h3>${esc(task?.name||'暂无执行任务')}</h3><p title=\"${esc(task?.title||product?.title||'')}\">${esc(task?.title||product?.title||'先核对商品资料，再创建执行批次。')}</"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 802,
+      "text": "<section class=\"panel queue-panel\"><div class=\"task-batch-heading\"><h2>${queueBatchSelection&&queue.selected?.id!==queue.current?.id?'历史批次任务列表':queue.selected&&['COMPLETED','STOPPED','CANCELLED'].includes(queue.selected.state)?'最近一批任务列表':'正在进行的一批任务列表'}</h2><label class=\"task-history-selector\">此店铺已进行的批次<select id=\"taskHistoryBatchSelector\" ${queue.options.length?'':'disabled'}><option value=\"\">${queue.current?`当前批次 · ${esc(queueBatchLabel(queue.current))}`:'暂无批次'}</option>${queue.options.map(w=>`"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 812,
+      "text": "const flow=steps.map(([name,hint,test],i)=>{const passed=events.some(x=>x.kind==='STEP_VERIFIED'&&test(x.technical?.step||''));const evidence=passed||(task.state==='SUCCEEDED'&&i===4);const last=events.at(-1);const current=!task.roundHold&&last?.kind==='STEP_INTENT'&&test(last.technical?.step||'');return `<div class=\"flow-node ${evidence?'done':current?'current':''}\"><span class=\"node-dot\">${evidence?'✓':i+1}</span><div><h3>${name}</h3><p>${evidence?'已有核验事件':hint}</p></div></div>`;}).join('')+`<"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 820,
+      "text": "function recordPager(total){const pages=Math.max(1,Math.ceil(total/recordPageSize));tablePage=Math.min(tablePage,pages);return `<div class=\"pagination\"><span role=\"status\">${total} 条 · 第 ${tablePage} / ${pages} 页</span>${btn('previous-page','上一页',tablePage===1?'disabled':'')}${btn('next-page','下一页',tablePage===pages?'disabled':'')}</div>`;}"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 882,
+      "text": "async function syncTaskDetail(){const id=selectedTask,x=taskItems().find(x=>x.id===id);if(!x?.runId||fetchingRun===x.runId)return;fetchingRun=x.runId;try{const detail=await get('/api/v1/task?id='+encodeURIComponent(x.runId));if(selectedTask===id&&JSON.stringify(detail)!==JSON.stringify(taskDetail)){taskDetail=detail;renderTasks();}}finally{if(fetchingRun===x.runId)fetchingRun=null;}}"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 910,
+      "text": "const current=()=>generation===windowPreviewGeneration&&JSON.stringify(fields)===JSON.stringify(readWindowConfig())&&$('editor').open;"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 935,
+      "text": "if(!windowPreview||JSON.stringify(windowPreview.fields)!==JSON.stringify(readWindowConfig()))throw Error('范围已变化，请重新检查本轮范围');const p=windowPreview;target.disabled=true;"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 949,
+      "text": "const resumeRound=data.engine.round,canContinueAfterSkip=()=>resumeRound?.id===target.dataset.round&&resumeRound.window?.id===target.dataset.window&&resumeRound.current?.key===key&&!resumeRound.active&&!['STOPPED','COMPLETED','NEEDS_REVIEW'].includes(resumeRound.state)&&['READY','PAUSED','SYSTEM_BLOCKED'].includes(resumeRound.window.state);"
+    },
+    {
+      "file": "workbench/travel-os.js",
+      "line": 1075,
+      "text": "document.addEventListener('toggle',event=>{if(event.target.id==='monitorExecutionDetails'&&event.target.open&&data?.engine.round?.current?.runId&&monitorDetail?.id!==data.engine.round.current.runId&&!monitorDetailError&&monitorFetching!==monitorScope)syncMonitorDetail();},true);"
+    }
+  ]
+}

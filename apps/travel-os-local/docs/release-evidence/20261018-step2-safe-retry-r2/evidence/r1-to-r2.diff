@@ -1,0 +1,31 @@
+--- step2-r1/workbench/listing-round.mjs
++++ step2-r2/workbench/listing-round.mjs
+@@ -558,14 +558,24 @@
+    const stage=run.checkpoint.step,tries=x.retry_counts[stage]||0;
+    this.syncQueue(x,'FAILED',null,patch.reason);
+    this.event(id,x.key,'TRANSIENT_FAILURE',{code:error.code,step:stage,retry:tries,reason:patch.reason});
++   let budgetDenied=null;
+    if(tries<2){
+     // Read the existing claim rule; do not grant, reset or reinterpret credit.
+-    if(x.queue_id)this.batch.store.assertClaimBudget(this.batch.store.item(x.queue_id),{round:this.round(id),entry:x});
+-    this.update(id,x.key,{...patch,state:'PENDING',retry_counts:{...x.retry_counts,[stage]:tries+1}});
+-    this.event(id,x.key,'SAFE_STEP_RECOVERY',{step:stage,retry:tries+1,max:2,repairVersion:this.round(id).repair_version});return true;
++    try{
++     if(x.queue_id)this.batch.store.assertClaimBudget(this.batch.store.item(x.queue_id),{round:this.round(id),entry:x});
++    }catch(error){
++     // Historical claim usage can exceed safe-step retries. End only this
++     // pre-submit detail failure; unknown/store faults still block the round.
++     if(!['ITEM_RETRY_BUDGET_EXHAUSTED','ITEM_RETRY_BUDGET_EXTRA_UNSAFE','ITEM_RETRY_BUDGET_SYSTEM_UNCONFIRMED'].includes(error.code))throw error;
++     budgetDenied={budgetCode:error.code,budgetReason:reasonOf(error)};
++    }
++    if(!budgetDenied){
++     this.update(id,x.key,{...patch,state:'PENDING',retry_counts:{...x.retry_counts,[stage]:tries+1}});
++     this.event(id,x.key,'SAFE_STEP_RECOVERY',{step:stage,retry:tries+1,max:2,repairVersion:this.round(id).repair_version});return true;
++    }
+    }
+    this.update(id,x.key,{...patch,state:'FAILED',finished:now()});this.finishInternal(x.batch_id);
+-   this.event(id,x.key,'SAFE_STEP_RECOVERY_EXHAUSTED',{code:error.code,step:stage,retries:tries,max:2,continued:true});return true;
++   this.event(id,x.key,'SAFE_STEP_RECOVERY_EXHAUSTED',{code:error.code,step:stage,retries:tries,max:2,cause:budgetDenied?'CLAIM_BUDGET':'STEP_RECOVERIES',...budgetDenied,continued:true});return true;
+   }
+   this.syncQueue(x,'FAILED',null,patch.reason);this.update(id,x.key,{...patch,state:'PENDING'});
+   const r=this.round(id),fingerprint=c.fingerprint||patch.reason,count=r.system_fingerprint===fingerprint?r.system_count+1:1;
