@@ -1,5 +1,25 @@
 # 项目文件导航｜标准化第 1 步
 
+## 2026-10-18 侧栏同款执行状态球
+
+`workbench/execution-orb.tsx`按位置管理原球与侧栏球，各保留一个画布；`execution-orb.js`为原构建器产物。`travel-os.html`在导航下添加位置，`travel-os.css`处理展开/窄屏，`travel-os.js`共用原状态流更新。规则与正式加载见`docs/SIDEBAR_EXECUTION_ORB_20261018.md`；40项独立QA、精确封签、静态加载、HTTP/页面截图及并行原任务恢复的有界数据差异审计均在`output/sidebar-execution-orb-20261018/`。
+
+## 2026-10-17 单条一键重新执行
+
+`round-item-retry.mjs`和API管理原任务单条动作；`round-selection.mjs`记录累计3次人工追加；`round-item-detail.js`保留跨刷新请求，`travel-os.js`和`operations-catalog-ui.js`接入按钮；`taobao-publisher.mjs`复核详情已插入前缀。规则与阶段状态见`docs/SINGLE_ITEM_DIRECT_RETRY_20261017.md`；精确候选、隔离验证、独立QA及安装前后证据在`output/single-item-direct-retry-20261017/`。正式加载以该目录`production-after.json`为准。
+
+## 2026-10-17 Windows 执行提醒
+
+状态监测与持久去重位于`workbench/execution-notifications.mjs`，服务接线在`workbench/server.mjs`；Windows 通知由`tools/notify-workbench.ps1`展示，服务异常由`tools/start-workbench.mjs`守护检查。回归为`workbench/scripts/execution-notifications.test.mjs`；范围、部署限制和证据见`docs/EXECUTION_NOTIFICATIONS_20261017.md`。
+
+## 2026-10-17 原批次采样与历史跳过窗口修复
+
+采样入口为`docs/LISTING_EFFICIENCY_SAMPLING_20261017.md`；原API控制、只读采样collector、独立分析、维护及原任务保全证据在`output/listing-efficiency-sampling-20261017/`。正式`round-manual-skip.mjs`导出只读历史跳过核验，`round-windows.mjs`和`round-selection.mjs`复用，回归为`workbench/scripts/skipped-captcha-window.test.mjs`。素材细分计时两文件仅在该输出目录dev候选，未安装。
+
+## 2026-10-16 上架提效已正式加载
+
+规划与阶段实绩入口为`docs/LISTING_EFFICIENCY_EXECUTION_20261016.md`，原复盘保留于`LISTING_EFFICIENCY_PLAN_20261016.md`。正式`workbench/execution-timing.mjs`、`execution-steps.mjs`、`execution-evidence-policy.mjs`及SourceWorkflow接入提供计时和关键节点截图；`tools/isolated-dev.mjs`为源码隔离/受限测试入口。隔离候选仍保存在`output/listing-efficiency-implementation-20261016/dev/`，受验清单、计时交接、独立QA、离线对照、E3/E4复核和本次维护前后保全证据均在同一输出根目录。正式83项锁只合入本轮4项，旧锁在`kernel-baselines/20261016-before-listing-efficiency.json`。
+
 ## 2026-10-15 公共素材单张换图
 
 `workbench/material-replacement.mjs` 管理本店图片版本、完整解码、幂等和未来导入映射；`material-editor.js` 为选图/预览/保存交互，`travel-os.js` 在公共素材卡片接入。`material-library.mjs` 保持原目录分组，`source-store.mjs` 保留旧导入并创建派生资料版本，`publishing-rules.mjs` 接续新素材配置。使用范围与限制见 [单图替换](MATERIAL_REPLACEMENT_20261015.md)；临时合成测试位于 `scripts/material-replacement*.mjs`，验收/维护证据在 `output/material-replacement-20261015/`，不替换原700条固定快照。
@@ -199,3 +219,10 @@ workbench/publishing-pages.mjs调整仅本轮新建且已核验成功页的活�
 - `workbench/scripts/shop-execution.test.mjs`、`shop-http.test.mjs`、`hqlh-independent.test.mjs`、`hqlh-scope-ui-qa.mjs`：隔离、反例、HTTP 与界面验证。
 - `docs/HQLH_EXECUTION_ADAPTATION_20261015.md`：实现和实际验收边界。证据位于 `output/hqlh-adaptation-20261015/` 与 `output/toni-hqlh-20261015/`；实际业务数据和登录信息不进入代码基线。
 
+
+### 2026-10-20：新增成功目标及一次恢复
+
+- workbench/round-success-goal.mjs：原round/queue上的新增成功目标、范围与基线、跨100窗口、一次失败终轮、精确停止与持久化；非独立执行器。
+- workbench/pre-submit-page-recovery.mjs：同claim内导航超时的新页恢复；与残页重填共享一次预算，提交/验证码/页面保护保持。
+- 对应运行联动：listing-round.mjs、round-windows.mjs、product-api.mjs、source-workflow.mjs、server.mjs；中文网站入口：travel-os.js、tasks.css、ui-copy.js。
+- 发布及范围证据：docs/release-evidence/20261019-success-target-r1/；内核87项，未自动启动新目标。

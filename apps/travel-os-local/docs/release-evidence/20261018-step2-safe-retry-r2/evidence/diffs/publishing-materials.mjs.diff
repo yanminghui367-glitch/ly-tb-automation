@@ -1,0 +1,19 @@
+--- step1-baseline/workbench/publishing-materials.mjs
++++ step2/workbench/publishing-materials.mjs
+@@ -4,6 +4,7 @@
+ 
+ // Detail-only readiness budgets. Main-image callers retain their existing path.
+ export const DETAIL_MATERIAL_BUDGETS=Object.freeze({entry:20000,panel:8000,receipt:60000,thumbnail:30000,poll:150});
++const detailTimeoutCodes=Object.freeze({'upload-entry':'SAFE_RETRY_DETAIL_UPLOAD_ENTRY','upload-panel':'SAFE_RETRY_DETAIL_UPLOAD_PANEL','upload-receipt':'SAFE_RETRY_DETAIL_UPLOAD_RECEIPT',thumbnail:'SAFE_RETRY_DETAIL_MATERIAL'});
+ // A structural clone of actual DOM, excluding text, URLs and all form values.
+ export async function materialDomSnippet(locator){
+   return locator.evaluateAll(elements=>{
+@@ -16,7 +17,7 @@
+   assert(Number.isFinite(timeout)&&timeout>0&&timeout<=60000,'素材等待预算无效');
+   const start=performance.now();let actual=null,dom_snippet=null,status='failed',failure=null;
+   const diagnostic=()=>({stage,selector,expected,actual,dom_snippet,screenshot:null,status,durationMs:Math.round((performance.now()-start)*1000)/1000,timeoutMs:timeout});
+-  const checkDeadline=()=>{const remaining=timeout-(performance.now()-start);if(remaining<=0){const d=diagnostic();const error=new Error(`详情素材等待超时：stage=${stage}；durationMs=${d.durationMs}；expected=${expected}；actual=${JSON.stringify(actual)}`);error.materialReadiness={...d,timedOut:true};throw error;}return remaining;};
++  const checkDeadline=()=>{const remaining=timeout-(performance.now()-start);if(remaining<=0){const d=diagnostic();const error=new Error(`详情素材等待超时：stage=${stage}；durationMs=${d.durationMs}；expected=${expected}；actual=${JSON.stringify(actual)}`);if(Object.hasOwn(detailTimeoutCodes,stage))error.code=detailTimeoutCodes[stage];error.materialReadiness={...d,timedOut:true};throw error;}return remaining;};
+   try{
+     for(;;){
+       // Guard errors propagate unchanged: never turn CAPTCHA/identity failures

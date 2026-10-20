@@ -1,0 +1,81 @@
+{
+  "checkedAt": "2026-10-18T05:55:35.825507+00:00",
+  "qaAgent": "/root/step05_runbook_qa",
+  "ok": true,
+  "verdict": "PASS_INSTALLATION_AND_SINGLE_ALLOWANCE",
+  "scope": "installation and allowance snapshots only; live five-item sample still pending",
+  "health": {
+    "app": "ly-tb-workbench",
+    "version": "1.0.0",
+    "pid": 15876,
+    "kernel": {
+      "ok": true,
+      "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+      "revision": "20261018-step3-main-stability-r1",
+      "files": 84,
+      "changed": []
+    }
+  },
+  "oldPid": 11904,
+  "oldProcessExited": true,
+  "newPid": 15876,
+  "processCreatedAt": "2026-10-18T13:52:58.98407+08:00",
+  "osProcessIndependentlyRead": true,
+  "serviceStartedAt": "2026-10-18T05:53:13.447Z",
+  "businessPreservation": {
+    "databases": 9,
+    "tableSummariesCompared": 211,
+    "allDatabaseTableSummariesEqual": true,
+    "settingsEqual": true,
+    "apiBusinessStateEqual": true,
+    "allNineBackupHashesMatched": true,
+    "comparisonEndsBeforeAllowanceAndSample": true
+  },
+  "item12Allowance": {
+    "before": {
+      "attempts": 4,
+      "maxAttempts": 4,
+      "extraAttempts": 0,
+      "manualUsed": 1
+    },
+    "after": {
+      "attempts": 4,
+      "maxAttempts": 5,
+      "extraAttempts": 0,
+      "manualUsed": 2
+    },
+    "requestId": "87620e85-bcbf-41a7-a7f9-d4358e417b52",
+    "newGrantEvents": 1,
+    "runItemTaskIdentitiesPreserved": true,
+    "submissionEventsUnchanged": true,
+    "executionNotStartedByAllowance": true,
+    "note": "These are before/after allowance snapshots; subsequent authorized sample claims are separate."
+  },
+  "formalLockSha256": "17345cf58209b4320d280cde9aefa1dff8c0ac6d8e9e60f3706a2bc9618909df",
+  "formalFrozenFilesMatched": 84,
+  "runtimeHashes": {
+    "workbench/taobao-publisher.mjs": "6eafc82f2b7236ef0b1b0c0b560b2b9227057303705267adaf2f472f6df1f9a3",
+    "workbench/listing-round.mjs": "1068c298afd8fb805f4646d553c9d3f491c769c512c1ad1758df50b5fea65308"
+  },
+  "liveSampleAccepted": false,
+  "run1Eligible": false,
+  "qaActions": {
+    "browser": 0,
+    "productionPost": 0,
+    "businessWrites": 0,
+    "formalSourceWrites": 0
+  },
+  "artifactHashes": {
+    "result.json": "239dd3eec1c4f4c1c75cab2f6d55d3ddf14ff14b356c8c8c8febac0ee3bf3383",
+    "production-before.json": "da424d5e05b75162bd681cdd3fca9385652a0e3c87ec102933f6e78ab2ddb972",
+    "production-after.json": "0975326b61f812734bb1a1608a311b1a59b8d7377b5f50570be24eef420784c2",
+    "installation.json": "5867ad340e9021abdd353cb6fc68e546ea42f0ac2e42683bf343c3f80bfd63f9",
+    "database-backup.json": "f2def701a815d09f0dede8ad838de7e165e799fa52d1f7019da5b63c818c8776",
+    "process-after.json": "8d9bc64c38e953b8f4ffe79c74032ea277285c01002a3f32e90dcca5b4f62ccf",
+    "allowance-before.json": "6ab35213fe2d7171b8319c591d6dbed3c664f5e651a06cd6d7e8a4bba59f998b",
+    "allowance-after.json": "2364abec891b96889e14985754ea5547f360645a4d80fef0a3c43bc568e415b1",
+    "allowance-result.json": "f9d20d5bdab4a73e7d6d14c1851ca66c236c6a7725be7171d3a0b631078718d8",
+    "allowance-request.json": "83067eff48d2ed48cb9ded32133c6e11c13828b12e5ae34d703aed9b86e296d4",
+    "allowance-receipt.json": "75f271b7cbfcacf6e7fc3307d1d58f5bcd84cd827313e7c4fa64111f503dc3de"
+  }
+}

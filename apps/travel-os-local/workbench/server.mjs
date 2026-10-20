@@ -16,6 +16,7 @@ import { createServer as createNetServer } from "node:net";
 import { createSessionGuard, SessionError } from "./session-guard.mjs";
 import { createStaticHandler } from "./static-files.mjs";
 import { networkAccess } from "./network-access.mjs";
+import { ExecutionNotificationMonitor, createWindowsPopup } from "./execution-notifications.mjs";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.WORKBENCH_PORT || 4318), RUNTIME = process.env.WORKBENCH_TEST_RUNTIME && process.env.WORKBENCH_NO_LISTEN === "1" ? resolve(process.env.WORKBENCH_TEST_RUNTIME) : join(ROOT, ".runtime"), STATE_FILE = join(RUNTIME, "jobs.json"), SHOPS_FILE = join(RUNTIME, "shops.json"), TASK_ARTIFACTS = join(ROOT, "output", "tasks"), MAPPING_ARTIFACTS = join(ROOT, "output", "mapping-evidence"), STAGED_IMPORTS = join(RUNTIME, "imports");
@@ -26,6 +27,8 @@ const defaultShop = { id: "wuzhou-changyou", name: "五洲畅游", port: 9222, p
 const browserEnvironment = new BrowserEnvironment({ portAvailable: assertPortAvailable });
 const sessionGuard = createSessionGuard({ connector: shop => browserEnvironment.browser(shop), risk: page => pageRisk(page, true) });
   const executions=new ShopExecutions({runtime:RUNTIME,artifacts:TASK_ARTIFACTS,owner:browserEnvironment,shops:loadShops,launch:launchChrome,isShopRemoved:id=>travelOs().store.removed(id)});
+  const executionNotifications=new ExecutionNotificationMonitor({runtime:RUNTIME,products:()=>[...executions.entries.values()].map(entry=>entry.product),notify:createWindowsPopup(),log:message=>console.error(message)});
+  executionNotifications.start();
   const sources=()=>executions.current().source;
   const batches=()=>executions.current().batch;
   const product=id=>executions.product(id);
@@ -694,7 +697,7 @@ export const workbenchServer = createServer((req,res)=>executions.run(new URL(re
     if(req.method==='POST'&&executionRoute(url.pathname))await (await product()).assertExecution({legacy:true});
     if(url.pathname.startsWith('/api/os/'))return await travelOs().handle(req,res,url,{body,json});
     if(url.pathname.startsWith('/api/v1/')){
-      if(req.method==='POST'&&['start','continue','retry','resume-single','reconcile','create','rounds/create','rounds/start','rounds/resume','rounds/window-create','content-preparation/create','content-preparation/review','content-preparation/repair'].includes(url.pathname.slice(8))&&travelOs().store.removed((await product()).shop.id))return json(res,409,{error:'执行店铺已从管理中移除，禁止创建或启动任务'});
+      if(req.method==='POST'&&['start','continue','retry','resume-single','reconcile','create','rounds/create','rounds/start','rounds/resume','rounds/window-create','rounds/success-goal-create','content-preparation/create','content-preparation/review','content-preparation/repair'].includes(url.pathname.slice(8))&&travelOs().store.removed((await product()).shop.id))return json(res,409,{error:'执行店铺已从管理中移除，禁止创建或启动任务'});
       return await (await product()).handle(req,res,url,{body,json});
     }
     if (req.method === "GET" && url.pathname === "/api/browser/status") { const { shop } = await context(); return json(res, 200, { shop: { id: shop.id, name: shop.name, port: shop.port }, browser: await browserEnvironment.status(shop) }); }
@@ -764,6 +767,13 @@ if (process.env.WORKBENCH_NO_LISTEN !== "1") workbenchServer.listen(PORT, networ
 let stopping = false;
 async function shutdownProgram() {
   if (stopping) return; stopping = true;
+  executionNotifications.stop();
+  try {
+    const monitorFile=join(RUNTIME,'launcher','service-monitor.json');
+    const monitor=JSON.parse(await readFile(monitorFile,'utf8'));
+    monitor.cleanShutdownAt=Date.now();
+    await writeFile(monitorFile,JSON.stringify(monitor));
+  } catch {}
   sessionGuard.invalidateAll("程序关闭，任务停留在断点。");
   await executions.shutdown();
   const state = await loadState();

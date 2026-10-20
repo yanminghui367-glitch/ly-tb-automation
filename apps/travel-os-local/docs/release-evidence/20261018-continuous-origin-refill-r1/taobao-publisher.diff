@@ -1,0 +1,215 @@
+--- baseline/workbench/taobao-publisher.mjs
++++ candidate/workbench/taobao-publisher.mjs
+@@ -118,50 +118,60 @@
+ // .media-img-plug. Its container can open before its search UI is ready.
+ // Poll that same picker only. Never reload it, re-click Image, or choose a
+ // similarly named search box from a main-image/preview/unrelated frame.
++const pendingMaterialFrameUrl=value=>value===null||value===''||value==='about:blank';
++function materialFrameLocation(value){
++ if(pendingMaterialFrameUrl(value))return value;
++ try{const u=new URL(value);return ['https:','http:'].includes(u.protocol)?u.origin+u.pathname:'[non-http-url]';}catch{return '[invalid-url]';}
++}
+ export async function waitDetailMaterialFrame(page,guard,{required=true,timeout=20000,onDiagnostic=async()=>{}}={}) {
+  assert(Number.isFinite(timeout)&&timeout>0&&timeout<=30000,'DETAIL_WAIT_BUDGET_INVALID');
+  const hosts=page.locator('.media-img-plug iframe:not(#mainImagesGroup):visible'),deadline=Date.now()+timeout;
+- let host=null,frame=null,status='failed',actual={hosts:0},failure=null;const started=performance.now();
++ let host=null,frame=null,status='failed',actual={hosts:0,src:null,frameUrl:null},failure=null;const started=performance.now();
+  const diagnostic=()=>({stage:'detail-panel',status,selector:'.media-img-plug iframe:not(#mainImagesGroup):visible',expected:'唯一官方详情面板、可编辑搜索框与可见确定按钮',actual,durationMs:Math.round((performance.now()-started)*1000)/1000,timeoutMs:timeout,screenshot:null});
+  const notReady=()=>Object.assign(Error('DETAIL_MATERIAL_FRAME_NOT_READY'),{code:'SAFE_RETRY_DETAIL_PANEL'});
+- const allowed=url=>{try{const u=new URL(url);return u.origin==='https://market.m.taobao.com'&&u.pathname==='/app/crs-qn/sucai-selector-ng/index';}catch{return false;}};
++ const wrongOrigin=()=>Object.assign(Error('DETAIL_MATERIAL_FRAME_ORIGIN'),{code:'SAFE_RETRY_DETAIL_FRAME_ORIGIN'});
++ const allowed=url=>{try{const u=new URL(url);return !u.username&&!u.password&&u.origin==='https://market.m.taobao.com'&&u.pathname==='/app/crs-qn/sucai-selector-ng/index';}catch{return false;}};
+  const checkHost=async()=>{
+   assert.equal(await hosts.count(),1,'DETAIL_MATERIAL_FRAME_CHANGED');
+   assert.equal(await page.locator('iframe#mainImagesGroup:visible').count(),0,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
+   assert(await host.evaluate(el=>el.isConnected)&&await host.isVisible(),'DETAIL_MATERIAL_FRAME_CHANGED');
+   assert(await hosts.evaluate((el,original)=>el===original,host),'DETAIL_MATERIAL_FRAME_CHANGED');
+-  assert(allowed(await host.getAttribute('src')),'DETAIL_MATERIAL_FRAME_ORIGIN');
++  const src=await host.getAttribute('src');actual.src=materialFrameLocation(src);return src;
+  };
+  try {
+   do {
+    await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');
+-    const count=await hosts.count();actual={hosts:count};assert(count<=1,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
++    const count=await hosts.count();actual={hosts:count,src:null,frameUrl:null};assert(count<=1,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
+    if(count)assert.equal(await page.locator('iframe#mainImagesGroup:visible').count(),0,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
+     if(!host&&count===0&&!required){status='absent';return null;}
+    if(!host&&count===1)host=await hosts.elementHandle();
+    if(host){
+-    await checkHost();
++    const src=await checkHost();
+     const current=await host.contentFrame();
+     if(frame&&current!==frame)throw Error('DETAIL_MATERIAL_FRAME_CHANGED');
+     frame=current;
+-    if(frame&&frame.url()!=='about:blank'){
+-     assert(allowed(frame.url()),'DETAIL_MATERIAL_FRAME_ORIGIN');
++    const frameUrl=frame?.url()??null;actual.frameUrl=materialFrameLocation(frameUrl);
++    if(!pendingMaterialFrameUrl(src)&&!allowed(src)||!pendingMaterialFrameUrl(frameUrl)&&!allowed(frameUrl))throw wrongOrigin();
++    if(!pendingMaterialFrameUrl(src)&&frame&&!pendingMaterialFrameUrl(frameUrl)){
+      const search=frame.getByPlaceholder('搜索图片名称',{exact:true});
+      const confirm=frame.getByRole('button',{name:/^确定(?:\s*[（(]\d+[）)])?$/});
+       const searches=await search.count(),confirms=await confirm.count();
+-      actual={hosts:count,search:searches,confirm:confirms,searchVisible:searches===1&&await search.isVisible(),searchEditable:searches===1&&await search.isEditable(),confirmVisible:confirms===1&&await confirm.isVisible()};
++      actual={...actual,search:searches,confirm:confirms,searchVisible:searches===1&&await search.isVisible(),searchEditable:searches===1&&await search.isEditable(),confirmVisible:confirms===1&&await confirm.isVisible()};
+      assert((await search.count())<=1&&(await confirm.count())<=1,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
+      if(await search.count()===1&&await search.isVisible()&&await search.isEditable()&&await confirm.count()===1&&await confirm.isVisible()){
+       const readyUrl=frame.url();
+       await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');
+-      await checkHost();assert(!frame.isDetached()&&frame.url()===readyUrl&&allowed(frame.url()),'DETAIL_MATERIAL_FRAME_CHANGED');
++      const finalSrc=await checkHost();actual.frameUrl=materialFrameLocation(frame.url());
++      assert(!frame.isDetached()&&frame.url()===readyUrl&&allowed(frame.url()),'DETAIL_MATERIAL_FRAME_CHANGED');
++      if(!pendingMaterialFrameUrl(finalSrc)&&!allowed(finalSrc))throw wrongOrigin();
+       assert(await search.count()<=1&&await confirm.count()<=1,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
++      if(pendingMaterialFrameUrl(finalSrc))throw notReady();
+       if(!(await search.count()===1&&await search.isVisible()&&await search.isEditable()&&await confirm.count()===1&&await confirm.isVisible()))throw notReady();
+       if(Date.now()>=deadline)throw notReady();status='ready';return frame;
+      }
+     }
+    }
+-   await delay(150);
++   await delay(Math.min(150,Math.max(0,deadline-Date.now())));
+   }while(Date.now()<deadline);
+   throw notReady();
+   }catch(error){failure=error;error.materialReadiness??=diagnostic();throw error;}
+@@ -173,43 +183,55 @@
+ 
+ // Main and detail pickers share .media-img-plug. Main is identified by its
+ // observed exact ID; wait for the same official iframe, never reopen/reload it.
+-export async function waitMainMaterialFrame(page,guard,{timeout=20000}={}) {
++export async function waitMainMaterialFrame(page,guard,{timeout=20000,onDiagnostic=async()=>{}}={}) {
+  assert(Number.isFinite(timeout)&&timeout>0&&timeout<=30000,'MAIN_WAIT_BUDGET_INVALID');
+  const hosts=page.locator('.media-img-plug iframe#mainImagesGroup:visible'),deadline=Date.now()+timeout;
+  const allowed=url=>{try{const u=new URL(url);return !u.username&&!u.password&&u.origin==='https://market.m.taobao.com'&&u.pathname==='/app/crs-qn/sucai-selector-ng/index';}catch{return false;}};
+- let host=null,frame=null;
++ let host=null,frame=null,status='failed',actual={hosts:0,src:null,frameUrl:null},failure=null;const started=performance.now();
++ const diagnostic=()=>({stage:'main-panel',status,selector:'.media-img-plug iframe#mainImagesGroup:visible',expected:'唯一官方主图面板及可编辑搜索框',actual,durationMs:Math.round((performance.now()-started)*1000)/1000,timeoutMs:timeout,screenshot:null});
++ const notReady=()=>Object.assign(Error('MAIN_MATERIAL_FRAME_NOT_READY：主图素材面板未就绪，已停止；保留原页面后重试此条'),{code:'SAFE_RETRY_MAIN_PANEL'});
++ const wrongOrigin=()=>Object.assign(Error('MAIN_MATERIAL_FRAME_ORIGIN'),{code:'SAFE_RETRY_MAIN_FRAME_ORIGIN'});
+  const checkHost=async()=>{
+   assert.equal(await hosts.count(),1,'MAIN_MATERIAL_FRAME_CHANGED');
+   assert(await host.evaluate(el=>el.isConnected)&&await host.isVisible(),'MAIN_MATERIAL_FRAME_CHANGED');
+   assert(await hosts.evaluate((el,original)=>el===original,host),'MAIN_MATERIAL_FRAME_CHANGED');
+-  assert(allowed(await host.getAttribute('src')),'MAIN_MATERIAL_FRAME_ORIGIN');
+   assert.equal(await page.locator('.media-img-plug iframe:not(#mainImagesGroup):visible').count(),0,'MAIN_MATERIAL_FRAME_AMBIGUOUS');
++  const src=await host.getAttribute('src');actual.src=materialFrameLocation(src);return src;
+  };
+  try{
+   do{
+    await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');
+-   const count=await hosts.count();assert(count<=1,'MAIN_MATERIAL_FRAME_AMBIGUOUS');
++   const count=await hosts.count();actual={hosts:count,src:null,frameUrl:null};assert(count<=1,'MAIN_MATERIAL_FRAME_AMBIGUOUS');
+    if(!host&&count===1)host=await hosts.elementHandle();
+    if(host){
+-    await checkHost();const current=await host.contentFrame();
++    const src=await checkHost();const current=await host.contentFrame();
+     if(frame&&current!==frame)throw Error('MAIN_MATERIAL_FRAME_CHANGED');
+     frame=current;
+-    if(frame&&frame.url()!=='about:blank'){
+-     assert(allowed(frame.url()),'MAIN_MATERIAL_FRAME_ORIGIN');
++    const frameUrl=frame?.url()??null;actual.frameUrl=materialFrameLocation(frameUrl);
++    if(!pendingMaterialFrameUrl(src)&&!allowed(src)||!pendingMaterialFrameUrl(frameUrl)&&!allowed(frameUrl))throw wrongOrigin();
++    if(!pendingMaterialFrameUrl(src)&&frame&&!pendingMaterialFrameUrl(frameUrl)){
+      const search=frame.getByPlaceholder('搜索图片名称',{exact:true});
+-     assert(await search.count()<=1,'MAIN_MATERIAL_FRAME_AMBIGUOUS');
++     const searches=await search.count();actual={...actual,search:searches,searchVisible:searches===1&&await search.isVisible(),searchEditable:searches===1&&await search.isEditable()};
++     assert(searches<=1,'MAIN_MATERIAL_FRAME_AMBIGUOUS');
+      if(await search.count()===1&&await search.isVisible()&&await search.isEditable()){
+       const readyUrl=frame.url();await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');
+-      await checkHost();assert(!frame.isDetached()&&frame.url()===readyUrl&&allowed(frame.url()),'MAIN_MATERIAL_FRAME_CHANGED');
+-      assert(await search.count()===1&&await search.isVisible()&&await search.isEditable(),'MAIN_MATERIAL_FRAME_NOT_READY');
+-      return frame;
++      const finalSrc=await checkHost();actual.frameUrl=materialFrameLocation(frame.url());
++      assert(!frame.isDetached()&&frame.url()===readyUrl&&allowed(frame.url()),'MAIN_MATERIAL_FRAME_CHANGED');
++      if(!pendingMaterialFrameUrl(finalSrc)&&!allowed(finalSrc))throw wrongOrigin();
++      assert(await search.count()<=1,'MAIN_MATERIAL_FRAME_AMBIGUOUS');
++      if(pendingMaterialFrameUrl(finalSrc)||!(await search.count()===1&&await search.isVisible()&&await search.isEditable())||Date.now()>=deadline)throw notReady();
++      status='ready';return frame;
+      }
+     }
+    }
+-   await delay(150);
++   await delay(Math.min(150,Math.max(0,deadline-Date.now())));
+   }while(Date.now()<deadline);
+-  throw Error('MAIN_MATERIAL_FRAME_NOT_READY：主图素材面板未就绪，已停止；保留原页面后重试此条');
+- }finally{await host?.dispose();}
++  throw notReady();
++ }catch(error){failure=error;error.materialReadiness??=diagnostic();throw error;}
++ finally{
++  await host?.dispose();
++  try{const d=failure?.materialReadiness||diagnostic();d.dom_snippet=await materialDomSnippet(hosts);const evidence=await onDiagnostic(d);if(evidence)Object.assign(d,evidence);}catch{}
++ }
+ }
+ 
+ // A material click can apply its image before an unrelated iframe navigation
+@@ -407,9 +429,11 @@
+ // search results and thumbnails may change; the saved source receipt must not.
+ export async function verifyInsertedDetails(urls,assets,receipts){
+  assert(urls.length<=assets.length,'TOO_MANY_DETAIL_IMAGES');
++ let missing=false;
+  for(const [i,url]of urls.entries()){
+   const a=assets[i],r=receipts[i];
+-  assert(r&&r.order===i+1&&typeof r.url==='string'&&r.url&&typeof url==='string'&&url,'EXISTING_DETAIL_RECEIPT_MISSING');
++  if(!r){missing=true;continue;}
++  assert(r.order===i+1&&typeof r.url==='string'&&r.url&&typeof url==='string'&&url,'EXISTING_DETAIL_MISMATCH');
+   assert.equal(r.source?.path,a.path,'DETAIL_SOURCE_MISMATCH');
+   assert.equal(r.source?.sha256,a.sha256,'DETAIL_SOURCE_MISMATCH');
+   assert.deepEqual(r.source?.materialVersion,a.materialVersion,'DETAIL_SOURCE_MISMATCH');
+@@ -417,6 +441,7 @@
+   assert.equal(norm(url),norm(r.url),'EXISTING_DETAIL_MISMATCH');
+   assert(await verifyMaterialUploadReceipt(a,r.url),'SOURCE_OR_ASSET_CHANGED: BOUND_MATERIAL_UPLOAD_UNVERIFIED');
+  }
++ assert(!missing,'EXISTING_DETAIL_RECEIPT_MISSING');
+  return urls.length;
+ }
+ 
+@@ -481,7 +506,7 @@
+   if(existing.length>i)return;
+   assert.equal(existing.length,i,'MAIN_IMAGE_COUNT_CHANGED：前序主图尚未插入，请保留原页面');
+   if(!await p.locator('iframe#mainImagesGroup').isVisible())await p.locator('#sell-field-mainImagesGroup').getByText('上传图片',{exact:true}).first().click();
+-  const f=await waitMainMaterialFrame(p,guard),name=basename(a.path);
++  const f=await waitMainMaterialFrame(p,guard,{onDiagnostic:detailReadiness.onDiagnostic}),name=basename(a.path);
+   const card=f.locator('.PicList_pic_background__pGTdV').filter({hasText:name}).first();
+   if(!await card.count()){await f.getByPlaceholder('搜索图片名称').fill(name);await f.getByPlaceholder('搜索图片名称').press('Enter');}
+   await ensureMaterial(f,a,card);
+@@ -656,6 +681,22 @@
+ 
+ export async function openTaskPage(context,task,checkpoint,guard,record,onPage=()=>{}) {
+  let p;
++ if(checkpoint.residualPageRefill||checkpoint.refillPageTargetId){
++  const binding=checkpoint.residualPageRefill,targetId=checkpoint.refillPageTargetId;
++  assert(typeof targetId==='string'&&targetId&&(!binding||binding.status==='BOUND'&&binding.newTargetId===targetId),'RESIDUAL_REFILL_PAGE_UNAVAILABLE：重填页面尚未完整绑定，禁止再次创建页面');
++  const matches=[];
++  for(const candidate of context.pages().filter(p=>!p.isClosed()&&newForm(p))){
++   const session=await context.newCDPSession(candidate);
++   try{const info=(await session.send('Target.getTargetInfo'))?.targetInfo;if(info?.type==='page'&&info.targetId===targetId)matches.push(candidate);}
++   finally{await session.detach();}
++  }
++  assert(matches.length===1,'RESIDUAL_REFILL_PAGE_UNAVAILABLE：原绑定的重填页面已关闭或无法唯一识别，禁止再次创建页面');
++  p=matches[0];await guard(p);
++  assert(newForm(p)&&(!checkpoint.formUrl||p.url()===checkpoint.formUrl),'RESIDUAL_REFILL_PAGE_UNAVAILABLE：原绑定的重填页面地址已变化');
++  assert.equal(await p.locator(selectors.title).inputValue(),task.listing.title,'ANOTHER_TASK_FORM');
++  await guard(p);assert(newForm(p)&&(!checkpoint.formUrl||p.url()===checkpoint.formUrl),'RESIDUAL_REFILL_PAGE_UNAVAILABLE：原绑定的重填页面地址已变化');
++  await onPage(p);return p;
++ }
+  if(checkpoint.formUrl) {
+   const matches=[];
+   for(const candidate of context.pages().filter(p=>p.url()===checkpoint.formUrl && newForm(p))) {
+@@ -663,15 +704,15 @@
+    if(title===task.listing.title)matches.push(candidate);
+   }
+   assert(matches.length<=1,'原填写页无法唯一识别，请保留目标商品页面后继续');p=matches[0];
+-  if(p){onPage(p);return p;}
++  if(p){await onPage(p);return p;}
+   // A restarted tab can lose its unsaved DOM. Only pre-submit runs call here;
+   // reconstruct the same task and revalidate every field instead of trusting flags.
+   const blanks=[];
+   for(const candidate of context.pages().filter(p=>p.url()===checkpoint.formUrl && newForm(p)))if(!await candidate.locator(selectors.title).inputValue())blanks.push(candidate);
+-  if(blanks.length===1){p=blanks[0];onPage(p);await guard(p);await p.locator(selectors.title).fill(task.listing.title);await p.locator(selectors.title).press('Tab');await record({formUrl:p.url(),reconstructed:true});return p;}
++  if(blanks.length===1){p=blanks[0];await onPage(p);await guard(p);await p.locator(selectors.title).fill(task.listing.title);await p.locator(selectors.title).press('Tab');await record({formUrl:p.url(),reconstructed:true});return p;}
+  }
+  await guard();
+- p=await createBackgroundPage(context);onPage(p,{createdThisExecution:true});await record({formPageCreated:true});
++ p=await createBackgroundPage(context);await onPage(p,{createdThisExecution:true});await record({formPageCreated:true});
+   await p.goto('https://upload.taobao.com/auction/sell.jhtml',{waitUntil:'domcontentloaded'});
+  await guard(p);
+  await p.getByText('其它商品定制',{exact:true}).click();

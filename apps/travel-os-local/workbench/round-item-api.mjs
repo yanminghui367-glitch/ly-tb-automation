@@ -6,6 +6,17 @@ import {readItemCandidates} from './round-item-candidates.mjs';
 import {RoundItemVerifyApi} from './round-item-verify-api.mjs';
 import {RoundItemRetryApi} from './round-item-retry-api.mjs';
 const prefix='/api/v1/rounds/';
+const parkExplanations={
+ ITEM_PARK_REQUEST_INVALID:'请填写确认人和挂起原因，并重新读取任务详情。',
+ ITEM_PARK_VERIFICATION_REQUIRED:'须先完成原商品核验，且核验明确为创建时间不匹配或无唯一匹配。',
+ ITEM_PARK_REQUEST_CONFLICT:'此操作编号已用于另一项挂起决定，请核对原回执。',
+ ITEM_PARK_STALE_REVISION:'任务记录已变化，请重新读取详情后确认。',
+ ITEM_PARK_BUSY:'执行器尚未停稳，请等待原执行动作结束。',
+ ITEM_PARK_WINDOW_PROTECTED:'当前窗口不满足挂起条件，请核对原窗口。',
+ ITEM_PARK_SUBMISSION_REQUIRED:'仅允许挂起已提交且核验未定的原商品。',
+ ITEM_PARK_RESULT_PROTECTED:'原商品已有结果或队列状态变化，不能挂起。',
+ ITEM_ALREADY_PARKED:'该商品已挂起，原结果仍待人工确认。'
+};
 const explanations={
  ITEM_HOST_NOT_CONFIGURED:'单条操作尚未完成服务接入，暂不能使用。',
  ITEM_HOST_SCOPE_MISMATCH:'单条操作与当前执行器归属不一致，暂不能使用。',
@@ -47,7 +58,7 @@ function validateBody(value){
  return value;
 }
 export class RoundItemApi {
- constructor(action,{host=null,verifier=null,retry=null}={}){this.action=action;this.host=host;this.verification=verifier?new RoundItemVerifyApi(verifier):null;this.retry=retry?new RoundItemRetryApi(retry):null;}
+ constructor(action,{host=null,verifier=null,retry=null}={}){this.action=action;this.host=host;this.parking=action.owner.parking;this.verification=verifier?new RoundItemVerifyApi(verifier):null;this.retry=retry?new RoundItemRetryApi(retry):null;}
  async detail(scope){
   const hostIssue=this.host?await this.host.inspect():null;
   // Read after asynchronous host checks; a stale GET never authorizes a POST.
@@ -61,17 +72,30 @@ export class RoundItemApi {
   }));
   const candidates=await readItemCandidates(a.owner,s,a.attempts);
   if(a.read(scope).revision!==s.revision)throw Object.assign(Error('ITEM_SKIP_STALE_REVISION'),{code:'ITEM_SKIP_STALE_REVISION'});
-  return {roundId:s.r.id,windowId:s.w.id,key:s.x.key,shopId:s.r.shop,taskHash:s.x.task_hash,candidates,
+  return {roundId:s.r.id,windowId:s.w.id,key:s.x.key,shopId:s.r.shop,manifestHash:s.r.manifest_hash,taskHash:s.x.task_hash,candidates,
+   retryBlocked:s.x.state==='RESULT_UNKNOWN'&&!!s.x.submitted,parking:this.parking?.record(s.r.id,s.x)||null,
    revision:check.revision,current:s.snapshot.item,submissionEvidence:s.hasSubmit,
    windowOutcome:s.assignment.outcome||null,
    verificationControl:this.verification?.verifier.controlView(s.r.id)?.key===s.x.key&&this.verification.verifier.controlView(s.r.id)?.windowId===s.w.id?this.verification.verifier.controlView(s.r.id):null,
    // Do not claim old runs have segmented attempts or invent their timestamps.
    historyCoverage:attempts.length?'HAS_RECORDED_ATTEMPTS':'PRIOR_HISTORY_NOT_SEGMENTED',attempts,
-   capabilities:{skip:{allowed:check.allowed,...(check.allowed?{code:null,reason:'尚未提交，可在此安全边界记录跳过原因。'}:{code:issue({code:check.reason}).code,reason:issue({code:check.reason}).message})},
+   capabilities:{park:this.parking?.capability(s,hostIssue)||{allowed:false,reason:'挂起入口尚未接入。'},skip:{allowed:check.allowed,...(check.allowed?{code:null,reason:'尚未提交，可在此安全边界记录跳过原因。'}:{code:issue({code:check.reason}).code,reason:issue({code:check.reason}).message})},
     retry:this.retry?this.retry.capability(s,hostIssue):{allowed:false,code:'NOT_CONNECTED',reason:'单条补跑入口尚未接入。'},
     verify:this.verification?this.verification.capability(s,hostIssue):{allowed:false,code:'NOT_CONNECTED',reason:'单条核验入口尚未接入。'}}};
  }
  async handle(req,res,url,{body,json}){
+  if(url.pathname===prefix+'item-park'){
+   if(req.method!=='POST'){res.setHeader('Allow','POST');json(res,405,{code:'METHOD_NOT_ALLOWED',error:'此入口仅支持确认挂起请求。'});return true;}
+   try{
+    if(url.search)throw Object.assign(Error('ITEM_PARK_REQUEST_INVALID'),{code:'ITEM_PARK_REQUEST_INVALID'});
+    let input;try{input=this.parking.request(await body(req));}catch{throw Object.assign(Error('ITEM_PARK_REQUEST_INVALID'),{code:'ITEM_PARK_REQUEST_INVALID'});}
+    const replay=this.parking.replay(input);if(replay){json(res,200,replay);return true;}
+    if(!this.host)throw Object.assign(Error('ITEM_HOST_NOT_CONFIGURED'),{code:'ITEM_HOST_NOT_CONFIGURED'});
+    await this.host.assert();this.host.assertCurrent();
+    json(res,200,this.parking.park(input));
+   }catch(e){const code=String(e.code||'ITEM_PARK_PROTECTED');json(res,code==='ITEM_PARK_REQUEST_INVALID'?400:409,{code,error:parkExplanations[code]||issue(e).message});}
+   return true;
+  }
   if(url.pathname===prefix+'item-retry'){
    if(this.retry)return this.retry.handle(req,res,url,{body,json});
    json(res,503,{code:'ITEM_RETRY_NOT_CONNECTED',error:'单条重试服务尚未接入。'});return true;

@@ -1,0 +1,47 @@
+{
+  "at": "2026-10-18T12:52:33.096918+00:00",
+  "revision": "20261018-continuous-origin-refill-r1",
+  "fromRevision": "20261018-step3-main-stability-r1",
+  "files": [
+    {
+      "path": "workbench/taobao-publisher.mjs",
+      "baselineSha256": "6eafc82f2b7236ef0b1b0c0b560b2b9227057303705267adaf2f472f6df1f9a3",
+      "sha256": "94011fc48bd782b281b52342318647177bdde647a8f1cdece772380e16ecdc61"
+    },
+    {
+      "path": "workbench/source-workflow.mjs",
+      "baselineSha256": "aecf842c18aded7433e48c55f7e76dcbbcf5b88dfb2e88dfbcb980007378a4ac",
+      "sha256": "b5c48b87fe8548ed5735c228df07c5411b46bbc3409a469b1852d6521df817ec"
+    },
+    {
+      "path": "workbench/listing-round.mjs",
+      "baselineSha256": "1068c298afd8fb805f4646d553c9d3f491c769c512c1ad1758df50b5fea65308",
+      "sha256": "c2b7c58460980b75fff527cb7b18d593e77cccf7178e81c80130bfe022d9ed6a"
+    }
+  ],
+  "runtimeFiles": [
+    "workbench/taobao-publisher.mjs",
+    "workbench/source-workflow.mjs",
+    "workbench/listing-round.mjs"
+  ],
+  "beforeLockSha256": "17345cf58209b4320d280cde9aefa1dff8c0ac6d8e9e60f3706a2bc9618909df",
+  "baselineSnapshot": "docs/kernel-baselines/20261018-before-continuous-origin-refill-r1.json",
+  "deploymentAllowed": false,
+  "scope": "Both material iframe readiness paths; bounded pre-submit origin retries; one persisted clean-form refill within original claim; existing watchdog Step 1.5 unchanged",
+  "attemptsSemanticsUnchanged": true,
+  "budgetsUnchanged": true,
+  "watchdogChanged": false,
+  "recovery": {
+    "shop": "shop-7949a469",
+    "roundId": "045fe9dc-b0fd-4101-998f-73ad1b75b99b",
+    "positions": [
+      17,
+      191
+    ],
+    "currentPosition": 118,
+    "relativePosition": 102,
+    "previousSuccessCount": 97,
+    "manualAllowanceGranted": 0,
+    "reviveFailedItems": false
+  }
+}

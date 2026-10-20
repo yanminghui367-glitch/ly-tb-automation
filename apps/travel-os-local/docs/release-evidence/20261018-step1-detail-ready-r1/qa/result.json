@@ -1,0 +1,60 @@
+{
+  "date": "2026-10-18",
+  "qaAgent": "/root/step05_runbook_qa",
+  "ok": true,
+  "verdict": "PASS_CANDIDATE_ONLY",
+  "scope": "Step 1 two-file isolated candidate and section 2.5 source cold backup; no production installation or item retry",
+  "candidateManifestSha256": "9f547eeff65cbb46275098e3d57bff726d1288b7e3773daa4a9422171c1d1820",
+  "candidateKernelLockSha256": "17188e2e59a5bb791bef86ee12b8f32d62aaaeee0f582af7fe8fcc71f238e26a",
+  "revision": "20261018-step1-detail-ready-r1",
+  "files": {
+    "workbench/taobao-publisher.mjs": "4abcb31f391e95a13355f97c1a023a52ca3c8abaad6065d87ec51e3db9e618ea",
+    "workbench/publishing-materials.mjs": "735f652636ee65d200ab3b0528b25b468885cd751ee63213b56241f5c2971dc7"
+  },
+  "runtimeFilesVerified": 2,
+  "artifactHashesVerified": 18,
+  "candidateKernel": {"ok": true, "files": 84, "revision": "20261018-step1-detail-ready-r1", "changed": []},
+  "independentTests": {
+    "path": "qa/readiness-edge.test.mjs",
+    "sha256": "1a6b4a0f92b0c7fe7d89a86f950afbc622638b49542bbceac9133af9b1f8abc8",
+    "passed": 5,
+    "failed": 0,
+    "skipped": 0,
+    "log": "qa/readiness-edge-final.log",
+    "logSha256": "6f7d23105f9f5404da83b54f62a53df66e883ba7645c52e0017e389fbdf7f96c",
+    "browserStarted": false,
+    "businessDatabaseOpened": false
+  },
+  "executorEvidenceReviewed": [
+    {"path": "evidence/final-regression.log", "passed": 78, "independentlyRerun": false, "beforeFinalIframeDeadlinePatch": true},
+    {"path": "evidence/final-deadline-regression.log", "passed": 17, "independentlyRerun": false, "finalCandidateTargetedRegression": true},
+    {"path": "evidence/existing-regression-r2.log", "passed": 55, "independentlyRerun": false}
+  ],
+  "testCountsAreOverlappingDoNotSum": true,
+  "backup": {
+    "archiveSha256": "f3b7c00a289409f46eb45480665923302c5265d5dede26f7061d765a9e008a5b",
+    "sourceFilesVerified": 382,
+    "zipEntries": 383,
+    "additionalZipEntry": "source-sha256.json",
+    "frozenFilesVerified": 84,
+    "aclRestricted": true
+  },
+  "production": {
+    "sourceFilesUnchanged": 382,
+    "kernelLockSha256": "1d21ba6d5d046376a9a4e285cb081593aee8041d1f17c7ff68794f3b539d46a2",
+    "kernel": {"ok": true, "files": 84, "revision": "20261017-single-item-direct-retry3", "changed": []},
+    "postRequestsByQa": 0,
+    "restartsByQa": 0,
+    "submissionsByQa": 0
+  },
+  "deploymentAllowed": false,
+  "platformReproductionVerified": false,
+  "step2Started": false,
+  "blockingFindings": [],
+  "limitations": [
+    "Real Taobao item 12 was not retried; local injected delays do not establish historical platform latency",
+    "Readiness deadline is not an upper bound on guard or evidence-capture wall time",
+    "Adapted no-SKU positive fixture provides a decoded local PNG and a clickable CSS box; unchanged original positive fixture was not reported as passing",
+    "All candidate changes require separate authorized installation and runtime verification"
+  ]
+}

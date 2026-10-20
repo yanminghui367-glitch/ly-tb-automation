@@ -672,3 +672,11 @@ body:has(#page-quotes:not([hidden])) .topbar{min-height:67px;padding-top:11px;pa
 
 #page-products .material-audit-results[open]{max-height:540px;overflow:auto;scrollbar-gutter:stable;padding-right:10px}
 #page-products .material-audit-item{max-width:none}
+
+/* The sidebar repeats the monitor orb beneath the navigation. Both locations
+   use the same renderer, dimensions and execution state. */
+.sidebar-orb-slot{display:none}
+.sidebar-expanded .sidebar nav{flex:0 1 auto}
+.sidebar-expanded .sidebar-orb-slot{display:flex;flex:1 0 142px;min-height:142px;justify-content:center;align-items:flex-start;padding-top:32px}
+.sidebar-orb-slot .execution-orb{margin:0}
+@media(max-width:850px){.sidebar .sidebar-orb-slot{display:none}.sidebar-expanded .sidebar .sidebar-orb-slot{display:flex}}

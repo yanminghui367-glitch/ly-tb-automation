@@ -1,0 +1,29 @@
+--- step1-baseline/workbench/taobao-publisher.mjs
++++ step2/workbench/taobao-publisher.mjs
+@@ -123,6 +123,7 @@
+  const hosts=page.locator('.media-img-plug iframe:not(#mainImagesGroup):visible'),deadline=Date.now()+timeout;
+  let host=null,frame=null,status='failed',actual={hosts:0},failure=null;const started=performance.now();
+  const diagnostic=()=>({stage:'detail-panel',status,selector:'.media-img-plug iframe:not(#mainImagesGroup):visible',expected:'唯一官方详情面板、可编辑搜索框与可见确定按钮',actual,durationMs:Math.round((performance.now()-started)*1000)/1000,timeoutMs:timeout,screenshot:null});
++ const notReady=()=>Object.assign(Error('DETAIL_MATERIAL_FRAME_NOT_READY'),{code:'SAFE_RETRY_DETAIL_PANEL'});
+  const allowed=url=>{try{const u=new URL(url);return u.origin==='https://market.m.taobao.com'&&u.pathname==='/app/crs-qn/sucai-selector-ng/index';}catch{return false;}};
+  const checkHost=async()=>{
+   assert.equal(await hosts.count(),1,'DETAIL_MATERIAL_FRAME_CHANGED');
+@@ -154,14 +155,15 @@
+       const readyUrl=frame.url();
+       await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');
+       await checkHost();assert(!frame.isDetached()&&frame.url()===readyUrl&&allowed(frame.url()),'DETAIL_MATERIAL_FRAME_CHANGED');
+-      assert(await search.count()===1&&await search.isVisible()&&await search.isEditable()&&await confirm.count()===1&&await confirm.isVisible(),'DETAIL_MATERIAL_FRAME_NOT_READY');
+-      if(Date.now()>=deadline)throw Error('DETAIL_MATERIAL_FRAME_NOT_READY');status='ready';return frame;
++      assert(await search.count()<=1&&await confirm.count()<=1,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
++      if(!(await search.count()===1&&await search.isVisible()&&await search.isEditable()&&await confirm.count()===1&&await confirm.isVisible()))throw notReady();
++      if(Date.now()>=deadline)throw notReady();status='ready';return frame;
+      }
+     }
+    }
+    await delay(150);
+   }while(Date.now()<deadline);
+-  throw Error('DETAIL_MATERIAL_FRAME_NOT_READY');
++  throw notReady();
+   }catch(error){failure=error;error.materialReadiness??=diagnostic();throw error;}
+   finally{
+    await host?.dispose();

@@ -1,0 +1,19 @@
+--- baseline/workbench/listing-round.mjs
++++ candidate/workbench/listing-round.mjs
+@@ -17,12 +17,12 @@
+ const reasonOf=error=>String(error?.message||error||'未知执行错误').slice(0,1600);
+ const isEvidence=r=>!!(/^\d{6,30}$/.test(String(r?.itemId||''))&&r.status&&r.rowText&&r.screenshot&&Number.isFinite(Date.parse(r.verifiedAt)));
+ const csvCell=value=>'"'+String(value??'').replace(/^[=+@-]/,"'$&").replaceAll('"','""')+'"';
+-const detailRetryCode=code=>/^SAFE_RETRY_DETAIL_(?:PANEL|UPLOAD_ENTRY|UPLOAD_PANEL|UPLOAD_RECEIPT|MATERIAL)$/.test(code||'');
+-const detailRetryStep=(code,step)=>code==='SAFE_RETRY_DETAIL_PANEL'?step==='open-details'||/^select-detail-\d+$/.test(step||''):/^select-detail-\d+$/.test(step||'');
+-const mainRetryCode=code=>code==='SAFE_RETRY_MAIN_IMAGE_STATE';
++const detailRetryCode=code=>/^SAFE_RETRY_DETAIL_(?:PANEL|FRAME_ORIGIN|UPLOAD_ENTRY|UPLOAD_PANEL|UPLOAD_RECEIPT|MATERIAL)$/.test(code||'');
++const detailRetryStep=(code,step)=>['SAFE_RETRY_DETAIL_PANEL','SAFE_RETRY_DETAIL_FRAME_ORIGIN'].includes(code)?['open-new-form','open-details'].includes(step)||/^select-detail-\d+$/.test(step||''):/^select-detail-\d+$/.test(step||'');
++const mainRetryCode=code=>['SAFE_RETRY_MAIN_IMAGE_STATE','SAFE_RETRY_MAIN_FRAME_ORIGIN','SAFE_RETRY_MAIN_PANEL'].includes(code);
+ const readinessRetryCode=code=>detailRetryCode(code)||mainRetryCode(code);
+ const submissionInRun=run=>!!(run&&(['SUBMITTING','RESULT_UNKNOWN','VERIFIED'].includes(run.state)||run.result||run.checkpoint?.itemId||run.checkpoint?.reconciliation));
+-const protectedPageReason=reason=>/PAGE_LEDGER_|PAGE_PROTECTION_|PINNED_PAGE|PAGE_BUDGET|保留页面.*(?:保护|失败)/i.test(reason||'');
++const protectedPageReason=reason=>/PAGE_LEDGER_|PAGE_PROTECTION_|PINNED_PAGE|PAGE_BUDGET|RESIDUAL_REFILL_|保留页面.*(?:保护|失败)/i.test(reason||'');
+ 
+ // Classification is separate from continuation: only proven pre-submit item
+ // failures may be finalized by the bounded, distinct-item circuit below.

@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-18T15:58:29.625Z",
+  "pid": 47768,
+  "processStartedAt": "2026-10-18T15:57:15.6170584Z",
+  "kernel": {
+    "ok": true,
+    "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+    "revision": "20261018-website-verify-r1",
+    "files": 84,
+    "changed": []
+  },
+  "businessCorePreserved": true,
+  "wholeDatabaseUnchanged": false,
+  "unchangedTables": 209,
+  "totalTables": 211,
+  "databases": 9,
+  "startupProjectionChanges": "Only current round_item.updated and one RESULT_UNKNOWN startup event; old events preserved",
+  "productionItemActions": 0
+}

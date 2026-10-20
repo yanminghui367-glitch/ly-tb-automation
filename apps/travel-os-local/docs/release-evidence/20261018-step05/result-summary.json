@@ -1,0 +1,125 @@
+{
+  "at": "2026-10-18T03:21:30.617Z",
+  "scope": "Step 0.5 only; isolated self-test, not independent QA or deployment",
+  "script": "docs/release-evidence/20261018-step05/rehearsal.mjs",
+  "scriptSha256": "6d8839076572e4e9b730e1675834352de11004fa5cb91b550787ee0bd36ad55a",
+  "localRawResult": "output/kernel-release-step05-20261018/runs/2026-10-18T03-21-29-176Z/result.json",
+  "localRawResultSha256": "2212886629124654bceb74d15617ee06ad5fb1b636b75bc5ba796f3fe6100b2a",
+  "passed": 6,
+  "results": [
+    {
+      "name": "原锁与隔离源码一致",
+      "pass": true,
+      "kernel": {
+        "ok": true,
+        "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+        "revision": "20261017-single-item-direct-retry3",
+        "files": 84,
+        "changed": []
+      },
+      "usedActualHealthHandler": true
+    },
+    {
+      "name": "修改一项冻结文件后变红",
+      "pass": true,
+      "kernel": {
+        "ok": false,
+        "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+        "revision": "20261017-single-item-direct-retry3",
+        "files": 84,
+        "changed": [
+          "workbench/publishing-materials.mjs"
+        ]
+      },
+      "usedActualHealthHandler": true
+    },
+    {
+      "name": "错误哈希不能恢复通过",
+      "pass": true,
+      "kernel": {
+        "ok": false,
+        "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+        "revision": "20261017-single-item-direct-retry3",
+        "files": 84,
+        "changed": [
+          "workbench/publishing-materials.mjs"
+        ]
+      },
+      "usedActualHealthHandler": true
+    },
+    {
+      "name": "只更新候选一项哈希后变绿",
+      "pass": true,
+      "kernel": {
+        "ok": true,
+        "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+        "revision": "20261018-step05-isolated-rehearsal-r1",
+        "files": 84,
+        "changed": []
+      },
+      "usedActualHealthHandler": true
+    },
+    {
+      "name": "未登记文件不会被自动纳入校验",
+      "pass": true,
+      "kernel": {
+        "ok": true,
+        "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+        "revision": "20261018-step05-isolated-rehearsal-r1",
+        "files": 84,
+        "changed": []
+      },
+      "usedActualHealthHandler": true
+    },
+    {
+      "name": "原文件与原锁成对恢复后变绿",
+      "pass": true,
+      "kernel": {
+        "ok": true,
+        "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+        "revision": "20261017-single-item-direct-retry3",
+        "files": 84,
+        "changed": []
+      },
+      "usedActualHealthHandler": true
+    }
+  ],
+  "production": {
+    "before": {
+      "app": "ly-tb-workbench",
+      "version": "1.0.0",
+      "pid": 40776,
+      "kernel": {
+        "ok": true,
+        "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+        "revision": "20261017-single-item-direct-retry3",
+        "files": 84,
+        "changed": []
+      }
+    },
+    "after": {
+      "app": "ly-tb-workbench",
+      "version": "1.0.0",
+      "pid": 40776,
+      "kernel": {
+        "ok": true,
+        "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+        "revision": "20261017-single-item-direct-retry3",
+        "files": 84,
+        "changed": []
+      }
+    },
+    "lockSha256": "1d21ba6d5d046376a9a4e285cb081593aee8041d1f17c7ff68794f3b539d46a2",
+    "frozenFilesUnchanged": 84,
+    "productionPostRequests": 0,
+    "restarts": 0,
+    "goodsSubmitted": 0
+  },
+  "git": {
+    "head": "4d4b93bb999e7f429efab92aecfb1f6060dee7e0",
+    "trackedSame": 3,
+    "trackedDifferent": 21,
+    "untrackedFrozen": 60
+  },
+  "independentQA": false
+}

@@ -1,8 +1,10 @@
+import {parkFailureEvidence} from './round-item-park.mjs';
 // Isolated candidate. Uses the existing round owner and verifier; never pumps or publishes.
 import {createHash} from 'node:crypto';
 import {readFile,realpath} from 'node:fs/promises';
 import {relative,isAbsolute} from 'node:path';
 import {RoundManualSkip} from './round-manual-skip.mjs';
+import {assertUnclaimedSubmissionId} from './result-reconciliation.mjs';
 const hash=x=>createHash('sha256').update(JSON.stringify(x)).digest('hex');
 const fail=code=>{throw Object.assign(Error(code),{code});};
 const text=x=>typeof x==='string'&&x.length>0&&x.length<=200;
@@ -187,7 +189,10 @@ export class RoundItemVerify {
    const known=s.snapshot.history?.itemId||s.run?.result?.itemId||s.run?.checkpoint?.itemId||null;
    const context=this.product.owner?.sessions?.get(s.r.shop)?.context;
    if(!context)fail('ITEM_VERIFY_BROWSER_REQUIRED');
-   const result=await o.verifyExisting({task:s.x.task,itemId:known,history:s.snapshot.history,run:s.run,roundId:req.roundId,key:req.key,executionWindowId:req.windowId,verificationAttemptId:attempt.id});
+   // The website's verify-only action needs the same original-submit evidence as
+   // round recovery. Read it from the owned store; never accept it from the UI.
+   const result=await o.verifyExisting({task:s.x.task,itemId:known,history:s.snapshot.history,run:s.run,roundId:req.roundId,key:req.key,executionWindowId:req.windowId,verificationAttemptId:attempt.id,
+    ...(!known&&s.run?.state==='RESULT_UNKNOWN'?{submissionEvents:o.source.store.events(s.run.id),assertUnusedItemId:value=>assertUnclaimedSubmissionId(o.source.store,s.run,value)}:{})});
    this.owned(req);await this.evidence(result,s);this.owned(req);
    if((await this.product.integrity())?.ok!==true)fail('ITEM_VERIFY_INTEGRITY_CHANGED');this.owned(req);
    await o.assertExecution();this.owned(req);
@@ -219,9 +224,9 @@ export class RoundItemVerify {
      const a=this.attempts.get(attempt.id);
      if(a&&!a.finished_at){
       // Avoid copying arbitrary exception text/URLs into user-visible records.
-      const code=verifyFailureCode(error);
+      const code=verifyFailureCode(error),parkEvidence=parkFailureEvidence(error);
       const human=code==='PAUSED_CAPTCHA';
-      const outcome={state:this.owner.item(req.roundId,req.key).state,disposition:'UNRESOLVED',code,submittedByThisAction:false,reason:human?'请在执行Chrome完成人工验证；原商品未重新提交':'本次未取得完整核验结果；原商品保持保护，不重新提交'};
+      const outcome={state:this.owner.item(req.roundId,req.key).state,disposition:'UNRESOLVED',code,...(parkEvidence?{parkEvidence}:{}),submittedByThisAction:false,reason:human?'请在执行Chrome完成人工验证；原商品未重新提交':'本次未取得完整核验结果；原商品保持保护，不重新提交'};
       o.event(req.roundId,req.key,'ITEM_VERIFY_UNRESOLVED',{windowId:req.windowId,attemptId:attempt.id,code});
       this.attempts.seal(attempt.id,outcome);
       if(o.active===req.roundId&&['RUNNING','PAUSING'].includes(o.round(req.roundId).state))o.state(req.roundId,human?'WAITING_HUMAN':'PAUSED',human?'请在执行Chrome完成人工验证；核验现场保留':'单条核验未完成；原商品与其他任务保留');

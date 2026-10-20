@@ -1,0 +1,13 @@
+{
+  "at": "2026-10-18T03:41:11.189943+00:00",
+  "archive": "D:\\TravelOS-Backups\\20261018-step1-detail-ready-r1\\source-cold-backup.zip",
+  "archiveSha256": "f3b7c00a289409f46eb45480665923302c5265d5dede26f7061d765a9e008a5b",
+  "archiveBytes": 34711486,
+  "sourceFiles": 382,
+  "kernelFiles": 84,
+  "extraSourceFiles": 298,
+  "allArchiveEntriesVerified": true,
+  "sourceBytesUnchanged": true,
+  "excludedDataFiles": 43,
+  "kernelLockSha256": "1d21ba6d5d046376a9a4e285cb081593aee8041d1f17c7ff68794f3b539d46a2"
+}

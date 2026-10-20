@@ -1,0 +1,35 @@
+[
+  {
+    "scenario": "five items with second detail timeout",
+    "roundState": "COMPLETED",
+    "counts": {
+      "EXISTING_VERIFIED": 0,
+      "NEW_SUCCESS": 4,
+      "FAILED": 1,
+      "PREFLIGHT_SKIPPED": 0,
+      "MANUAL_SKIPPED": 0,
+      "RESULT_UNKNOWN": 0,
+      "WAITING_HUMAN": 0,
+      "PENDING": 0
+    },
+    "submits": 4,
+    "badItemAttempts": 3,
+    "maxAttempts": 3,
+    "safeRecoveries": 2
+  },
+  {
+    "scenario": "untyped fault",
+    "roundState": "SYSTEM_BLOCKED",
+    "counts": {
+      "EXISTING_VERIFIED": 0,
+      "NEW_SUCCESS": 1,
+      "FAILED": 0,
+      "PREFLIGHT_SKIPPED": 0,
+      "MANUAL_SKIPPED": 0,
+      "RESULT_UNKNOWN": 0,
+      "WAITING_HUMAN": 0,
+      "PENDING": 4
+    },
+    "submits": 1
+  }
+]

@@ -72,7 +72,7 @@ export function parseTableResponse(payload,metadata={}){
 }
 // Close only the observed SKU-management announcement through its native close
 // control. Unknown dialogs, input forms and verification challenges stay intact.
-export async function dismissSellerTablePromotion(page,checked){
+export async function dismissSellerTablePromotion(page,checked,{budget=ms=>ms}={}){
  await checked(page);
  const wrappers=page.locator('.next-overlay-wrapper.opened'),blocking=[];
  for(let i=0;i<await wrappers.count();i++){
@@ -88,34 +88,36 @@ export async function dismissSellerTablePromotion(page,checked){
  if(await dialog.count()!==1||await close.count()!==1||await experience.count()!==1||await dialog.locator('button').count()!==2||await dialog.locator('input,textarea,select,iframe,[contenteditable="true"],a[href],[role="button"]').count()||!await close.isVisible()||!await experience.isVisible())throw blocked();
  await checked(page);
  try{
-  await close.click({timeout:5000});
-  await expect(experience).toBeHidden({timeout:5000});
+  await close.click({timeout:budget(5000)});
+  await expect(experience).toBeHidden({timeout:budget(5000)});
  }catch{
   throw Object.assign(Error('后台 SKU 管理介绍弹窗未能正常关闭，请在执行 Chrome 关闭后重新核验；原商品不会重复发布。'),{code:'TABLE_PROMOTION_CLOSE_FAILED',tableDiagnostic:{schemaVersion:1,stage:'ui-overlay',code:'TABLE_PROMOTION_CLOSE_FAILED'}});
  }
  await checked(page);
  return {dismissed:true,kind:'sku-management-announcement'};
 }
-export async function sellerTable(context,task,guard,{onFailure}={}){
+export async function sellerTable(context,task,guard,{onFailure,deadline,signal}={}){
+ const budget=maximum=>{const remaining=deadline===undefined?maximum:Math.min(maximum,deadline-Date.now());assert(!signal?.aborted&&remaining>0,'后台只读确认时间已用尽，保持待核验');return remaining;};
  const checked=async page=>{
+  budget(10000);
   await guard(page);if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');
   assertAuxiliaryPage(page,'verification');
-  await expect(page.locator('div.shopName--x6nyUylx')).toHaveText(task.business.shop_name,{useInnerText:true,timeout:10000});
-  assertAuxiliaryPage(page,'verification');
+  await expect(page.locator('div.shopName--x6nyUylx')).toHaveText(task.business.shop_name,{useInnerText:true,timeout:budget(10000)});
+  budget(10000);assertAuxiliaryPage(page,'verification');
  };
- const page=await getAuxiliaryPage(context,{role:'verification',shopId:task.shopId,url:'https://qn.taobao.com/home.htm/SellManage/all',guard:checked});
+ const page=await getAuxiliaryPage(context,{role:'verification',shopId:task.shopId,url:'https://qn.taobao.com/home.htm/SellManage/all',guard:checked,deadline,signal});
  const prepare=async()=>{
-  try{return await dismissSellerTablePromotion(page,checked);}
+  try{return await dismissSellerTablePromotion(page,checked,{budget});}
   catch(error){if(error.tableDiagnostic){try{await onFailure?.(error.tableDiagnostic);}catch{}}throw error;}
  };
  await prepare();
  const all=page.getByRole('tab',{name:/^全部\(/});
- if(await all.getAttribute('aria-selected')!=='true'){await prepare();await all.click();await expect(all).toHaveAttribute('aria-selected','true');}
+ if(await all.getAttribute('aria-selected')!=='true'){await prepare();await all.click({timeout:budget(10000)});await expect(all).toHaveAttribute('aria-selected','true',{timeout:budget(10000)});}
  const rows=()=>page.locator('tr').filter({has:page.locator('a.title-link')});
  async function action(expected,click){
   await prepare();
   const start=Date.now();
-  const responsePromise=page.waitForResponse(r=>matchesTableRequest(r.request(),expected)&&r.request().timing().startTime>=start,{timeout:25000});
+  const responsePromise=page.waitForResponse(r=>matchesTableRequest(r.request(),expected)&&r.request().timing().startTime>=start,{timeout:budget(25000)});
   // Attach a rejection handler before any click/guard can throw.
   responsePromise.catch(()=>{});
   await click();const response=await responsePromise;
@@ -127,7 +129,7 @@ export async function sellerTable(context,task,guard,{onFailure}={}){
   let payload,current;
   try{payload=await response.json();}catch{return reject(tableFailure('response-json',metadata));}
   try{current=parseTableResponse(payload,metadata);}catch(error){return reject(error);}
-  await expect.poll(async()=>rows().evaluateAll(nodes=>nodes.map(n=>n.innerText.match(/ID[:：]\s*(\d+)/)?.[1])),{timeout:15000}).toEqual(current.ids);
+  await expect.poll(async()=>rows().evaluateAll(nodes=>nodes.map(n=>n.innerText.match(/ID[:：]\s*(\d+)/)?.[1])),{timeout:budget(15000)}).toEqual(current.ids);
   await checked(page);
   const records=await rows().evaluateAll(nodes=>nodes.map(n=>({
    itemId:n.innerText.match(/ID[:：]\s*(\d+)/)?.[1],title:n.querySelector('a.title-link')?.innerText.trim(),text:n.innerText,
@@ -136,18 +138,18 @@ export async function sellerTable(context,task,guard,{onFailure}={}){
   })));
   assert(records.every(r=>r.title&&r.status),'后台商品名称或状态不完整');
   assert(await page.locator('#queryTitle').inputValue()===expected.title&&await page.locator('#queryItemId').inputValue()===expected.itemId,'后台筛选被改动，停止核验');
-  await expect(all).toHaveAttribute('aria-selected','true');return {...current,records};
+  await expect(all).toHaveAttribute('aria-selected','true',{timeout:budget(10000)});return {...current,records};
  }
  async function search({title='',itemId=''}={}){
-  await prepare();await page.locator('#queryTitle').fill(title);await page.locator('#queryItemId').fill(itemId);
-  const outer=page.locator('#queryOuterId');if(await outer.count())await outer.fill('');
-  await page.locator('#queryItemId').press('Tab');
-  let current=await action({title,itemId,page:1},()=>page.getByRole('button',{name:'搜索',exact:true}).click()),records=[...current.records];
+  await prepare();await page.locator('#queryTitle').fill(title,{timeout:budget(10000)});await page.locator('#queryItemId').fill(itemId,{timeout:budget(10000)});
+  const outer=page.locator('#queryOuterId');if(await outer.count())await outer.fill('',{timeout:budget(10000)});
+  await page.locator('#queryItemId').press('Tab',{timeout:budget(10000)});
+  let current=await action({title,itemId,page:1},()=>page.getByRole('button',{name:'搜索',exact:true}).click({timeout:budget(10000)})),records=[...current.records];
   const total=current.total,seen=new Set(records.map(r=>r.itemId));
   while(records.length<total){
    assert(current.page<1000,'后台分页超出安全上限');
-   const next=page.locator('.l-config-list-table .l-config-list-pagination').getByRole('button',{name:/^下一页(?:，当前第\d+页)?$/});await expect(next).toHaveCount(1);await expect(next).toBeEnabled();
-   current=await action({title,itemId,page:current.page+1},()=>next.click());
+   const next=page.locator('.l-config-list-table .l-config-list-pagination').getByRole('button',{name:/^下一页(?:，当前第\d+页)?$/});await expect(next).toHaveCount(1,{timeout:budget(10000)});await expect(next).toBeEnabled({timeout:budget(10000)});
+   current=await action({title,itemId,page:current.page+1},()=>next.click({timeout:budget(10000)}));
    assert(current.total===total,'后台商品数量在分页期间变化，请重新核验');
    for(const row of current.records){assert(!seen.has(row.itemId),'后台分页重复，不能确认查重完整性');seen.add(row.itemId);records.push(row);}
   }
@@ -160,7 +162,7 @@ export function observedBusiness(row){
  const price=Number(cell('价格').replace(/[¥￥,\s]/g,'')),inventory=Number(cell('库存').replace(/[,\s]/g,''));
  return {price,inventory,status:row.status};
 }
-export async function listingEvidence(table,row,task,dir,{newSubmission=false}={}){
+export async function listingEvidence(table,row,task,dir,{newSubmission=false,deadline}={}){
  assert(/^\d+$/.test(row.itemId)&&row.title&&row.status,'后台商品证据不足');
  if(newSubmission){
   assert(row.title===task.listing.title,'后台商品标题与提交快照不符');
@@ -170,7 +172,9 @@ export async function listingEvidence(table,row,task,dir,{newSubmission=false}={
   assert(/^(出售中|仓库中|待审核|审核中)$/.test(row.status),'后台商品状态需人工核验：'+row.status);
  }
  await table.guard();await mkdir(dir,{recursive:true});
- const screenshot=join(dir,'verified-in-list.png');await table.page.screenshot({path:screenshot,fullPage:true});
+ const screenshot=join(dir,'verified-in-list.png');
+ const remaining=deadline===undefined?30000:Math.min(30000,deadline-Date.now());assert(remaining>0,'后台只读确认时间已用尽');
+ await table.page.screenshot({path:screenshot,fullPage:true,timeout:remaining});await table.guard();
  const actual=observedBusiness(row),differences=[];
  if(actual.price!==Number(task.business.price_cny))differences.push('当前价格与原快照不同，未改价');
  if(actual.inventory!==Number(task.business.inventory))differences.push('当前库存与原快照不同，未修改');

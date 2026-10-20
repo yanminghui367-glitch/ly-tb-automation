@@ -56,3 +56,35 @@ test('lost response cannot begin another attempt or overwrite a sealed receipt',
  await assert.rejects(f.retry.retry({...req,key:f.scope(2).key}),/REQUEST_CONFLICT/);
  assert.equal(JSON.stringify(f.retry.lookup(req)),snapshot);assert.equal(f.flow.submits,1);
 });
+
+async function exhausted(t){
+ const f=await fixture(t);await f.pause();const x=f.round.item(f.r.id,f.scope().key);
+ f.store.db.prepare("UPDATE batch_items SET attempts=3,max_attempts=3,state='RETRY' WHERE id=?").run(x.queue_id);
+ f.store.db.prepare('UPDATE runs SET reason=? WHERE id=?').run('FORM_DETAIL_IMAGE: synthetic pre-submit failure',x.run_id);
+ f.flow.launch=function(id){this.active=id;this.launches.push(id);this.pending=Promise.resolve().then(()=>{f.store.move(id,'RUNNING');f.store.checkpoint(id,{step:'select-detail-1'});f.store.move(id,'PAUSED','FORM_DETAIL_IMAGE: synthetic pre-submit failure');}).finally(()=>this.active=null);};
+ return {...f,x};
+}
+test('one click adds one original-task allowance; three additions are durable and a fourth is rejected',async t=>{
+ const f=await exhausted(t),others=f.round.items(f.r.id).slice(1),run=f.store.run(f.x.run_id),manifest=f.round.round(f.r.id).manifest_hash;
+ for(let i=1;i<=3;i++){
+  const scope=f.retry.reader.read(f.scope()),budget=f.retry.allowed(scope);assert.equal(budget.willAdd,true);assert.equal(budget.used,i-1);assert.equal(budget.remaining,4-i);
+  const req=f.request(1,'addition-'+i),receipt=await f.retry.retry(req);
+  assert.equal(receipt.finished,true);const q=f.batch.store.item(f.x.queue_id);assert.equal(q.attempts,3+i);assert.equal(q.max_attempts,3+i);assert.equal(q.run_id,f.x.run_id);
+  assert.equal(f.round.selections.manualBudgetUsed(q.id),i);assert.equal((await f.retry.retry(req)).replayed,true);assert.equal(f.batch.store.item(q.id).max_attempts,3+i);
+ }
+ await assert.rejects(f.retry.retry(f.request(1,'addition-4')),/ITEM_RETRY_BUDGET_MANUAL_CAP/);
+ assert.equal(f.store.run(f.x.run_id).taskHash,run.taskHash);assert.equal(f.round.round(f.r.id).manifest_hash,manifest);assert.deepEqual(f.round.items(f.r.id).slice(1),others);assert.equal(f.flow.submits,0);
+});
+test('preflight rejection and transaction failure grant no allowance; old manual grants count toward the cap',async t=>{
+ const f=await exhausted(t),q=()=>f.batch.store.item(f.x.queue_id);
+ f.round.checkFiles=async()=>{throw Error('SOURCE_OR_ASSET_CHANGED');};await assert.rejects(f.retry.retry(f.request()),/SOURCE_OR_ASSET_CHANGED/);assert.equal(q().max_attempts,3);assert.equal(f.round.selections.manualBudgetUsed(q().id),0);
+ f.round.checkFiles=async()=>{};const begin=f.retry.attempts.begin;f.retry.attempts.begin=()=>{throw Error('SYNTHETIC_WRITE_FAILURE');};await assert.rejects(f.retry.retry(f.request()),/SYNTHETIC_WRITE_FAILURE/);assert.equal(q().max_attempts,3);assert.equal(f.round.selections.manualBudgetUsed(q().id),0);f.retry.attempts.begin=begin;
+ for(let i=0;i<3;i++)f.batch.store.event(q().batch,q().id,'MANUAL_RETRY_BUDGET_GRANTED',{addAttempts:1,source:'old-bulk-grant'});
+ await assert.rejects(f.retry.retry(f.request()),/ITEM_RETRY_BUDGET_MANUAL_CAP/);assert.equal(q().attempts,3);assert.equal(q().max_attempts,3);
+});
+
+test('previously consumed automatic extras stay counted; one manual addition creates exactly one usable attempt',async t=>{
+ const f=await exhausted(t);f.store.db.prepare('UPDATE batch_items SET attempts=5,max_attempts=3 WHERE id=?').run(f.x.queue_id);f.store.db.prepare('UPDATE round_items SET baseline_attempts=3,extra_attempts=2 WHERE round_id=? AND key=?').run(f.r.id,f.x.key);
+ const receipt=await f.retry.retry(f.request(1,'after-legacy-extras'));assert.equal(receipt.finished,true);const q=f.batch.store.item(f.x.queue_id);assert.equal(q.attempts,6);assert.equal(q.max_attempts,6);assert.equal(f.round.item(f.r.id,f.x.key).extra_attempts,2);assert.equal(f.round.selections.manualBudgetUsed(q.id),1);
+ const grant=f.batch.store.events(q.batch).findLast(e=>e.kind==='MANUAL_RETRY_BUDGET_GRANTED');assert.equal(grant.payload.addAttempts,1);assert.equal(grant.payload.historicalAlreadyConsumed,2);assert.equal(grant.payload.oldLimit,3);assert.equal(grant.payload.newLimit,6);assert.equal(f.flow.submits,0);
+});

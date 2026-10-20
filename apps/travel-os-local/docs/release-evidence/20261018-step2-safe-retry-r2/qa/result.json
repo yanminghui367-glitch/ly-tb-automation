@@ -1,0 +1,139 @@
+{
+  "date": "2026-10-18",
+  "qaAgent": "/root/step05_runbook_qa",
+  "ok": true,
+  "verdict": "PASS_CANDIDATE_ONLY",
+  "candidateManifestSha256": "1067814049314bfbd0133dc817389160930f9898cbf3f9797a265c3f63ea6b5e",
+  "candidateKernelLockSha256": "bac37aedc5eff14be3284d9b4b5edc3c21c618758504728f44f233589c362aea",
+  "revision": "20261018-step2-safe-retry-r2",
+  "fromRevision": "20261018-step1-detail-ready-r1",
+  "baselineIsCandidateNotProduction": true,
+  "step1ManifestSha256": "9f547eeff65cbb46275098e3d57bff726d1288b7e3773daa4a9422171c1d1820",
+  "beforeLockSha256": "17188e2e59a5bb791bef86ee12b8f32d62aaaeee0f582af7fe8fcc71f238e26a",
+  "supersedesUninstalledCandidate": {
+    "revision": "20261018-step2-safe-retry-r1",
+    "manifestSha256": "af1f25cf66eac24172dd35f4f459f12818fae21c3b14f661e8d09b7d97641d9c"
+  },
+  "files": {
+    "workbench/taobao-publisher.mjs": "0cac2402fb1112c53e22883c4daaf04b59330a15d817934488deecd66159bd66",
+    "workbench/publishing-materials.mjs": "304500f53f12f18a08bba327e8d77ca1985c3316c97e94719977708acbd6ea29",
+    "workbench/listing-round.mjs": "658da87504bc6fc7637c0243e0744b8050367613d8e0a4810c8d08ecb8a41dc9"
+  },
+  "runtimeFilesVerified": 3,
+  "artifactHashesVerified": 24,
+  "onlyRuntimeChangedSinceR1": [
+    "workbench/listing-round.mjs"
+  ],
+  "priorQaCorrection": {
+    "acknowledged": true,
+    "incorrectR1Test": 12,
+    "error": "Treating claim-budget rejection escaping failure() and blocking the round as acceptable",
+    "r1ReportsUnmodified": true
+  },
+  "independentTests": {
+    "path": "qa/independent-round-r2.test.mjs",
+    "sha256": "5a758cedde315c1f76bcf26c23282ee148c7534d40ba8228d68dcad74bd33e08",
+    "passed": 21,
+    "failed": 0,
+    "skipped": 0,
+    "log": "qa/independent-round-r2-final.log",
+    "logSha256": "143540232cbcf2c00016f876302fb64d619256d7598686ee80f8794813aaf394",
+    "sameTestsAgainstR1": {
+      "passed": 13,
+      "failed": 8,
+      "log": "qa/independent-round-r1-regression.log",
+      "logSha256": "293642c22ea15d7f5680bc09dce308f876eece9fc52ce116e4a6055c3c103d2a"
+    },
+    "database": ":memory:",
+    "browserStarted": false,
+    "productionHttpRequests": 0
+  },
+  "independentWindowChecks": {
+    "retryCounts": [
+      0,
+      1
+    ],
+    "attempts": 3,
+    "maxAttempts": 3,
+    "newSuccess": 4,
+    "failed": 1,
+    "windowCount": 3,
+    "allWindowStates": "COMPLETED",
+    "failedItemWindowOutcome": "FAILED",
+    "additionalSafeRecoveryScheduled": false,
+    "budgetFieldsMutatedByFailure": false
+  },
+  "executorEvidenceReviewed": [
+    {
+      "path": "evidence/final-mock-regression.log",
+      "sha256": "0624f6bb6df9b2dd558ebb5216086ee92ccfa3943a6afd3b82e150a4e63b2848",
+      "passed": 132,
+      "failed": 0,
+      "skipped": 0,
+      "includesIndependentTests": true,
+      "independentlyRerun": false
+    },
+    {
+      "path": "evidence/budget-outcomes.json",
+      "sha256": "12555acb266ff3ea035b96d4fc73fa81b680c5bf06f7c9e26cc5d8df2597b269",
+      "cases": 3,
+      "attemptOutcome": "FAILED",
+      "autoRetryScheduled": false,
+      "disposition": "FINISHED",
+      "independentlyRerun": false
+    },
+    {
+      "path": "evidence/step1-final-bytes-full-regression.log",
+      "sha256": "3ac886f7272797bbd8bf310131da42c2578396825226a8b8d4a1288b2c19b3ee",
+      "passed": 120,
+      "failed": 0,
+      "step1FinalHashesBound": true,
+      "independentlyRerun": false
+    }
+  ],
+  "testCountsAreOverlappingDoNotSum": true,
+  "protectedBoundaries": {
+    "resultUnknown": true,
+    "captchaLoginIdentity": true,
+    "submissionEvidence": true,
+    "retainedPageLedger": true
+  },
+  "exactBudgetRejectionCodesHandled": [
+    "ITEM_RETRY_BUDGET_EXHAUSTED",
+    "ITEM_RETRY_BUDGET_EXTRA_UNSAFE",
+    "ITEM_RETRY_BUDGET_SYSTEM_UNCONFIRMED"
+  ],
+  "unknownBudgetAndDatabaseFaultsStillBlock": true,
+  "originalBudgetAlgorithmUnchanged": true,
+  "pumpUnchanged": true,
+  "candidateKernel": {
+    "ok": true,
+    "files": 84,
+    "revision": "20261018-step2-safe-retry-r2",
+    "changed": []
+  },
+  "production": {
+    "sourceFilesUnchanged": 382,
+    "kernelLockSha256": "1d21ba6d5d046376a9a4e285cb081593aee8041d1f17c7ff68794f3b539d46a2",
+    "kernel": {
+      "ok": true,
+      "files": 84,
+      "revision": "20261017-single-item-direct-retry3",
+      "changed": []
+    },
+    "postRequestsByQa": 0,
+    "restartsByQa": 0,
+    "submissionsByQa": 0
+  },
+  "deploymentAllowed": false,
+  "platformReproductionVerified": false,
+  "step3AuthorizedByThisReport": false,
+  "blockingFindings": [],
+  "limitations": [
+    "Only the explicitly classified and unprotected pre-submit detail-failure branch may finish on these budget rejections",
+    "Unknown faults and protected states remain blockers",
+    "All test listing outcomes are synthetic; no real site or Taobao execution was performed",
+    "User must review this candidate diff and logs before authorizing installation",
+    "Production readiness timing percentiles remain unmeasured"
+  ]
+}

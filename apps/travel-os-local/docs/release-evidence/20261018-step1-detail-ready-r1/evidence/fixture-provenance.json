@@ -1,0 +1,12 @@
+{
+  "originalPath": "workbench/scripts/no-sku-verification.test.mjs",
+  "originalSha256": "2aed2df98321c6129c583eb81f8e589a3351610a7a5ec768991db530269bf0cc",
+  "adaptedPath": "evidence/tests/no-sku-decoded-fixture.test.mjs",
+  "adaptedSha256": "6c65195e1f013a1bd292b5ec62e293a1d5fca3a7077e09eb191165aae55fcf18",
+  "changes": [
+    "Dependency imports point to isolated candidate",
+    "Only second.png is fulfilled with valid local PNG bytes; other requests remain aborted",
+    "Synthetic 1px image has 80x60 CSS box so pointer hit test stays inside the image area"
+  ],
+  "assertions": "All original assertions retained. The unchanged original positive fixture aborts its image and cannot meet the new decoded-thumbnail contract. It was not reported as passing."
+}

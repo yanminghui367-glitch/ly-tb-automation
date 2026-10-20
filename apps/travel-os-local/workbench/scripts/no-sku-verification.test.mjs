@@ -81,7 +81,7 @@ async function form(t){
  const dir=await mkdtemp(join(tmpdir(),'ly-no-sku-'));t.after(async()=>{const target=resolve(dir);assert.equal(dirname(target),resolve(tmpdir()));assert(basename(target).startsWith('ly-no-sku-'));await rm(target,{recursive:true,force:true});});const file=join(dir,'source.txt');await writeFile(file,'isolated source');
  const asset={path:file,sha256:createHash('sha256').update('isolated source').digest('hex')};
  const task={priority:1,source:{workbook:file,sha256:asset.sha256},assets:{main:[asset],secondary:[asset,asset,asset,asset],details:[asset]},listing:{title:'测试目的地旅行服务',guideTitle:'旅行服务'},business:{category_path:'个性定制/设计服务/DIY/其它定制/其它商品定制',custom_service:true,procurement:'中国内地（大陆）',ship_from:'北京 / 北京',shipping_time:'24小时内发货',ship_from_region:'大陆及港澳台',region_restriction:'不设置商品维度区域限售模板',listing_time:'立刻上架',price_cny:20,inventory:999999,brand:'无品牌/无注册商标',freight_template:'隔离模板'}};
- const receipts={main:Array.from({length:5},(_,i)=>({source:asset,url:'https://img.alicdn.com/imgextra/i1/3997268470/main-'+i+'.png'})),details:[{url:'https://fixture.invalid/detail.png'}]};
+ const receipts={main:Array.from({length:5},(_,i)=>({source:asset,url:'https://img.alicdn.com/imgextra/i1/3997268470/main-'+i+'.png'})),details:[{order:1,source:asset,url:'https://fixture.invalid/detail.png'}]};
  const radio=text=>'<label><input type="radio" checked>'+text+'</label>';
  const html='<div id="global-card">其它商品定制</div><section id="sell-field-title"><input value="'+task.listing.title+'"></section><section id="sell-field-shopping_title"><input value="旅行服务"></section><section id="struct-p-20000"><input value="无品牌/无注册商标"></section><div id="sale-card">'+EMPTY_HTML+radio('立刻上架')+'<section id="sell-field-price"><input value="20"></section><section id="sell-field-batchInventory-card"><input value="999999"></section></div><section id="sell-field-customize">'+radio('是')+'</section><div id="deliver-card">'+radio('24小时内发货')+radio('不设置商品维度区域限售模板')+'</div><div id="sell-field-shippingArea">'+radio('大陆及港澳台')+radio('单一发货地')+'<input role="combobox" aria-valuetext="北京 / 北京"></div><section id="sell-field-globalStock">'+radio('中国内地（大陆）')+'</section><section id="sell-field-tbExtractWay"><input type="checkbox" value="2" checked>隔离模板</section><section id="sell-field-mainImagesGroup">'+receipts.main.map(r=>'<img src="'+r.url+'">').join('')+'</section><section id="sell-field-descRepublicOfSell"><img class="image-item" src="'+receipts.details[0].url+'"></section>';
  await page.route('https://item.upload.taobao.com/**',r=>r.fulfill({contentType:'text/html; charset=utf-8',body:html}));await page.goto('https://item.upload.taobao.com/sell/v2/publish.htm');
@@ -197,4 +197,20 @@ test('pre-submit review persists the no-SKU result and refuses to write PASS for
  const good=JSON.parse(await readFile(join(f.dir,'review.json'),'utf8'));assert.equal(good.decision,'PASS_SOURCE_AND_FORM');assert.equal(good.noSku?.status,'VERIFIED_EMPTY');assert.equal(good.noSku?.skuCount,0);
  await page.evaluate(mutations.find(([name])=>name==='hidden nonempty row')[1]);await assert.rejects(publisher.fillTask({page,task:f.task,dir:f.dir,target:'ONSALE',guard:async()=>{},step}),/NO_SKU_UNVERIFIED/);
  assert.deepEqual(JSON.parse(await readFile(join(f.dir,'review.json'),'utf8')),good);
+});
+
+test('partial detail recovery reuses proven inserted prefix even when that asset is absent in the picker',async t=>{
+ const f=await form(t),next={path:join(f.dir,'second.txt'),sha256:f.task.assets.details[0].sha256};await writeFile(next.path,'isolated source');f.task.assets.details.push(next);
+ const picker='https://market.m.taobao.com/app/crs-qn/sucai-selector-ng/index';
+ await page.route(picker,route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<input placeholder="搜索图片名称"><div class="PicList_pic_background__pGTdV"><span class="PicList_tip_title__aQfti">second.txt</span><div class="PicList_pic_imgBox__c0HXw" onclick="document.querySelector('input[type=checkbox]').checked=true"><img src="https://fixture.invalid/second.png"></div><input type="checkbox"></div><button onclick="parent.postMessage('insert-second','https://item.upload.taobao.com')">确定</button>`}));
+ await page.evaluate(url=>{window.addEventListener('message',e=>{if(e.origin==='https://market.m.taobao.com'&&e.data==='insert-second'){document.querySelector('#sell-field-descRepublicOfSell').insertAdjacentHTML('beforeend','<img class="image-item" src="https://fixture.invalid/second.png">');document.querySelector('.media-img-plug').remove();}});document.body.insertAdjacentHTML('beforeend','<div class="media-img-plug"><iframe src="'+url+'"></iframe></div>');},picker);
+ const steps=[];const result=await publisher.fillTask({page,task:f.task,dir:f.dir,target:'ONSALE',guard:async()=>{},step:async(name,fn)=>{steps.push(name);if(name.startsWith('select-detail-')||name==='insert-details'||name==='pre-submit-review')await fn();}});
+ assert.equal(result.details.length,2);assert.equal(result.details[0].source.path,f.task.assets.details[0].path);assert.equal(result.details[1].source.path,next.path);assert.equal(await page.locator('#sell-field-descRepublicOfSell img').count(),2);assert(steps.includes('pre-submit-review'));
+});
+test('partial detail recovery refuses missing receipt, wrong source, reordered image or changed bound version',async()=>{
+ const a={path:'original.png',sha256:'fixed'},r={order:1,source:a,url:'https://fixture.invalid/original.png'};
+ await assert.rejects(publisher.verifyInsertedDetails([r.url],[a],[]),/RECEIPT_MISSING/);
+ await assert.rejects(publisher.verifyInsertedDetails([r.url],[{...a,sha256:'edited'}],[r]),/SOURCE_MISMATCH/);
+ await assert.rejects(publisher.verifyInsertedDetails(['https://fixture.invalid/other.png'],[a],[r]),/EXISTING_DETAIL_MISMATCH/);
+ await assert.rejects(publisher.verifyInsertedDetails([r.url],[{...a,materialVersion:{version:2}}],[r]),/SOURCE_MISMATCH/);
 });

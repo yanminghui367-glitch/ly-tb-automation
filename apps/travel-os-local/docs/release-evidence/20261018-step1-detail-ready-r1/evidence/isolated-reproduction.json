@@ -1,0 +1,146 @@
+{
+  "item": 12,
+  "originalAsset": {
+    "name": "HQLH-详情页首页-1-R01.png",
+    "sha256": "dc95b0e740fedfee1355945a382cdf09445232742e2b9fc7eb286833442ccde6"
+  },
+  "scope": "Isolated DOM with actual item 12 detail asset; injected delays are not historical platform latency",
+  "records": [
+    {
+      "label": "original upload entry",
+      "durationMs": 5050.733,
+      "error": "expect(locator).toHaveCount(expected) failed\n\nLocator:  getByRole('button', { name: '上传文件', exact: true })\nExpected: 1\nReceived: 0\nTimeout:  5000ms\n\nCall log:\n  - Expect \"to.have.count\" with timeout 5000ms\n  - waiting for getByRole('button', { name: '上传文件', exact: true })\n    14 × locator resolved to 0 elements\n       - unexpected value \"0\"\n",
+      "diagnostics": []
+    },
+    {
+      "label": "candidate upload entry",
+      "durationMs": 6604.9266,
+      "error": null,
+      "diagnostics": [
+        {
+          "stage": "upload-entry",
+          "selector": "button[name=\"上传文件\"]",
+          "expected": "唯一、可见且可用的上传文件按钮",
+          "actual": {
+            "count": 1,
+            "visible": true,
+            "enabled": true
+          },
+          "dom_snippet": "<button></button>",
+          "screenshot": null,
+          "status": "ready",
+          "durationMs": 6510.571,
+          "timeoutMs": 20000
+        },
+        {
+          "stage": "upload-panel",
+          "selector": "[role=dialog] #sucai-tu-upload-pannel",
+          "expected": "点击后出现唯一官方上传弹窗",
+          "actual": {
+            "dialogs": 1,
+            "visible": true
+          },
+          "dom_snippet": "<section role=\"dialog\"><label><input type=\"checkbox\"></label><label><input type=\"checkbox\"></label><label><input type=\"checkbox\"></label><div><input type=\"file\"></div><p></p><button></button></section>",
+          "screenshot": null,
+          "status": "ready",
+          "durationMs": 5.927,
+          "timeoutMs": 8000
+        },
+        {
+          "stage": "upload-panel",
+          "selector": "[role=dialog] #sucai-tu-upload-pannel input[type=file]",
+          "expected": "唯一官方上传弹窗及可用原生文件控件",
+          "actual": {
+            "dialogs": 1,
+            "inputs": 1,
+            "visible": true,
+            "enabled": true
+          },
+          "dom_snippet": "<section role=\"dialog\"><label><input type=\"checkbox\"></label><label><input type=\"checkbox\"></label><label><input type=\"checkbox\"></label><div><input type=\"file\"></div><p></p><button></button></section>",
+          "screenshot": null,
+          "status": "ready",
+          "durationMs": 6.308,
+          "timeoutMs": 8000
+        }
+      ]
+    },
+    {
+      "label": "recorded thumbnail visible assertion shape",
+      "durationMs": 5003.227500000001,
+      "error": "expect(locator).toBeVisible() failed\n\nLocator: locator('.PicList_pic_background__pGTdV').filter({ hasText: 'HQLH-详情页首页-1-R01.png' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"to.be.visible\" with timeout 5000ms\n  - waiting for locator('.PicList_pic_background__pGTdV').filter({ hasText: 'HQLH-详情页首页-1-R01.png' })\n",
+      "diagnostics": []
+    },
+    {
+      "label": "candidate delayed thumbnail",
+      "durationMs": 6548.802899999999,
+      "error": null,
+      "diagnostics": [
+        {
+          "stage": "thumbnail",
+          "selector": ".PicList_pic_imgBox__c0HXw img",
+          "expected": "唯一可见缩略图，complete=true 且 naturalWidth/naturalHeight>0",
+          "actual": {
+            "cards": 1,
+            "images": 1,
+            "visible": true,
+            "complete": true,
+            "naturalWidth": 1086,
+            "naturalHeight": 1448,
+            "hasSource": true
+          },
+          "dom_snippet": "<div class=\"PicList_pic_background__pGTdV\"><span class=\"PicList_tip_title__aQfti\"></span><div class=\"PicList_pic_imgBox__c0HXw\"><img></div><input type=\"checkbox\"></div>",
+          "screenshot": null,
+          "status": "ready",
+          "durationMs": 6548.499,
+          "timeoutMs": 30000
+        }
+      ]
+    },
+    {
+      "label": "unchanged STEP_PAUSED integration",
+      "event": {
+        "seq": 3,
+        "run": "dd01d932-7aad-413e-b396-97fdd74ac853",
+        "at": "2026-10-18T03:53:27.195Z",
+        "kind": "STEP_PAUSED",
+        "payload": {
+          "name": "select-detail-1",
+          "durationMs": 299.8608999999997,
+          "evidencePolicy": "key-nodes-20261016",
+          "evidenceMode": "key",
+          "evidenceReason": "STEP_FAILED",
+          "screenshotRequested": true,
+          "screenshot": "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\output\\step1-detail-ready-20261018\\tests\\2026-10-18T03-52-58-164Z\\step-paused\\select-detail-1-d19f8ac9-3869-458b-ade8-7ff043df0f84.png",
+          "screenshotAt": "2026-10-18T03:53:27.175Z",
+          "screenshotError": null,
+          "error": "详情素材等待超时：stage=thumbnail；durationMs=253.569；expected=唯一可见缩略图，complete=true 且 naturalWidth/naturalHeight>0；actual={\"cards\":0,\"images\":0,\"visible\":false}",
+          "errorCode": null,
+          "timing": {
+            "elapsedMs": 299.8608999999997,
+            "categories": {
+              "action": {
+                "calls": 1,
+                "totalMs": 278.70820000000094,
+                "selfMs": 278.70820000000094,
+                "errors": 1
+              },
+              "evidence": {
+                "calls": 1,
+                "totalMs": 19.500800000001618,
+                "selfMs": 19.500800000001618,
+                "errors": 0
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "networkPolicy": "All requests fulfilled locally or aborted, no continuation",
+  "requests": [
+    "https://fixture.invalid/item12.png",
+    "https://fixture.invalid/item12.png",
+    "https://fixture.invalid/broken.png",
+    "https://fixture.invalid/wrong"
+  ]
+}

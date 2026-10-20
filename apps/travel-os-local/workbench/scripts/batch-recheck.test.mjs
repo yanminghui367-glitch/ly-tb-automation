@@ -79,14 +79,14 @@ test('manual budget grant rechecks frozen files and writes nothing when files ch
  const before=f.batch.store.item(x.queue_id),response=await call();assert.equal(response.status,409);assert.equal(response.body.retainRequest,false);assert.match(response.body.error,/额度未增加：冻结资料复核失败/);assert.equal(f.batch.store.item(x.queue_id).max_attempts,before.max_attempts);
  assert.equal(f.batch.store.events(before.batch).filter(e=>e.kind==='MANUAL_RETRY_BUDGET_GRANTED').length,0);assert.equal(f.round.events(f.r.id,x.key).filter(e=>e.kind==='MANUAL_RETRY_BUDGET_GRANTED').length,0);
 });
-test('manual quota cannot be granted to submitted, unclear, skipped or already manually extended products',async t=>{
+test('manual quota cannot be granted to submitted, unclear, skipped or products with three prior manual additions',async t=>{
  for(const kind of ['submitted','unclear','skipped','already-granted']){
   const f=await fixture(t,2),origin=await f.create([1]);f.fail({position:1,code:'FORM_ERROR',reason:'FORM_FAILURE: 页面控件未确认'});await f.run(origin);f.round.stop();
   const x=f.round.item(f.r.id,f.keys[0]);f.store.db.prepare("UPDATE batch_items SET attempts=max_attempts,state='FAILED' WHERE id=?").run(x.queue_id);
   if(kind==='submitted')f.store.event(x.run_id,'SUBMIT_CLICKED',{});
   if(kind==='unclear')f.store.db.prepare("UPDATE runs SET state='RESULT_UNKNOWN' WHERE id=?").run(x.run_id);
   if(kind==='skipped')f.store.db.prepare("UPDATE batch_items SET state='SKIPPED' WHERE id=?").run(x.queue_id);
-  if(kind==='already-granted')f.batch.store.event(f.batch.store.item(x.queue_id).batch,x.queue_id,'MANUAL_RETRY_BUDGET_GRANTED',{addAttempts:1});
+  if(kind==='already-granted')for(let i=0;i<3;i++)f.batch.store.event(f.batch.store.item(x.queue_id).batch,x.queue_id,'MANUAL_RETRY_BUDGET_GRANTED',{addAttempts:1});
   const p=await f.preview([1],{mode:'recheck',windowId:origin.window.id}),body={roundId:f.r.id,windowId:origin.window.id,keys:[x.key],addAttempts:1,reason:'已核对原异常',requestId:randomUUID(),expectedRevision:p.expectedRevision};
   await assert.rejects(Promise.resolve().then(()=>f.round.selections.grantRetryBudget(body)),e=>e.code?.startsWith('SELECTION_'));
   assert.equal(f.batch.store.item(x.queue_id).max_attempts,3,kind);assert.equal(f.flow.launches.length,1,kind);

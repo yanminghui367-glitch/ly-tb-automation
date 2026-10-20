@@ -60,7 +60,13 @@ try{
  await product.saveSettings({executionEnabled:true,confirmShop:shop.name});await new Promise(r=>server.listen(0,qaHost,r));base='http://'+qaHost+':'+server.address().port;
  assert.notEqual(server.address().port,4318);
  const w=product.round.windows.create(await product.round.windows.preview(round.id,{limit:3}));
+ hold=true;product.round.start(round.id,{windowId:w.id});
+ for(let i=0;!release&&i<300;i++)await new Promise(r=>setTimeout(r,10));assert(release);product.round.pause();release();await product.round.pending;hold=false;release=null;
  const first=product.round.items(round.id)[0];
+ store.db.prepare("UPDATE batch_items SET attempts=3,max_attempts=3,state='RETRY' WHERE id=?").run(first.queue_id);
+ store.db.prepare("UPDATE runs SET reason=? WHERE id=?").run('FORM_DETAIL_IMAGE: fixture failure',first.run_id);
+ const originalRun=first.run_id,originalQueue=first.queue_id,previousLaunches=launches.length;
+
  product.round.update(round.id,first.key,{reason:'后台商品查询失败，尚未提交',failure_stage:'existing-listing-query'});
  product.round.state(round.id,'SYSTEM_BLOCKED','后台商品查询失败，尚未提交');
  const untouched=JSON.stringify(product.round.items(round.id).slice(1));
@@ -74,7 +80,7 @@ try{
  await openDetail();
  const action=n=>page.locator('[data-item-action="'+n+'"]');
  await action('retry').waitFor();
- check((await page.locator('#editor').innerText()).includes('重新检查并重试此条'),'实际任务详情展示单条重试入口');
+ check((await page.locator('#editor').innerText()).includes('重新执行此条'),'实际任务详情展示单条重试入口');
  check((await page.locator('#editor').innerText()).includes('读取后台商品列表（查重）'),'查询失败使用真实查询步骤，非旧上传断点');
  await page.screenshot({path:join(out,'01-retry-desktop.png'),fullPage:true});
  await page.setViewportSize({width:390,height:844});
@@ -85,29 +91,33 @@ try{
  await page.screenshot({path:join(out,'02-retry-mobile.png'),fullPage:false});
  // The real button request reaches ProductApi; discard its first successful response.
  let lost=false;
- await context.route('**/api/v1/rounds/item-retry',async route=>{
+ await context.route('**/api/v1/rounds/item-retry?**',async route=>{
   const response=await route.fetch();
   if(!lost&&response.status()===200){lost=true;return route.abort('failed');}
   return route.fulfill({response});
  });
  hold=true;
- await action('retry').click();
+ await page.locator('#editorClose').count().then(async count=>{if(count)await page.locator('#editorClose').click();else await page.locator('#editor').evaluate(el=>el.close());});
+ await page.locator('[data-action="round-current-retry"]').click();
  await page.waitForFunction(()=>document.body.innerText.includes('正在检查并处理所选商品'));
  for(let i=0;!release&&i<300;i++)await new Promise(r=>setTimeout(r,10));assert(release,'synthetic source began');
  check(await action('refresh').isDisabled()&&await action('retry').count()===0&&await action('verify').count()===0&&await page.locator('[data-item-skip]').count()===0,'进行中防止重复操作，原资料与结果不可另行修改');
- check(launches.length===1&&flow.submits===0,'单条真实API请求只启动一个模拟执行者');
+ check(launches.length===previousLaunches+1&&flow.submits===0,'单条真实API请求只启动一个模拟执行者');
  release();hold=false;
  await page.waitForFunction(()=>{const x=document.querySelector('[data-item-action="retry-reconcile"]');return x&&!x.disabled;});
  check(lost&&flow.submits===1,'响应丢失时后台仅执行一次，页面保留核对入口');
  check((await page.locator('.round-item-summary').innerText()).includes('本次重试结果待核对')&&!(await page.locator('.round-item-summary').innerText()).includes('尚未点击提交')&&(await page.locator('.round-item-next').innerText()).includes('沿用原操作核对'),'响应丢失不把请求前快照当作当前未提交状态');
  await page.setViewportSize({width:1440,height:1000});
  await page.screenshot({path:join(out,'03-response-lost.png'),fullPage:true});
+ await page.reload();await openDetail();await action('retry-reconcile').waitFor();
+ check(await action('retry').count()===0,'响应丢失后刷新仍只允许核对原请求');
  await action('retry-reconcile').click();
  await page.waitForFunction(()=>document.querySelector('.round-item-feedback')?.innerText.includes('本次单条处理已记录'));
- const attempts=requests.filter(x=>x.path==='/api/v1/rounds/item-retry');
+ const attempts=requests.filter(x=>new URL(x.path,'http://localhost').pathname==='/api/v1/rounds/item-retry');
  check(attempts.length===2&&JSON.stringify(attempts[0].input)===JSON.stringify(attempts[1].input),'网络恢复沿用原请求，不生成第二次重试');
- check(flow.submits===1&&launches.length===1&&JSON.stringify(product.round.items(round.id).slice(1))===untouched,'只处理选中商品，其余两条状态与记录不变');
+ check(flow.submits===1&&launches.length===previousLaunches+1&&JSON.stringify(product.round.items(round.id).slice(1))===untouched,'只处理选中商品，其余两条状态与记录不变');
  check(product.round.round(round.id).state==='PAUSED'&&!product.round.active,'单条结束后持久暂停，释放原执行器');
+ check(product.round.item(round.id,first.key).run_id===originalRun&&product.round.item(round.id,first.key).queue_id===originalQueue&&product.round.selections.manualBudgetUsed(originalQueue)===1&&batch.store.item(originalQueue).attempts===4,'监控一键复用3/3原任务，仅追加并使用1次机会');
  check(await action('retry').count()===0&&await page.locator('[data-item-skip]').count()===0,'成功商品不再提供重试与跳过');
  await page.locator('.round-item-history summary').click();
  check((await page.locator('.round-item-history').innerText()).includes('手动重试'),'原尝试作为手动重试留在处理记录中');
@@ -134,7 +144,7 @@ try{
  const skipContinueRequests=requests.slice(skipRequestStart).filter(x=>['/api/v1/rounds/item-skip','/api/v1/rounds/resume'].includes(new URL(x.path,'http://localhost').pathname));
  check(skipContinueRequests.length===2&&new URL(skipContinueRequests[0].path,'http://localhost').pathname==='/api/v1/rounds/item-skip'&&new URL(skipContinueRequests[1].path,'http://localhost').pathname==='/api/v1/rounds/resume','先记跳过，再恢复同一轮次');
  check(product.round.item(round.id,second.key).state==='MANUAL_SKIPPED'&&product.round.item(round.id,second.key).submitted===0,'跳过项保留人工跳过状态且没有提交');
- check(product.round.item(round.id,third.key).state==='NEW_SUCCESS'&&flow.submits===2&&launches.length===2,'跳过项未重发，原轮次继续处理下一条');
+ check(product.round.item(round.id,third.key).state==='NEW_SUCCESS'&&flow.submits===2&&launches.length===previousLaunches+2,'跳过项未重发，原轮次继续处理下一条');
  check(errors.length===0&&apiErrors.length===0&&external.length===0,'合并操作无页面错误、API错误或外网请求');
  check(errors.length===0&&external.length===0,'没有页面脚本异常或外部网络访问');
  check(JSON.stringify(await hashes())===JSON.stringify(sourceHashes),'测试期间候选源文件保持不变');

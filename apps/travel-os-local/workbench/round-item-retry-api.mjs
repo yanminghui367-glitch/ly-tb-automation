@@ -15,6 +15,7 @@ const messages={
  ITEM_RETRY_STATE_PROTECTED:'当前状态不允许重试，请按原问题提示处理。',
  ITEM_RETRY_RUN_PROTECTED:'原执行现场仍需人工处理或结果核验。',
  ITEM_RETRY_NOT_ATTEMPTED:'此商品尚未处理，请从原轮次开始。',
+ ITEM_RETRY_BUDGET_MANUAL_CAP:'这条商品已用完3次人工追加机会，请先处理失败原因；原记录保留。',
  ITEM_RETRY_BUDGET_EXHAUSTED:'原任务已达尝试次数上限，不能继续重试；原次数和记录保留。',
  ITEM_RETRY_BUDGET_EXTRA_UNSAFE:'原任务已达尝试上限，且不满足原定额外安全恢复条件；保留原次数与断点，不能继续重试。',
  ITEM_RETRY_BUDGET_SYSTEM_UNCONFIRMED:'原任务已达尝试上限，尚未确认属于允许额外恢复的提交前系统故障；不能继续重试。',
@@ -35,7 +36,7 @@ export class RoundItemRetryApi {
     if(verified?.id!==open.id||req.roundId!==s.r.id||req.key!==s.x.key||![req.windowId,open.window_id].includes(s.w.id))throw Error('ITEM_RETRY_FAILED');
     return {allowed:true,mode:'RECOVER',reason:'上次重试中断，先保存原处理记录。本次不会重新发布。',request:req,executionWindowId:open.window_id};
    }
-   r.allowed(s);return {allowed:true,mode:'RETRY',reason:'重新检查原资料、店铺及后台重复商品，仅重试此条，结束后暂停。'};
+   const manualBudget=r.allowed(s);return {allowed:true,mode:'RETRY',manualBudget,reason:manualBudget.willAdd?`点击后追加1次机会并重新执行此条，剩余人工追加机会${manualBudget.remaining}次；结束后暂停。`:'点击后重新执行此条，保留原资料和记录；结束后暂停。'};
   }catch(e){const i=retryIssue(e);return {allowed:false,mode:null,code:i.code,reason:i.error};}
  }
  async handle(req,res,url,{body,json}){

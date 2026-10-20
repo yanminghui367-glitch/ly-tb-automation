@@ -1,0 +1,134 @@
+--- baseline/workbench/taobao-publisher.mjs
++++ workbench/taobao-publisher.mjs
+@@ -8,7 +8,7 @@
+ import assert from 'node:assert/strict';
+ import {visibleChallenge} from './browser-environment.mjs';
+ import {fillAttributes,verifyAttributes,validateSelections,selectedCustomState} from './publishing-attributes.mjs';
+-import {uploadMaterial} from './publishing-materials.mjs';
++import {uploadMaterial,waitDetailThumbnail,materialDomSnippet} from './publishing-materials.mjs';
+ import {createBackgroundPage,getAuxiliaryPage,assertAuxiliaryPage} from './publishing-pages.mjs';
+ import {captureTaskScreenshot} from './task-screenshot.mjs';
+ import {setTimeout as delay} from 'node:timers/promises';
+@@ -118,10 +118,11 @@
+ // .media-img-plug. Its container can open before its search UI is ready.
+ // Poll that same picker only. Never reload it, re-click Image, or choose a
+ // similarly named search box from a main-image/preview/unrelated frame.
+-export async function waitDetailMaterialFrame(page,guard,{required=true,timeout=20000}={}) {
++export async function waitDetailMaterialFrame(page,guard,{required=true,timeout=20000,onDiagnostic=async()=>{}}={}) {
+  assert(Number.isFinite(timeout)&&timeout>0&&timeout<=30000,'DETAIL_WAIT_BUDGET_INVALID');
+  const hosts=page.locator('.media-img-plug iframe:not(#mainImagesGroup):visible'),deadline=Date.now()+timeout;
+- let host=null,frame=null;
++ let host=null,frame=null,status='failed',actual={hosts:0},failure=null;const started=performance.now();
++ const diagnostic=()=>({stage:'detail-panel',status,selector:'.media-img-plug iframe:not(#mainImagesGroup):visible',expected:'唯一官方详情面板、可编辑搜索框与可见确定按钮',actual,durationMs:Math.round((performance.now()-started)*1000)/1000,timeoutMs:timeout,screenshot:null});
+  const allowed=url=>{try{const u=new URL(url);return u.origin==='https://market.m.taobao.com'&&u.pathname==='/app/crs-qn/sucai-selector-ng/index';}catch{return false;}};
+  const checkHost=async()=>{
+   assert.equal(await hosts.count(),1,'DETAIL_MATERIAL_FRAME_CHANGED');
+@@ -133,9 +134,9 @@
+  try {
+   do {
+    await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');
+-   const count=await hosts.count();assert(count<=1,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
++    const count=await hosts.count();actual={hosts:count};assert(count<=1,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
+    if(count)assert.equal(await page.locator('iframe#mainImagesGroup:visible').count(),0,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
+-   if(!host&&count===0&&!required)return null;
++    if(!host&&count===0&&!required){status='absent';return null;}
+    if(!host&&count===1)host=await hosts.elementHandle();
+    if(host){
+     await checkHost();
+@@ -146,20 +147,26 @@
+      assert(allowed(frame.url()),'DETAIL_MATERIAL_FRAME_ORIGIN');
+      const search=frame.getByPlaceholder('搜索图片名称',{exact:true});
+      const confirm=frame.getByRole('button',{name:/^确定(?:\s*[（(]\d+[）)])?$/});
++      const searches=await search.count(),confirms=await confirm.count();
++      actual={hosts:count,search:searches,confirm:confirms,searchVisible:searches===1&&await search.isVisible(),searchEditable:searches===1&&await search.isEditable(),confirmVisible:confirms===1&&await confirm.isVisible()};
+      assert((await search.count())<=1&&(await confirm.count())<=1,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
+      if(await search.count()===1&&await search.isVisible()&&await search.isEditable()&&await confirm.count()===1&&await confirm.isVisible()){
+       const readyUrl=frame.url();
+       await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');
+       await checkHost();assert(!frame.isDetached()&&frame.url()===readyUrl&&allowed(frame.url()),'DETAIL_MATERIAL_FRAME_CHANGED');
+       assert(await search.count()===1&&await search.isVisible()&&await search.isEditable()&&await confirm.count()===1&&await confirm.isVisible(),'DETAIL_MATERIAL_FRAME_NOT_READY');
+-      return frame;
++      if(Date.now()>=deadline)throw Error('DETAIL_MATERIAL_FRAME_NOT_READY');status='ready';return frame;
+      }
+     }
+    }
+    await delay(150);
+   }while(Date.now()<deadline);
+   throw Error('DETAIL_MATERIAL_FRAME_NOT_READY');
+- }finally{await host?.dispose();}
++  }catch(error){failure=error;error.materialReadiness??=diagnostic();throw error;}
++  finally{
++   await host?.dispose();
++   if(status!=='absent')try{const d=failure?.materialReadiness||diagnostic();d.dom_snippet=await materialDomSnippet(hosts);const evidence=await onDiagnostic(d);if(evidence)Object.assign(d,evidence);}catch{}
++  }
+ }
+ 
+ // Main and detail pickers share .media-img-plug. Main is identified by its
+@@ -395,9 +402,14 @@
+ export async function fillTask({page:p, task,dir,target,step,guard,executionProfile=null,materialBinding=null}) {
+  const order=task.priority;
+  const risk=async()=>{if(await visibleChallenge(p))throw Error('PAUSED_CAPTCHA');};
++ const detailReadiness={onDiagnostic:async (diagnostic,evidencePage=p)=>{
++  const evidence=diagnostic.status==='failed'?await captureTaskScreenshot(evidencePage,dir,'detail-readiness-'+diagnostic.stage):{};
++  await writeFile(dir+'detail-readiness-'+randomUUID()+'.json',JSON.stringify({at:new Date().toISOString(),...diagnostic,...evidence},null,2),{flag:'wx'});
++  return evidence;
++ }};
+  async function fill(selector,value){const l=p.locator(selector);await guard();await l.fill(String(value));await l.press('Tab');await expect(l).toHaveValue(String(value));}
+  async function radio(scope,text){const l=p.locator(scope).locator('label').filter({hasText:text}).filter({has:p.locator('input[type=radio]')}).first();await guard();await l.click();await expect(l.locator('input[type=radio]')).toBeChecked();}
+- async function ensureMaterial(f,a,card) {
++  async function ensureMaterial(f,a,card,{detail=false}={}) {
+   if(await card.isVisible().catch(()=>false)){assert(await verifyMaterialUploadReceipt(a,card),'SOURCE_OR_ASSET_CHANGED: BOUND_MATERIAL_UPLOAD_UNVERIFIED：新版图片尚无上传回执，不能复用同名旧素材');return;}
+   // The native Playwright owner handles the real file chooser; never injects uploads.
+   const exists=await card.waitFor({state:'visible',timeout:4000}).then(()=>true).catch(()=>false);
+@@ -413,16 +425,17 @@
+   library=await getAuxiliaryPage(p.context(),{role:'material',shopId:task.shopId,url:href,guard:materialGuard});
+   if((await library.locator('body').innerText()).includes('支持所有商品测图'))await library.getByRole('button',{name:'关闭',exact:true}).click();
+   let uploadDialog;
+-  try{uploadDialog=await uploadMaterial(library,a.path,materialGuard);}
++   try{uploadDialog=await uploadMaterial(library,a.path,materialGuard,{readiness:detail?{onDiagnostic:d=>detailReadiness.onDiagnostic(d,library)}:null});}
+   catch(error){
+-   const evidence=await captureTaskScreenshot(library,dir,'material-upload-paused');
+-   await writeFile(dir+'material-upload-checkpoint.json',JSON.stringify({at:new Date().toISOString(),reason:error.message,diagnostic:error.uploadDiagnostic||null,...evidence},null,2)).catch(()=>{});
++    const evidence=error.materialReadiness?.screenshot?{screenshot:error.materialReadiness.screenshot,screenshotAt:error.materialReadiness.screenshotAt,screenshotError:null}:await captureTaskScreenshot(library,dir,'material-upload-paused');
++    await writeFile(dir+'material-upload-checkpoint.json',JSON.stringify({at:new Date().toISOString(),reason:error.message,diagnostic:error.materialReadiness||error.uploadDiagnostic||null,...evidence},null,2)).catch(()=>{});
+    throw error;
+   }
+   await library.screenshot({path:dir+`uploaded-${basename(a.path)}.png`});
+   await materialGuard();await uploadDialog.getByRole('button',{name:'完成',exact:true}).click();await guard();
+   const search=f.getByPlaceholder('搜索图片名称');await search.fill('');await search.press('Enter');
+-  await expect(card).toBeVisible({timeout:30000});
++   if(detail)await waitDetailThumbnail(card,guard,detailReadiness);
++   else await expect(card).toBeVisible({timeout:30000});
+   if(a.materialVersion){
+    const receipt={path:a.path,sha256:a.sha256,materialVersion:a.materialVersion,url:await card.locator('.PicList_pic_imgBox__c0HXw img').getAttribute('src'),at:new Date().toISOString()};
+    await writeFile(a.path+'.upload.json',JSON.stringify(receipt,null,2),{flag:'wx'}).catch(async e=>{if(e.code!=='EEXIST'||!await verifyMaterialUploadReceipt(a,card))throw e;});
+@@ -439,7 +452,7 @@
+  let receipts=JSON.parse(await readFile(dir+'main-receipts.json','utf8').catch(()=>'[]'));
+  let shippingArea=await p.locator('#sell-field-shippingArea').count()?{mode:'LEGACY_FIELDS',rendered:true}:null;
+  // A retained loading detail picker must settle before any form refill.
+- const openDetailFrame=await waitDetailMaterialFrame(p,guard,{required:false});
++ const openDetailFrame=await waitDetailMaterialFrame(p,guard,{required:false,...detailReadiness});
+  if(openDetailFrame)shippingArea=await inspectShippingArea(p,task,executionProfile,guard);
+  if(!openDetailFrame){
+  for(const [i,a] of mains.entries())await step('main-image-'+(i+1),async()=>{
+@@ -484,7 +497,7 @@
+   let f=openDetailFrame;
+   if(!f)await step('open-details',async()=>{
+    await p.locator('#sell-field-descRepublicOfSell').getByText('图片',{exact:true}).click();
+-   f=await waitDetailMaterialFrame(p,guard);
++   f=await waitDetailMaterialFrame(p,guard,detailReadiness);
+   });
+   for(const [i,a] of details.entries())await step('select-detail-'+(i+1),async()=>{
+    await guard();
+@@ -494,9 +507,10 @@
+    // Reuse the current material list during checkpoint recovery. Search only
+    // when the required filename is absent, preserving the user's selection.
+    if(!await targetCard.isVisible()){await search.fill(name);await search.press('Enter');}
+-   await ensureMaterial(f,a,targetCard);await risk();
++   await ensureMaterial(f,a,targetCard,{detail:true});await risk();
+    const checked=matches.filter({has:f.locator('input[type=checkbox]:checked')}).first();
+    const card=await checked.count()?checked:targetCard;
++   await waitDetailThumbnail(card,guard,detailReadiness);
+    await expect(card.locator('.PicList_tip_title__aQfti')).toHaveText(name);
+    const url=await card.locator('.PicList_pic_imgBox__c0HXw img').getAttribute('src');
+    assert(await verifyMaterialUploadReceipt(a,card),'SOURCE_OR_ASSET_CHANGED: BOUND_MATERIAL_UPLOAD_UNVERIFIED');

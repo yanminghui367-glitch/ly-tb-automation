@@ -1,0 +1,92 @@
+{
+  "ok": true,
+  "syntheticOnly": true,
+  "assertions": [
+    "nearest-rank P50/P90",
+    "deduplicated paths",
+    "failures excluded from ready quantiles",
+    "missing stage is null, not zero"
+  ],
+  "observed": {
+    "scope": "Only supplied task artifact directories; no inferred zero-duration samples",
+    "method": "nearest-rank; percentiles use ready observations only; failures/timeouts listed separately",
+    "caution": "Small samples are descriptive. Missing stages mean not observed, not zero. Upload-panel contains two selectors; inspect breakdown before comparing budgets. Repeated retries are separate observations.",
+    "files": [
+      "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\output\\step2-safe-retry-20261018\\timing-fixtures\\detail-readiness-0.json",
+      "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\output\\step2-safe-retry-20261018\\timing-fixtures\\detail-readiness-1.json",
+      "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\output\\step2-safe-retry-20261018\\timing-fixtures\\detail-readiness-2.json",
+      "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\output\\step2-safe-retry-20261018\\timing-fixtures\\detail-readiness-3.json",
+      "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\output\\step2-safe-retry-20261018\\timing-fixtures\\detail-readiness-4.json",
+      "C:\\Users\\Administrator\\Documents\\ChatGPT\\旅游 上架自动化\\output\\step2-safe-retry-20261018\\timing-fixtures\\detail-readiness-failure.json"
+    ],
+    "invalid": [],
+    "stages": {
+      "upload-entry": {
+        "observations": 0,
+        "ready": 0,
+        "failedOrInterrupted": 0,
+        "readyP50Ms": null,
+        "readyP90Ms": null,
+        "failedDurationsMs": [],
+        "timeoutBudgetsMs": []
+      },
+      "upload-panel": {
+        "observations": 0,
+        "ready": 0,
+        "failedOrInterrupted": 0,
+        "readyP50Ms": null,
+        "readyP90Ms": null,
+        "failedDurationsMs": [],
+        "timeoutBudgetsMs": []
+      },
+      "upload-receipt": {
+        "observations": 0,
+        "ready": 0,
+        "failedOrInterrupted": 0,
+        "readyP50Ms": null,
+        "readyP90Ms": null,
+        "failedDurationsMs": [],
+        "timeoutBudgetsMs": []
+      },
+      "thumbnail": {
+        "observations": 6,
+        "ready": 5,
+        "failedOrInterrupted": 1,
+        "readyP50Ms": 30,
+        "readyP90Ms": 50,
+        "failedDurationsMs": [
+          30001
+        ],
+        "timeoutBudgetsMs": [
+          30000
+        ]
+      },
+      "detail-panel": {
+        "observations": 0,
+        "ready": 0,
+        "failedOrInterrupted": 0,
+        "readyP50Ms": null,
+        "readyP90Ms": null,
+        "failedDurationsMs": [],
+        "timeoutBudgetsMs": []
+      }
+    },
+    "selectorBreakdown": [
+      {
+        "stage": "thumbnail",
+        "selector": "img",
+        "observations": 6,
+        "ready": 5,
+        "failedOrInterrupted": 1,
+        "readyP50Ms": 30,
+        "readyP90Ms": 50,
+        "failedDurationsMs": [
+          30001
+        ],
+        "timeoutBudgetsMs": [
+          30000
+        ]
+      }
+    ]
+  }
+}

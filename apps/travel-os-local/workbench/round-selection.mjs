@@ -1,8 +1,10 @@
 import {randomUUID} from 'node:crypto';
+import {settledSkippedCaptcha} from './round-manual-skip.mjs';
 import {digest} from './source-store.mjs';
 
 const fail=(code,message=code)=>{throw Object.assign(Error(message),{code});};
 const text=x=>typeof x==='string'&&x.length>0&&x.length<=200;
+export const MANUAL_RETRY_ADDITIONS_LIMIT=3;
 const terminal=new Set(['NEW_SUCCESS','EXISTING_VERIFIED','MANUAL_SKIPPED','PREFLIGHT_SKIPPED']);
 const isolated=x=>['existing-listing-check','content-review','content-preflight'].includes(x.failure_stage);
 const human=/CAPTCHA|验证码|滑块|风险验证|请人工登录|登录失效|店铺身份/;
@@ -94,8 +96,8 @@ export class RoundSelection {
   const pass=this.readPass(roundId);
   for(const x of o.items(roundId)){
    const s=this.snapshot(roundId,x,pass);
-   if(['SUBMITTING','RESULT_UNKNOWN'].includes(s.run?.state)||x.submission_uncertain||x.state==='RESULT_UNKNOWN'&&!isolated(x)||s.hasSubmit&&!terminal.has(x.state)&&!isolated(x))add('SELECTION_RESULT_UNRESOLVED','原商品提交结果待核验，禁止新建执行范围');
-   if(s.run?.state==='PAUSED_CAPTCHA'||human.test(s.run?.reason||'')||x.state==='WAITING_HUMAN'&&x.failure_stage!=='content-preflight')add('SELECTION_HUMAN_REQUIRED','请先处理原登录、验证码或人工验证');
+   if(!o.parking?.has(roundId,x)&&(['SUBMITTING','RESULT_UNKNOWN'].includes(s.run?.state)||x.submission_uncertain||x.state==='RESULT_UNKNOWN'&&!isolated(x)||s.hasSubmit&&!terminal.has(x.state)&&!isolated(x)))add('SELECTION_RESULT_UNRESOLVED','原商品提交结果待核验，禁止新建执行范围');
+   if((s.run?.state==='PAUSED_CAPTCHA'||human.test(s.run?.reason||'')||x.state==='WAITING_HUMAN'&&x.failure_stage!=='content-preflight')&&!settledSkippedCaptcha(o,roundId,x))add('SELECTION_HUMAN_REQUIRED','请先处理原登录、验证码或人工验证');
    if(x.state==='PENDING'&&x.entered_publish&&!eligible.some(v=>v.key===x.key))add('SELECTION_CHECKPOINT_REQUIRED','原商品仍有未结束断点，须纳入可执行选择或先处理原任务');
    if(x.state==='NEW_SUCCESS')try{o.assertContentForTask(x.task,roundId);}catch{add('SELECTION_SUCCESS_REVIEW_REQUIRED','历史成功商品仍需完成原内容审核');}
   }
@@ -112,7 +114,7 @@ export class RoundSelection {
    let s=null;try{s=this.snapshot(roundId,x);this.allowed(s,roundId,config.mode);await o.checkFiles(x.task);eligible.push(detail(x,s.q));versions[key]=s.revision;}
    catch(e){const kind=o.classifyFailure(e,{preflight:true}).kind;
     if(!/^SELECTION_/.test(e.code||'')&&!['CONTENT_MISMATCH','CONTENT_REVIEW_REQUIRED','CONTENT_REVIEW_HELD'].includes(e.code)&&!['PREFLIGHT','PRODUCT'].includes(kind))throw e;
-    excluded.push({...detail(x,s?.q),...(e.code==='SELECTION_BUDGET_EXHAUSTED'&&s?.q?{manualBudgetGrantAvailable:!s.hasSubmit&&s.q.state==='FAILED'&&this.manualBudgetUsed(s.q.id)<1,manualBudgetRemaining:Math.max(0,1-this.manualBudgetUsed(s.q.id))}:{}),code:e.code||'SELECTION_DATA_INVALID',reason:String(e.message).slice(0,400)});
+    excluded.push({...detail(x,s?.q),...(e.code==='SELECTION_BUDGET_EXHAUSTED'&&s?.q?{manualBudgetGrantAvailable:!s.hasSubmit&&['FAILED','RETRY'].includes(s.q.state)&&this.manualBudgetUsed(s.q.id)<MANUAL_RETRY_ADDITIONS_LIMIT,manualBudgetRemaining:Math.max(0,MANUAL_RETRY_ADDITIONS_LIMIT-this.manualBudgetUsed(s.q.id))}:{}),code:e.code||'SELECTION_DATA_INVALID',reason:String(e.message).slice(0,400)});
    }
   }
   eligible.sort((a,b)=>a.position-b.position);excluded.sort((a,b)=>(a.position||Infinity)-(b.position||Infinity));
@@ -122,6 +124,17 @@ export class RoundSelection {
  }
  manualBudgetUsed(queueId){
   return this.db.prepare("SELECT payload FROM batch_events WHERE task=? AND kind='MANUAL_RETRY_BUDGET_GRANTED' ORDER BY seq").all(queueId).reduce((n,row)=>{try{return n+Number(JSON.parse(row.payload).addAttempts||0);}catch{return n;}},0);
+ }
+ grantSingleRetryBudget(s,{requestId,reason='操作者点击重新执行此条，追加一次原任务尝试机会'}={}){
+  const o=this.owner; if(!this.db.isTransaction)fail('SELECTION_BUDGET_BUSY','追加机会必须与原重试记录一并保存');
+  if(!s?.q||s.hasSubmit||!['FAILED','RETRY','PENDING'].includes(s.q.state))fail('SELECTION_BUDGET_NOT_EXHAUSTED','原任务不支持追加重试机会');
+  if(this.manualBudgetUsed(s.q.id)>=MANUAL_RETRY_ADDITIONS_LIMIT)fail('ITEM_RETRY_BUDGET_MANUAL_CAP','这条商品已用完3次人工追加机会，请先处理失败原因');
+  const old=s.q,now=new Date().toISOString(),effective=o.batch.store.preflightBudget(old.id).effectiveAttempts,newLimit=Math.max(old.max_attempts,effective)+1;
+  const changed=this.db.prepare("UPDATE batch_items SET max_attempts=? WHERE id=? AND key=? AND attempts=? AND max_attempts=? AND state=?").run(newLimit,old.id,s.x.key,old.attempts,old.max_attempts,old.state);
+  if(changed.changes!==1)fail('SELECTION_BUDGET_STALE','原任务记录发生变化，请刷新后重试');
+  const payload={requestId,requestHash:digest({roundId:s.r.id,windowId:s.w.id,key:s.x.key,requestId,addAttempts:1}),roundId:s.r.id,windowId:s.w.id,key:s.x.key,attempts:old.attempts,oldLimit:old.max_attempts,newLimit,historicalAlreadyConsumed:Math.max(0,effective-old.max_attempts),addAttempts:1,reason,at:now,source:'single-item-retry'};
+  o.batch.store.event(old.batch,old.id,'MANUAL_RETRY_BUDGET_GRANTED',payload);o.event(s.r.id,s.x.key,'MANUAL_RETRY_BUDGET_GRANTED',payload);
+  return {used:this.manualBudgetUsed(old.id),max:MANUAL_RETRY_ADDITIONS_LIMIT,oldLimit:old.max_attempts,newLimit};
  }
  async grantRetryBudget(input={}){
   const {roundId,windowId,keys,addAttempts,reason,requestId,expectedRevision}=input;
@@ -136,7 +149,7 @@ export class RoundSelection {
   const prepared=sorted.map(key=>{
    const x=o.item(roundId,key),s=this.snapshot(roundId,x);this.allowed(s,roundId,'recheck',{allowBudgetGrant:true});
    if(!s.q||!['FAILED','RETRY'].includes(s.q.state)||s.q.attempts<s.q.max_attempts)fail('SELECTION_BUDGET_NOT_EXHAUSTED','只能为已达次数上限的原异常商品增加额度');
-   if(this.manualBudgetUsed(s.q.id)+addAttempts>1)fail('SELECTION_BUDGET_MANUAL_CAP','每个商品最多手动增加1次额度');
+   if(this.manualBudgetUsed(s.q.id)+addAttempts>MANUAL_RETRY_ADDITIONS_LIMIT)fail('SELECTION_BUDGET_MANUAL_CAP','每个商品最多手动追加3次机会');
    return {x,q:s.q,s};
    });
    // Files may change after preview; verify the frozen task inputs again
@@ -149,12 +162,13 @@ export class RoundSelection {
    const now=new Date().toISOString(),granted=[];
    for(const {x,q} of prepared){
     const current=this.snapshot(roundId,o.item(roundId,x.key));this.allowed(current,roundId,'recheck',{allowBudgetGrant:true});
-    if(current.q.id!==q.id||current.q.attempts<current.q.max_attempts||this.manualBudgetUsed(q.id)+addAttempts>1)fail('SELECTION_BUDGET_STALE','额度条件已变化，请重新检查');
-    const updated=this.db.prepare('UPDATE batch_items SET max_attempts=max_attempts+? WHERE id=? AND attempts>=max_attempts AND state IN (\'FAILED\',\'RETRY\')').run(addAttempts,q.id);
+    if(current.q.id!==q.id||current.q.attempts<current.q.max_attempts||this.manualBudgetUsed(q.id)+addAttempts>MANUAL_RETRY_ADDITIONS_LIMIT)fail('SELECTION_BUDGET_STALE','额度条件已变化，请重新检查');
+    const effective=o.batch.store.preflightBudget(q.id).effectiveAttempts,newLimit=Math.max(q.max_attempts,effective)+1;
+    const updated=this.db.prepare('UPDATE batch_items SET max_attempts=? WHERE id=? AND attempts>=max_attempts AND state IN (\'FAILED\',\'RETRY\')').run(newLimit,q.id);
     if(updated.changes!==1)fail('SELECTION_BUDGET_STALE','原队列记录已变化，请重新检查');
-    const payload={requestId,requestHash,roundId,windowId,key:x.key,attempts:q.attempts,oldLimit:q.max_attempts,newLimit:q.max_attempts+addAttempts,addAttempts,reason:reason.trim(),at:now};
+    const payload={requestId,requestHash,roundId,windowId,key:x.key,attempts:q.attempts,oldLimit:q.max_attempts,newLimit,historicalAlreadyConsumed:Math.max(0,effective-q.max_attempts),addAttempts,reason:reason.trim(),at:now};
     o.batch.store.event(q.batch,q.id,'MANUAL_RETRY_BUDGET_GRANTED',payload);o.event(roundId,x.key,'MANUAL_RETRY_BUDGET_GRANTED',payload);
-    granted.push({key:x.key,attempts:q.attempts,maxAttempts:q.max_attempts+addAttempts,addAttempts});
+    granted.push({key:x.key,attempts:q.attempts,maxAttempts:newLimit,addAttempts});
    }
    return {accepted:true,replayed:false,roundId,windowId,granted};
   });

@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-18T04:47:17.893671+00:00",
+  "sourceManifestSha256": "9f547eeff65cbb46275098e3d57bff726d1288b7e3773daa4a9422171c1d1820",
+  "files": [
+    {
+      "path": "workbench/taobao-publisher.mjs",
+      "baselineSha256": "20d575d7c119b91529d2d54af0295c3f707ccda873b4745d88aba84cdd335565",
+      "sha256": "4abcb31f391e95a13355f97c1a023a52ca3c8abaad6065d87ec51e3db9e618ea"
+    },
+    {
+      "path": "workbench/publishing-materials.mjs",
+      "baselineSha256": "a786dde96a3fba43858650d252498224d44a5718ed0455c80e0defd61799f5c3",
+      "sha256": "735f652636ee65d200ab3b0528b25b468885cd751ee63213b56241f5c2971dc7"
+    }
+  ],
+  "logSha256": "3ac886f7272797bbd8bf310131da42c2578396825226a8b8d4a1288b2c19b3ee",
+  "passed": 120,
+  "failed": 0,
+  "allSixRelatedSuitesRunOnFinalStep1Bytes": true,
+  "existingStep1PackageUnmodified": true
+}

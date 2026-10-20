@@ -1,0 +1,74 @@
+{
+  "checkedAt": "2026-10-18T05:52:11.264333+00:00",
+  "qaAgent": "/root/step05_runbook_qa",
+  "ok": true,
+  "verdict": "PASS_CANDIDATE_ONLY",
+  "candidateManifestSha256": "2889dff92491bd9fbafeb1bc1c49411f6607b4acbde77dba970ee7c21d1fe461",
+  "candidateLockSha256": "17345cf58209b4320d280cde9aefa1dff8c0ac6d8e9e60f3706a2bc9618909df",
+  "finalRuntimeHashes": {
+    "workbench/taobao-publisher.mjs": "6eafc82f2b7236ef0b1b0c0b560b2b9227057303705267adaf2f472f6df1f9a3",
+    "workbench/listing-round.mjs": "1068c298afd8fb805f4646d553c9d3f491c769c512c1ad1758df50b5fea65308"
+  },
+  "beforeLockSha256": "bac37aedc5eff14be3284d9b4b5edc3c21c618758504728f44f233589c362aea",
+  "fromRevision": "20261018-step2-safe-retry-r2",
+  "toRevision": "20261018-step3-main-stability-r1",
+  "productionFrozenFilesChecked": 84,
+  "productionChanged": [],
+  "candidateRuntimeChanged": [
+    "workbench/taobao-publisher.mjs",
+    "workbench/listing-round.mjs"
+  ],
+  "independentTests": {
+    "total": 42,
+    "passed": 42,
+    "failed": 0,
+    "skipped": 0,
+    "circuit": 34,
+    "main": 8
+  },
+  "finalRelevantRegression": {
+    "total": 294,
+    "passed": 294,
+    "failed": 0,
+    "skipped": 0,
+    "includesIndependent42": true,
+    "executedBy": "parent",
+    "logSha256": "30d005f6ec54116cb63ca5f78482842c8796d6a628f8a5b399830b35ce67a931"
+  },
+  "manualBudgetMetadataCorrectedOnly": true,
+  "attemptsSemanticsUnchanged": true,
+  "detailBudgetsUnchanged": true,
+  "productionInstalledByQA": false,
+  "liveSamplePerformedByQA": false,
+  "run1Eligible": false,
+  "qaActions": {
+    "productionPost": 0,
+    "browserOperations": 0,
+    "productionSourceWrites": 0,
+    "businessWrites": 0
+  },
+  "artifactHashes": {
+    "candidate/candidate-manifest.json": "2889dff92491bd9fbafeb1bc1c49411f6607b4acbde77dba970ee7c21d1fe461",
+    "candidate/kernel-lock.candidate.json": "17345cf58209b4320d280cde9aefa1dff8c0ac6d8e9e60f3706a2bc9618909df",
+    "candidate/README.md": "4010a9e420b1aab2862217e1de690507b716c298701433f084f537eb087fc981",
+    "candidate/INSTALLATION-PLAN.md": "04b5fa947227824849c6935a88688ec1bec6800d950e60279551d4a4cd995761",
+    "final-regression-binding.json": "3112c2119d02033fae27f8b6ff9fee9fa3ec29a28ac2bf54809bece0bd248b73",
+    "final-bytes-regression.log": "30d005f6ec54116cb63ca5f78482842c8796d6a628f8a5b399830b35ce67a931",
+    "qa/independent-final-tests.log": "b0f55069ad0238bccdcf1d6852366a78b219b50031eccfc414963334ede29e3e",
+    "qa/independent-circuit-r1.log": "6d70cc3257377719b21df35742febf6784f7a85c0c96815cd93eb4a52c554510",
+    "qa/actual-guard-r2.log": "1102e4211db79e6ab0d4aae4d933d28e7f496770c79af7ac946a9b01b4b38934",
+    "qa/independent-circuit.test.mjs": "f0e55ac4c5fab4a423c9b7e961b389c9fcd37d143c73e0e907e97e9349e2390b",
+    "qa/independent-main.test.mjs": "3b80fd59284c670502bb77203e76c0b7f1d1592ae8cb7e61394e4ee98990d216",
+    "qa/independent-fixture.mjs": "61157bed24b9daa55ab643996b77ab6df8d3b0a31aad8bc6a7fb75cecf0c82b0",
+    "qa/budget-mode-facts.json": "ff361edbe423834eac22f34bf3b8f6f679944ee399a50beb388e135c3739f98a",
+    "qa/budget-mode-facts.md": "604a68c7fa5925ae5a7605392e4bbed2c60e44f9ea2cf4bc8b65f13b7bfa9232",
+    "main/READINESS-AUDIT.md": "7e80897435c07092c9b4c286156ec7c07164d18a10588065dbd7c530ac7548f9",
+    "main/audit-search.json": "6e58eb27d144c38ca4c5e2037816b5d320395088b84f0a586d42b25e0da3662a",
+    "qa/independent-qa.md": "b120eed32456b2489fa62a4482938f65a49c0129269f7d6fc9646c1fd9ea1d71"
+  },
+  "limits": [
+    "Candidate and isolated evidence only; real 12-16 listing sample remains separate",
+    "Initial and post-click observation each use a five-second budget; in-flight guard or click not forcibly cancelled",
+    "Repeated unclassified item errors can finalize up to three same-fingerprint distinct items before stopping"
+  ]
+}

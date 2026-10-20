@@ -1,0 +1,103 @@
+[
+  {
+    "scenario": "historical attempts 3/3 with zero safe recoveries",
+    "round": "COMPLETED",
+    "window": "COMPLETED",
+    "counts": {
+      "EXISTING_VERIFIED": 0,
+      "NEW_SUCCESS": 4,
+      "FAILED": 1,
+      "PREFLIGHT_SKIPPED": 0,
+      "MANUAL_SKIPPED": 0,
+      "RESULT_UNKNOWN": 0,
+      "WAITING_HUMAN": 0,
+      "PENDING": 0
+    },
+    "attemptsBeforeFailure": 3,
+    "attemptsAfterFailure": 3,
+    "maxAttempts": 3,
+    "safeRecoveries": {},
+    "extraAttempts": 0,
+    "event": {
+      "code": "SAFE_RETRY_DETAIL_MATERIAL",
+      "step": "select-detail-1",
+      "retries": 0,
+      "max": 2,
+      "cause": "CLAIM_BUDGET",
+      "budgetCode": "ITEM_RETRY_BUDGET_EXTRA_UNSAFE",
+      "budgetReason": "原任务不具备额外安全恢复条件，保留原次数与断点",
+      "continued": true
+    },
+    "ledgerOutcome": "FAILED",
+    "autoRetryScheduled": false,
+    "synthetic": true
+  },
+  {
+    "scenario": "historical attempts 3/3 with one safe recovery",
+    "round": "COMPLETED",
+    "window": "COMPLETED",
+    "counts": {
+      "EXISTING_VERIFIED": 0,
+      "NEW_SUCCESS": 4,
+      "FAILED": 1,
+      "PREFLIGHT_SKIPPED": 0,
+      "MANUAL_SKIPPED": 0,
+      "RESULT_UNKNOWN": 0,
+      "WAITING_HUMAN": 0,
+      "PENDING": 0
+    },
+    "attemptsBeforeFailure": 3,
+    "attemptsAfterFailure": 3,
+    "maxAttempts": 3,
+    "safeRecoveries": {
+      "select-detail-1": 1
+    },
+    "extraAttempts": 0,
+    "event": {
+      "code": "SAFE_RETRY_DETAIL_MATERIAL",
+      "step": "select-detail-1",
+      "retries": 1,
+      "max": 2,
+      "cause": "CLAIM_BUDGET",
+      "budgetCode": "ITEM_RETRY_BUDGET_EXTRA_UNSAFE",
+      "budgetReason": "原任务不具备额外安全恢复条件，保留原次数与断点",
+      "continued": true
+    },
+    "ledgerOutcome": "FAILED",
+    "autoRetryScheduled": false,
+    "synthetic": true
+  },
+  {
+    "scenario": "previously granted one allowance consumed: attempts 4/4 and zero safe recoveries",
+    "round": "COMPLETED",
+    "window": "COMPLETED",
+    "counts": {
+      "EXISTING_VERIFIED": 0,
+      "NEW_SUCCESS": 4,
+      "FAILED": 1,
+      "PREFLIGHT_SKIPPED": 0,
+      "MANUAL_SKIPPED": 0,
+      "RESULT_UNKNOWN": 0,
+      "WAITING_HUMAN": 0,
+      "PENDING": 0
+    },
+    "attemptsBeforeFailure": 4,
+    "attemptsAfterFailure": 4,
+    "maxAttempts": 4,
+    "safeRecoveries": {},
+    "extraAttempts": 0,
+    "event": {
+      "code": "SAFE_RETRY_DETAIL_MATERIAL",
+      "step": "select-detail-1",
+      "retries": 0,
+      "max": 2,
+      "cause": "CLAIM_BUDGET",
+      "budgetCode": "ITEM_RETRY_BUDGET_EXTRA_UNSAFE",
+      "budgetReason": "原任务不具备额外安全恢复条件，保留原次数与断点",
+      "continued": true
+    },
+    "ledgerOutcome": "FAILED",
+    "autoRetryScheduled": false,
+    "synthetic": true
+  }
+]

@@ -1,0 +1,22 @@
+{
+  "at": "2026-10-18T05:50:49.123010+00:00",
+  "manifestSha256": "2889dff92491bd9fbafeb1bc1c49411f6607b4acbde77dba970ee7c21d1fe461",
+  "runtimeFiles": [
+    {
+      "path": "workbench/taobao-publisher.mjs",
+      "baselineSha256": "0cac2402fb1112c53e22883c4daaf04b59330a15d817934488deecd66159bd66",
+      "sha256": "6eafc82f2b7236ef0b1b0c0b560b2b9227057303705267adaf2f472f6df1f9a3"
+    },
+    {
+      "path": "workbench/listing-round.mjs",
+      "baselineSha256": "658da87504bc6fc7637c0243e0744b8050367613d8e0a4810c8d08ecb8a41dc9",
+      "sha256": "1068c298afd8fb805f4646d553c9d3f491c769c512c1ad1758df50b5fea65308"
+    }
+  ],
+  "tests": 294,
+  "passed": 294,
+  "failed": 0,
+  "includesIndependent42": true,
+  "logSha256": "30d005f6ec54116cb63ca5f78482842c8796d6a628f8a5b399830b35ce67a931",
+  "note": "294 already includes the independent 42; intermediate final-regression.log was before the last guard amendment and is not final-byte acceptance"
+}

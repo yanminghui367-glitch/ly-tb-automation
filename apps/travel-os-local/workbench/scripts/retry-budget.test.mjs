@@ -33,11 +33,11 @@ async function http(t,f){
  return {get:async()=>{const r=await fetch(base+'/api/v1/rounds/item?'+new URLSearchParams(f.scope()));return {status:r.status,data:await r.json()};},post:async req=>{const r=await fetch(base+'/api/v1/rounds/item-retry',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(req)});return {status:r.status,data:await r.json()};}};
 }
 
-test('baseline zero at three attempts: GET and POST deny identically with zero extra rows/events/writes',async t=>{
+test('baseline zero at three attempts: GET is read-only; explicit POST adds one manual allowance and executes original task',async t=>{
  const f=await fixture(t),api=await http(t,f),req=f.request(),before=f.snapshot(),launches=f.flow.launches.length;
- const get=await api.get();assert.equal(get.status,200);assert.equal(get.data.capabilities.retry.allowed,false);assert.equal(get.data.capabilities.retry.code,'ITEM_RETRY_BUDGET_EXTRA_UNSAFE');assert.match(get.data.capabilities.retry.reason,/已达尝试上限/);
- const post=await api.post(req);assert.equal(post.status,409);assert.equal(post.data.code,get.data.capabilities.retry.code);assert.equal(post.data.retainRequest,false);
- assert.equal(f.snapshot(),before);assert.equal(f.flow.launches.length,launches);assert.equal(f.flow.submits,0);assert.equal(f.retry.lookup(req),null);
+ const get=await api.get();assert.equal(get.status,200);assert.equal(get.data.capabilities.retry.allowed,true);assert.equal(get.data.capabilities.retry.manualBudget.willAdd,true);assert.equal(get.data.capabilities.retry.manualBudget.remaining,3);assert.equal(f.snapshot(),before);
+ const post=await api.post(req);assert.equal(post.status,200);assert.equal(post.data.outcome.state,'NEW_SUCCESS');
+ assert.equal(f.batch.store.item(f.x.queue_id).attempts,4);assert.equal(f.batch.store.item(f.x.queue_id).max_attempts,4);assert.equal(f.round.selections.manualBudgetUsed(f.x.queue_id),1);assert.equal(f.flow.launches.length,launches+1);assert.equal(f.flow.submits,1);
 });
 test('same frozen baseline-zero task below limit may use its last original attempt only',async t=>{
  const f=await fixture(t,{attempts:2}),api=await http(t,f),oldEvents=f.store.events(f.x.run_id),others=JSON.stringify(f.round.items(f.r.id).slice(1));
@@ -92,19 +92,19 @@ test('submission events forbid extra claims; UI submission protection keeps prec
 test('CAPTCHA, login and identity reasons still prohibit extra budget',async t=>{
  for(const reason of ['CAPTCHA Timeout','验证码 Timeout','登录失效 Timeout','店铺身份 Timeout']){const f=await fixture(t,{baseline:3,reason});const before=f.snapshot();assert.throws(f.budget,e=>e.code==='ITEM_RETRY_BUDGET_EXTRA_UNSAFE');assert.equal(f.retry.inspect(f.scope()).code,'ITEM_RETRY_RUN_PROTECTED');assert.equal(f.snapshot(),before);}
 });
-test('extra budget requires same confirmed system-error signatures and API exposes honest cause',async t=>{
+test('legacy automatic extra budget still requires system signatures; manual explicit addition is separate and GET is read-only',async t=>{
  const f=await fixture(t,{baseline:3,reason:'ordinary unknown failure'}),before=f.snapshot();assert.throws(f.budget,e=>e.code==='ITEM_RETRY_BUDGET_SYSTEM_UNCONFIRMED');
- const cap=new RoundItemRetryApi(f.retry).capability(f.retry.reader.read(f.scope()),null);assert.equal(cap.allowed,false);assert.equal(cap.code,'ITEM_RETRY_BUDGET_SYSTEM_UNCONFIRMED');assert.match(cap.reason,/尚未确认/);assert.equal(f.snapshot(),before);
+ const cap=new RoundItemRetryApi(f.retry).capability(f.retry.reader.read(f.scope()),null);assert.equal(cap.allowed,true);assert.equal(cap.manualBudget.willAdd,true);assert.match(cap.reason,/追加1次/);assert.equal(f.snapshot(),before);
  for(const reason of ['expect(locator) failed','MATERIAL_X','ATTRIBUTE_X','FORM_X','Timeout','页面失败','控件失败']){f.store.db.prepare('UPDATE runs SET reason=? WHERE id=?').run(reason,f.x.run_id);assert.equal(f.budget().extra,true);}
 });
 for(const boundary of ['assertExecution','checkFiles','host.assert'])test('concurrent budget exhaustion during '+boundary+' rejects before any action or additional write',async t=>{
  const f=await fixture(t,{attempts:2}),req=f.request();let afterOtherWriter,mutated=false;
  const mutate=()=>{if(mutated)return;mutated=true;f.store.db.prepare('UPDATE batch_items SET attempts=3 WHERE id=?').run(f.x.queue_id);afterOtherWriter=f.snapshot();};
  if(boundary==='host.assert'){const original=f.host.assert.bind(f.host);let n=0;f.host.assert=async()=>{await original();if(++n===2)mutate();};}else f.round[boundary]=async()=>mutate();
- const launchCount=f.flow.launches.length;await assert.rejects(f.retry.retry(req),e=>e.code==='ITEM_RETRY_BUDGET_EXTRA_UNSAFE');assert(mutated);assert.equal(f.snapshot(),afterOtherWriter);assert.equal(f.retry.lookup(req),null);assert.equal(f.flow.launches.length,launchCount);assert.equal(f.flow.submits,0);
+ const launchCount=f.flow.launches.length;await assert.rejects(f.retry.retry(req),e=>e.code==='ITEM_RETRY_STALE_REVISION');assert(mutated);assert.equal(f.snapshot(),afterOtherWriter);assert.equal(f.retry.lookup(req),null);assert.equal(f.flow.launches.length,launchCount);assert.equal(f.flow.submits,0);
 });
 test('baseline and extra mutation after preview also reject without spending a new attempt',async t=>{
- for(const change of ['baseline_attempts=0','extra_attempts=2']){const f=await fixture(t,{baseline:3}),req=f.request();let afterOtherWriter;f.round.checkFiles=async()=>{f.store.db.prepare('UPDATE round_items SET '+change+' WHERE round_id=? AND key=?').run(f.r.id,f.x.key);afterOtherWriter=f.snapshot();};await assert.rejects(f.retry.retry(req),e=>e.code==='ITEM_RETRY_BUDGET_EXTRA_UNSAFE');assert.equal(f.snapshot(),afterOtherWriter);assert.equal(f.retry.lookup(req),null);}
+ for(const change of ['baseline_attempts=0','extra_attempts=2']){const f=await fixture(t,{baseline:3}),req=f.request();let afterOtherWriter;f.round.checkFiles=async()=>{f.store.db.prepare('UPDATE round_items SET '+change+' WHERE round_id=? AND key=?').run(f.r.id,f.x.key);afterOtherWriter=f.snapshot();};await assert.rejects(f.retry.retry(req),e=>e.code==='ITEM_RETRY_STALE_REVISION');assert.equal(f.snapshot(),afterOtherWriter);assert.equal(f.retry.lookup(req),null);}
 });
 test('sealed response replay remains readable even when original queue is now at budget limit',async t=>{
  const f=await fixture(t,{attempts:2}),req=f.request(),receipt=await f.retry.retry(req),before=f.snapshot();const replay=await f.retry.retry(req);assert.equal(replay.attemptId,receipt.attemptId);assert.equal(replay.replayed,true);assert.equal(f.snapshot(),before);assert.equal(f.flow.submits,1);
