@@ -5,7 +5,24 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-if ($Url -ne 'http://127.0.0.1:4318/travel-os.html#tasks') { exit 2 }
+# Accept only the local workbench and scoped read-only task location fields.
+try {
+  $taskUri = [Uri]$Url
+  if ($taskUri.Scheme -ne 'http' -or $taskUri.Host -ne '127.0.0.1' -or $taskUri.Port -ne 4318 -or $taskUri.UserInfo -or $taskUri.AbsolutePath -ne '/travel-os.html' -or $taskUri.Fragment -ne '#tasks') { exit 2 }
+  $locationFields = @{}
+  if ($taskUri.Query) {
+    foreach ($pair in $taskUri.Query.TrimStart('?').Split('&')) {
+      $parts = $pair.Split('=',2)
+      $field = [Uri]::UnescapeDataString($parts[0])
+      $value = if ($parts.Count -eq 2) { [Uri]::UnescapeDataString($parts[1]) } else { '' }
+      if ($field -cnotin @('shop','round','window','item') -or $locationFields.ContainsKey($field) -or $value -cnotmatch '^[\w:.-]{1,256}$') { exit 2 }
+      $locationFields[$field] = $value
+    }
+    if (-not $locationFields.ContainsKey('shop')) { exit 2 }
+    if ($locationFields.ContainsKey('window') -ne $locationFields.ContainsKey('item')) { exit 2 }
+    if ($locationFields.ContainsKey('window') -and -not $locationFields.ContainsKey('round')) { exit 2 }
+  }
+} catch { exit 2 }
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
@@ -36,4 +53,5 @@ $icon.add_BalloonTipClicked({
 }.GetNewClosure())
 $timer.Start()
 $icon.ShowBalloonTip(10000)
+[Console]::Out.WriteLine('TRAVEL_OS_NOTIFICATION_READY')
 [System.Windows.Forms.Application]::Run($context)

@@ -21,12 +21,15 @@
     CHALLENGE_PRESENT: '页面出现人工验证', ENOENT: '找不到指定文件或目录',
     EACCES: '没有访问文件的权限', ECONNRESET: '连接被重置',
     ECONNREFUSED: '连接被拒绝', ETIMEDOUT: '连接等待超时',
-    TimeoutError: '操作等待超时', AbortError: '操作已中止', TypeError: '数据格式异常'
+    TimeoutError: '操作等待超时', AbortError: '操作已中止', TypeError: '数据格式异常',
+    MATERIAL_GUARD_BUDGET_EXHAUSTED: '素材安全检查总等待预算已用完',
+    MATERIAL_PREPARED_CARD_TIMEOUT: '已准备图片尚未就绪'
   };
   const kinds = {
     PRE_SUBMIT_PAGE_RECOVERY:'发布页超时后新页恢复', RESIDUAL_PAGE_REFILL:'提交前新页重填', PRE_SUBMIT_REFILL_EXHAUSTED:'新页恢复后仍未就绪', SUCCESS_GOAL_CREATED:'已创建新增成功目标', SUCCESS_GOAL_TARGET_REACHED:'新增成功目标已达到', SUCCESS_GOAL_EXHAUSTED:'目标范围已耗尽', SUCCESS_GOAL_STOPPED:'成功目标已停止', SUCCESS_GOAL_RETRY_PASS:'开始安全失败项重试轮', SUCCESS_GOAL_ITEM_EXCLUDED:'商品不满足本次恢复条件',
     STEP_INTENT: '开始执行步骤', STEP_VERIFIED: '步骤核对通过', STEP_FAILED: '步骤执行异常',
     SUBMITTING: '正在提交商品', SUBMIT_CLICKED: '已点击提交', SUBMIT_EVIDENCE: '已记录提交凭据',
+    SUBMIT_DISPATCH_STARTED:'已开始提交操作', SUBMISSION_RECEIPT_OBSERVED:'已读取原提交回执', SUBMISSION_RECEIPT_RECOVERED:'已恢复原提交回执', ITEM_RESULT_ASSOCIATED:'原提交商品已关联核验', RESULT_RECONCILED:'原商品结果已核验', RECONCILIATION_REJECTED:'原商品关联核验未通过',
     RESULT_UNKNOWN: '提交结果待核验', PAUSED: '任务已暂停', WAITING_HUMAN: '等待人工处理',
     FAILED: '任务执行异常', VERIFIED: '商品结果已核验', PROGRAM_CLOSED: '工作台已关闭并保存断点',
     TASK_CREATED: '已创建任务', TASK_QUEUED: '任务已排队', TASK_STARTED: '任务已开始',
@@ -67,7 +70,18 @@
     text = text.replace(/(?:[A-Z]:\\[^\s:]+|\\\\[^\s]+|\b(?:workbench|node_modules)\\[^\s]+)/gi, '本机文件位置');
     return text.replace(/[ \t]{2,}/g, ' ').trim();
   };
+  const materialStages = {'prepared-material-card':'已准备图片','upload-entry':'详情上传入口','upload-panel':'详情上传窗口','upload-receipt':'详情上传回执',thumbnail:'详情缩略图','main-material-frame':'主图素材窗口','main-upload-frame':'主图上传窗口','bulk-material-card':'批量图片查找','bulk-upload-receipt':'批量上传回执'};
+  const materialTiming = value => {
+    const raw=String(value??''),stage=raw.match(/\bstage=([^；;\s]+)/)?.[1];
+    if(!stage||!(/\b(?:observeMs|guardMs)=/.test(raw)))return null;
+    const values=[['observeMs','页面观察用时'],['guardMs','安全检查用时'],['elapsedMs','总用时']].map(([key,label])=>{
+      const n=raw.match(new RegExp('\\b'+key+'=(\\d+(?:\\.\\d+)?)'))?.[1];return n?`${label} ${n} 毫秒`:'';
+    }).filter(Boolean);
+    const budget=/包含安全检查的总等待预算|OVERALL_GUARD_TIMEOUT|MATERIAL_GUARD_BUDGET_EXHAUSTED/.test(raw)?'安全检查总等待预算已用完':/观察预算|OBSERVATION_TIMEOUT|MATERIAL_PREPARED_CARD_TIMEOUT/.test(raw)?'页面观察预算已用完':'素材等待诊断';
+    return `${budget}；阶段：${materialStages[stage]||'素材就绪检查'}；${values.join('；')}。具体就绪条件与页面证据请查看原任务记录。`;
+  };
   const reasonText = value => {
+    const timing=materialTiming(value);if(timing)return timing;
     if(/SOURCE_OR_ASSET_CHANGED|PACKAGE_CHANGED_SINCE_REVIEW/.test(String(value??'')))return diagnose(value).cause;
     let text = safeText(value).replace(/\bChrome\b/gi, '执行浏览器').replace(/\bPlaywright\b/gi, '自动化程序').replace(/\bExcel\b/gi, '表格文件').replace(/\bDRY_RUN\b/gi, '仅填写模式').replace(/\bLIVE\b/g, '正式执行').replace(/\bID\b/g, '编号');
     return /[A-Za-z]{2,}/.test(text) ? '系统记录了技术异常，请按页面提供的处理建议检查；详细诊断已保存在本机。' : text;
@@ -89,8 +103,11 @@
   const diagnose = (value, {state='', stage='', submissionUncertain=false}={}) => {
     const raw=String(value??'');
     const issue=(title,cause,action,known=true)=>({title,cause,action:Array.isArray(action)?action.join(' '):action,actions:Array.isArray(action)?action:[action],known});
+    if(/缺少原任务实际提交点击时间/.test(raw))return issue('提交回执未记回', '提交点击记录不完整，系统不能自动确认原商品结果。', ['打开“查看当前商品详情与处理记录”，查看原执行日志与截图。','若原截图显示商品提交成功，使用详情中的“按原提交回执核验商品”，填写回执商品编号。','核验通过后返回点击“检查并继续本轮”；不要重新提交或用跳过代替核验。']);
     if(state==='RESULT_UNKNOWN'||submissionUncertain||/提交结果未知|提交可能|结果待核验|已有商品记录未能在原店铺核实/.test(raw))return issue('先核验原商品结果',/existing-listing|known-listing/.test(stage)||/已有商品记录/.test(raw)?'查重时发现已有商品记录，但还没确认它是不是当前店铺里的这条商品。':'系统还没确认淘宝是否已成功上架这条商品，直接重发可能造成重复商品。',['点击下方“查看当前商品详情与处理记录”，在“下一步”点击“核验原商品”；如果显示“核对上次核验结果”或“恢复上次核验记录”，沿用该入口。','只有显示“已有商品已核验”或“新增上架已核验”后，再回到本页点击“检查并继续本轮”。','如果核验入口不可用或仍未通过，查看详情里的原因并交维护人员处理。不要再次提交或重新发布。']);
     if(state==='PAUSED_CAPTCHA'||/CAPTCHA|CHALLENGE_PRESENT|验证码|滑块/.test(raw))return issue('需要你完成验证码','淘宝页面弹出了验证码或滑块，系统不能代替你完成，所以暂停。',['点击本页“打开执行 Chrome”，在淘宝页面人工完成验证。','确认验证码或滑块已经消失，再回到网站点击“检查并继续本轮”。']);
+    if(/MATERIAL_GUARD_BUDGET_EXHAUSTED|包含安全检查的总等待预算已用完/.test(raw))return issue('素材安全检查总等待已到上限','素材等待连同安全检查已达到总时间上限；这不代表安全检查通过，也不代表图片已经就绪。',['查看当前商品详情中的步骤、用时和原页面证据，保留原任务与执行页面。','由后台重新核对提交保护与恢复条件；只有详情明确允许的操作才可执行，不要反复继续或重建任务绕过限制。']);
+    if(/MATERIAL_PREPARED_CARD_TIMEOUT|已准备图片等待超时/.test(raw))return issue('已准备图片还没确认就绪','页面观察时间已用完，系统尚未确认已准备图片可用，不能据此认定安全检查通过或直接发布。',['打开当前商品详情，核对图片卡片、加载情况与步骤截图。','后续处理以详情中的后台可用操作为准；若仍未就绪，交维护人员检查，保留原任务与次数。']);
     if(/内核发生变化|内核校验失败|内核文件变化|内核已改变|KERNEL_(?:CHANGED|MISMATCH)|INTEGRITY_FAILED/.test(raw))return issue('网站代码改动尚未同步','网站代码被修改，但与已核对的版本记录不一致，系统因此停止执行。',['这项无法靠重复点击“继续”解决。保留原任务，交维护人员核对代码、同步版本并重载网站。','维护完成后刷新网页，再点击“检查并继续本轮”。']);
     if(/SOURCE_OR_ASSET_CHANGED|PACKAGE_CHANGED_SINCE_REVIEW/.test(raw))return issue('原任务还在使用修改前的资料','表格或图片改过了，但原任务记住的还是修改前的资料版本，所以暂时不能继续。',['在网站“资料设置”确认最新资料已经保存，不必反复上传同一份资料。','交维护人员修复原任务与新资料的版本绑定；完成后回到原任务点击“检查并继续本轮”。','保留原任务和跳过记录。重新开始一轮不会自动更新原任务的资料。']);
     if(/ENOENT|找不到指定文件|文件不存在|缺图|缺少.*图片/.test(raw))return issue('找不到任务要用的文件','任务要用的表格或图片，在原来的位置找不到了。',['进入网站“资料设置”，核对文件目录和名称，确认文件是否被移动、改名或删除。','恢复缺失文件或补齐资料并保存；若使用了新版本，请先核对原任务的版本绑定，再点击“检查并继续本轮”。']);

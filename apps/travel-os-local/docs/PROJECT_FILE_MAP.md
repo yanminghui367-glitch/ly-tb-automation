@@ -1,5 +1,13 @@
 # 项目文件导航｜标准化第 1 步
 
+## 2026-11-02：图片原生读取及原任务回执恢复
+
+新增 `workbench/material-native-files.mjs`：Windows扩展路径、隔离原生文件完整字节/SHA预检及固定官方SDK空文件过滤取证。`publishing-materials.mjs` 适配真实搜索框/素材卡片/图标和精确截名归属；`material-upload-preparation.mjs` 管理逐图持久化、旧未发送强证恢复与新分派路径来源标记；`taobao-publisher.mjs` 仅补准备素材实际平台名透传。92项R2锁、原14图真实验收和独立证据在 `output/material-upload-fix-20261102/REPORT.md` 及两级 `qa-final/`。未执行商品发布，普通发布页选择器未扩改。
+
+## 2026-11-01：异常恢复与图片集中准备
+
+通知定位及恢复说明由 `execution-notifications.mjs`、`tools/notify-workbench.ps1`、`travel-os.js`、`round-item-detail.js` 管理；`page-ownership.mjs`、`pre-submit-page-recovery.mjs`、`source-workflow.mjs` 只在真实证据与精确归属通过后回收本次恢复旧页。新增 `material-upload-preparation.mjs` 管理店铺/内容回执及未知上传，`material-preparation-api.mjs` 管理原范围、幂等、只读核查和逐条资料定位；`publishing-materials.mjs` 与 `taobao-publisher.mjs` 连接原生批量控件及发布时准备结果，`product-api.mjs`、`shop-execution.mjs`、`server.mjs` 管理全局忙与正常关闭。现行91项锁、阶段顺序、独立QA及真实平台限制见 `output/recovery-materials-20261101/REPORT.md` 和两个 `docs/release-evidence/20261101-recovery-materials-r3/`、`...-r4/`。
+
 ## 2026-10-18 侧栏同款执行状态球
 
 `workbench/execution-orb.tsx`按位置管理原球与侧栏球，各保留一个画布；`execution-orb.js`为原构建器产物。`travel-os.html`在导航下添加位置，`travel-os.css`处理展开/窄屏，`travel-os.js`共用原状态流更新。规则与正式加载见`docs/SIDEBAR_EXECUTION_ORB_20261018.md`；40项独立QA、精确封签、静态加载、HTTP/页面截图及并行原任务恢复的有界数据差异审计均在`output/sidebar-execution-orb-20261018/`。

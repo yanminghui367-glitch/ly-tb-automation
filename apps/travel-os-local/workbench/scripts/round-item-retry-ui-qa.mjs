@@ -98,7 +98,10 @@ try{
  });
  hold=true;
  await page.locator('#editorClose').count().then(async count=>{if(count)await page.locator('#editorClose').click();else await page.locator('#editor').evaluate(el=>el.close());});
- await page.locator('[data-action="round-current-retry"]').click();
+ await page.getByRole('button',{name:'查看此条可用处理操作',exact:true}).click();
+ await action('retry').waitFor();
+ check(launches.length===previousLaunches,'监控入口只读取详情，尚未发起重试');
+ await action('retry').click();
  await page.waitForFunction(()=>document.body.innerText.includes('正在检查并处理所选商品'));
  for(let i=0;!release&&i<300;i++)await new Promise(r=>setTimeout(r,10));assert(release,'synthetic source began');
  check(await action('refresh').isDisabled()&&await action('retry').count()===0&&await action('verify').count()===0&&await page.locator('[data-item-skip]').count()===0,'进行中防止重复操作，原资料与结果不可另行修改');
@@ -117,7 +120,7 @@ try{
  check(attempts.length===2&&JSON.stringify(attempts[0].input)===JSON.stringify(attempts[1].input),'网络恢复沿用原请求，不生成第二次重试');
  check(flow.submits===1&&launches.length===previousLaunches+1&&JSON.stringify(product.round.items(round.id).slice(1))===untouched,'只处理选中商品，其余两条状态与记录不变');
  check(product.round.round(round.id).state==='PAUSED'&&!product.round.active,'单条结束后持久暂停，释放原执行器');
- check(product.round.item(round.id,first.key).run_id===originalRun&&product.round.item(round.id,first.key).queue_id===originalQueue&&product.round.selections.manualBudgetUsed(originalQueue)===1&&batch.store.item(originalQueue).attempts===4,'监控一键复用3/3原任务，仅追加并使用1次机会');
+ check(product.round.item(round.id,first.key).run_id===originalRun&&product.round.item(round.id,first.key).queue_id===originalQueue&&product.round.selections.manualBudgetUsed(originalQueue)===1&&batch.store.item(originalQueue).attempts===4,'详情确认后复用3/3原任务，仅追加并使用1次机会');
  check(await action('retry').count()===0&&await page.locator('[data-item-skip]').count()===0,'成功商品不再提供重试与跳过');
  await page.locator('.round-item-history summary').click();
  check((await page.locator('.round-item-history').innerText()).includes('手动重试'),'原尝试作为手动重试留在处理记录中');

@@ -1,0 +1,181 @@
+{
+  "at": "2026-10-22T15:48:23.793Z",
+  "reviewer": "/root/receipt_qa",
+  "verdict": "PASS_CANDIDATE_ONLY",
+  "revision": "20261022-submit-receipt-r1",
+  "manifestSha256": "88b38dc52fecee66e5a156a50086f07e3784692bfcabe9da0ca8aa08f376e75e",
+  "nextLockSha256": "78fc29b5d750ef13935ff46e37b72b4841aeb55ebce0f11b58bc6a7ad0a2ed6d",
+  "beforeLockSha256": "ad8912f825a1df02febf4dfa29e5f17fb449afdc520166711d047a325f368161",
+  "kernel": {
+    "ok": true,
+    "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+    "revision": "20261022-submit-receipt-r1",
+    "files": 88,
+    "changed": []
+  },
+  "files": [
+    {
+      "path": "workbench/listing-round.mjs",
+      "role": "runtime",
+      "baselineSha256": "0cb4c3dcbeb4c215cdeecae716dba7cd00deed8a52fb2aba6288d495fbadb629",
+      "sha256": "eee0ba4419549a96173c54021425dcd6ca5c247b0879840dc0cae69a7f302a26",
+      "verifiedSha256": "eee0ba4419549a96173c54021425dcd6ca5c247b0879840dc0cae69a7f302a26",
+      "verifiedBaselineSha256": "0cb4c3dcbeb4c215cdeecae716dba7cd00deed8a52fb2aba6288d495fbadb629"
+    },
+    {
+      "path": "workbench/result-reconciliation.mjs",
+      "role": "runtime",
+      "baselineSha256": "5da487ee2e3fcf84ebd77916e3e3a4abf0cef940001e39263fb127c34d7bfc38",
+      "sha256": "c85d18a27d76dd69d8527e33a2b545ed4756dabecbf02544340e4bb656d3a9c7",
+      "verifiedSha256": "c85d18a27d76dd69d8527e33a2b545ed4756dabecbf02544340e4bb656d3a9c7",
+      "verifiedBaselineSha256": "5da487ee2e3fcf84ebd77916e3e3a4abf0cef940001e39263fb127c34d7bfc38"
+    },
+    {
+      "path": "workbench/round-item-detail.js",
+      "role": "runtime",
+      "baselineSha256": "ed8b97c839c466e101691507d984124a469c2294cb3b74064b95af20f7ac31c6",
+      "sha256": "689bd86ab21c4e68abeb69a297bbfcd331300dfc3d1747508e233b0daaef00a4",
+      "verifiedSha256": "689bd86ab21c4e68abeb69a297bbfcd331300dfc3d1747508e233b0daaef00a4",
+      "verifiedBaselineSha256": "ed8b97c839c466e101691507d984124a469c2294cb3b74064b95af20f7ac31c6"
+    },
+    {
+      "path": "workbench/round-item-verify.mjs",
+      "role": "runtime",
+      "baselineSha256": "39a5ee24bce903dc48f182b5b5ba5732913f0c0f577a235767f2f61fae5390f0",
+      "sha256": "be7a5975328d7e68fa4271fdece58224dea9d2e2c7b840ac5cf54ffd3d8c2634",
+      "verifiedSha256": "be7a5975328d7e68fa4271fdece58224dea9d2e2c7b840ac5cf54ffd3d8c2634",
+      "verifiedBaselineSha256": "39a5ee24bce903dc48f182b5b5ba5732913f0c0f577a235767f2f61fae5390f0"
+    },
+    {
+      "path": "workbench/round-verification.mjs",
+      "role": "runtime",
+      "baselineSha256": "b7a2775eb1ddece78167bb776cdca2441812c6e352b0a5b323e8de92de7385ee",
+      "sha256": "12f7ef320ba3be8337876a2614a5edeae6817629d237b86f16238ad9a023d89e",
+      "verifiedSha256": "12f7ef320ba3be8337876a2614a5edeae6817629d237b86f16238ad9a023d89e",
+      "verifiedBaselineSha256": "b7a2775eb1ddece78167bb776cdca2441812c6e352b0a5b323e8de92de7385ee"
+    },
+    {
+      "path": "workbench/scripts/receipt-association-ui.test.mjs",
+      "role": "test",
+      "baselineSha256": null,
+      "sha256": "98f281666f2c419c9f24d07c8fe71f3433a4c88b4600f1b7c04f12a12201ab93",
+      "verifiedSha256": "98f281666f2c419c9f24d07c8fe71f3433a4c88b4600f1b7c04f12a12201ab93",
+      "verifiedBaselineSha256": null
+    },
+    {
+      "path": "workbench/scripts/receipt-association.test.mjs",
+      "role": "test",
+      "baselineSha256": null,
+      "sha256": "699dda2e3750b888fdea7d84f5d111747511eee052dbae1c0a47af6f1099fe7c",
+      "verifiedSha256": "699dda2e3750b888fdea7d84f5d111747511eee052dbae1c0a47af6f1099fe7c",
+      "verifiedBaselineSha256": null
+    },
+    {
+      "path": "workbench/scripts/round-receipt-accounting.test.mjs",
+      "role": "test",
+      "baselineSha256": null,
+      "sha256": "7b51190babd219e702bdb42ffb58dd7d1d2808aaebf72c1ae806ecd332582aad",
+      "verifiedSha256": "7b51190babd219e702bdb42ffb58dd7d1d2808aaebf72c1ae806ecd332582aad",
+      "verifiedBaselineSha256": null
+    },
+    {
+      "path": "workbench/scripts/submission-navigation-receipt.test.mjs",
+      "role": "test",
+      "baselineSha256": null,
+      "sha256": "07f7dc61fd3846a26e7db988a2dba6a2eb9ff87854a6a5694391524bb662c334",
+      "verifiedSha256": "07f7dc61fd3846a26e7db988a2dba6a2eb9ff87854a6a5694391524bb662c334",
+      "verifiedBaselineSha256": null
+    },
+    {
+      "path": "workbench/scripts/submission-pause-boundary.test.mjs",
+      "role": "test",
+      "baselineSha256": "1357a6754d91af9417ad96790a1d4e4063f593324849b1c916440df8c2207f62",
+      "sha256": "4dacc6558bde4385f046322d64da77360ac36a481a55569d67edfe57edb297ab",
+      "verifiedSha256": "4dacc6558bde4385f046322d64da77360ac36a481a55569d67edfe57edb297ab",
+      "verifiedBaselineSha256": "1357a6754d91af9417ad96790a1d4e4063f593324849b1c916440df8c2207f62"
+    },
+    {
+      "path": "workbench/source-workflow.mjs",
+      "role": "runtime",
+      "baselineSha256": "f1ed2e5f268c141d531aad14be82f38df4ba52981e8e1b11753218451da7ff49",
+      "sha256": "f75ab8bfb2506890d1316820fa9c425dcb2c72564ef67b2f6b4aa1133f6d7307",
+      "verifiedSha256": "f75ab8bfb2506890d1316820fa9c425dcb2c72564ef67b2f6b4aa1133f6d7307",
+      "verifiedBaselineSha256": "f1ed2e5f268c141d531aad14be82f38df4ba52981e8e1b11753218451da7ff49"
+    },
+    {
+      "path": "workbench/submission-receipt.mjs",
+      "role": "runtime",
+      "baselineSha256": null,
+      "sha256": "e39aee5082725249a0af52621de16d85f850674f82aa9535d34dad902758d723",
+      "verifiedSha256": "e39aee5082725249a0af52621de16d85f850674f82aa9535d34dad902758d723",
+      "verifiedBaselineSha256": null
+    },
+    {
+      "path": "workbench/taobao-publisher.mjs",
+      "role": "runtime",
+      "baselineSha256": "5f6b5d77447fa34a783ed58f8f407dc1b64b4be48398822773759b229b660582",
+      "sha256": "d48fcd1b83b3941cc784b7bb160ee58fde1ac947d199bda83d3447d0aecbe465",
+      "verifiedSha256": "d48fcd1b83b3941cc784b7bb160ee58fde1ac947d199bda83d3447d0aecbe465",
+      "verifiedBaselineSha256": "5f6b5d77447fa34a783ed58f8f407dc1b64b4be48398822773759b229b660582"
+    },
+    {
+      "path": "workbench/ui-copy.js",
+      "role": "runtime",
+      "baselineSha256": "99b5bc32bce37f50048ede0b7ae6c1f4930a321a219a87a8a8df71330af23690",
+      "sha256": "37e49f3c7f9eb495a3b921c09ecf6fdb1663dc840038e5eaae2c29e6989f9234",
+      "verifiedSha256": "37e49f3c7f9eb495a3b921c09ecf6fdb1663dc840038e5eaae2c29e6989f9234",
+      "verifiedBaselineSha256": "99b5bc32bce37f50048ede0b7ae6c1f4930a321a219a87a8a8df71330af23690"
+    },
+    {
+      "path": "docs/kernel-baselines/20261022-before-submit-receipt-r1.json",
+      "role": "baseline",
+      "baselineSha256": null,
+      "sha256": "ad8912f825a1df02febf4dfa29e5f17fb449afdc520166711d047a325f368161",
+      "verifiedSha256": "ad8912f825a1df02febf4dfa29e5f17fb449afdc520166711d047a325f368161",
+      "verifiedBaselineSha256": null
+    }
+  ],
+  "evidence": [
+    {
+      "file": "qa/final-independent.log",
+      "sha256": "7be4ca25113e75dc3701ef1776d405948fd6acb6fb3344e69e81e53a8b166096",
+      "tests": 24,
+      "pass": 24,
+      "fail": 0
+    },
+    {
+      "file": "qa/final-ui.log",
+      "sha256": "960ddd2e39bb4d436b5f5777b73475d592b1d10ed863a3cf52ba898da550bf6e",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0
+    },
+    {
+      "file": "qa/receipt-implementation-final-regression-r3.log",
+      "sha256": "3bfce219b560ea4121efa2262d616381d3200a13810487b7bfd18f5b34985570",
+      "tests": 151,
+      "pass": 151,
+      "fail": 0
+    }
+  ],
+  "independentAuthoredTests": 12,
+  "independentlyExecutedTests": 25,
+  "constraints": [
+    "No live service, database, shop browser or platform action performed by QA",
+    "No duplicate submit: ambiguous click cannot retry; exact original receipt or explicit ID plus backend facts required",
+    "No fabricated SUBMIT_CLICKED timestamp; recovered submission counted through SUBMIT_EVIDENCE",
+    "Association and verify-only projection rollback, race rejection, idempotency, denominator and attempts checked",
+    "Existing source round recovery preserves its prior persistence model; successful association and verify-only use atomic transactions",
+    "Implementation 151-test run overlaps with independently executed tests and must not be added as unique coverage"
+  ],
+  "exclusions": [
+    "qa/navigation-before.log is an invalid early QA fixture run (missing charset / locator fixture timeout), not regression proof",
+    "This is scoped final-byte regression, not a claim that all historical repository tests pass; unrelated listing-round baseline failure not independently reproduced and not used as an exclusion for any test in this PASS",
+    "Installation, live Houston ID verification and platform status must be separately validated by root after installation"
+  ],
+  "bugsFoundDuringReview": [
+    "Recovered original receipt initially lacked submission accounting; fixed via explicit SUBMIT_EVIDENCE before flags",
+    "Candidate manifest initially referenced an older test timestamp fixture; final hashes rechecked"
+  ],
+  "deploymentAllowed": false
+}

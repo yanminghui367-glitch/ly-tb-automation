@@ -132,6 +132,16 @@ export class PageOwnership {
   assert(!entry.borrowed&&!entry.hold,'借用、常驻或明确保留页面不能自动关闭');
   this.transition(entry,'close-intent');const ticket=Object.freeze({id:entry.id,sessionId:this.sessionId});this.closeTickets.set(ticket,entry);return ticket;
  }
+ beginRecoveredClose(page,{replacementPage,oldTargetId,newTargetId,runId,taskHash,evidencePersisted=false,submissionAbsent=false,unpinnedConfirmed=false,guardPassed=false}={}){
+  this.assertHealthy();const entry=this.ownedPublish(page),replacement=this.ownedPublish(replacementPage);
+  assert(page!==replacementPage&&live(page)&&live(replacementPage),'恢复旧页与新页必须分别存在');
+  assert(entry.state==='retained'&&['PRE_SUBMIT_NAVIGATION_TIMEOUT','PRE_SUBMIT_MATERIAL_READINESS','RESIDUAL_DETAIL_RECEIPT_MISSING'].includes(entry.reason),'只允许回收本次提交前恢复产生的旧页');
+  assert(!entry.borrowed&&!replacement.borrowed&&replacement.state==='created'&&!replacement.hold,'借用或保留的新页面不能授权回收');
+  assert(entry.targetId===oldTargetId&&replacement.targetId===newTargetId&&oldTargetId!==newTargetId&&entry.scope.runId===runId&&entry.scope.taskHash===taskHash,'恢复页面归属不匹配');
+  assert(evidencePersisted===true&&submissionAbsent===true&&unpinnedConfirmed===true&&guardPassed===true,'恢复证据、未提交或页面保护未确认');
+  this.transition(entry,'close-intent','PRE_SUBMIT_RECOVERY_REPLACED');
+  const ticket=Object.freeze({id:entry.id,sessionId:this.sessionId});this.closeTickets.set(ticket,entry);return ticket;
+ }
  finishClose(ticket,{closed=false}={}){
   const entry=this.closeTickets.get(ticket);assert(entry,'关闭回执不属于当前会话或已处理');
   // Consume before persistence or further validation: neither a failed write nor

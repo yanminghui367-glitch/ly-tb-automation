@@ -1,0 +1,33 @@
+{
+  "at": "2026-10-22T15:57:52.606Z",
+  "revision": "20261022-submit-receipt-r2",
+  "fromRevision": "20261022-submit-receipt-r1",
+  "previousManifest": "docs/kernel-baselines/20261022-before-submit-receipt-r2.json",
+  "beforeLockSha256": "78fc29b5d750ef13935ff46e37b72b4841aeb55ebce0f11b58bc6a7ad0a2ed6d",
+  "scope": "UI success notice only: preserve user stop and avoid directing to absent resume button; no execution behavior change",
+  "expectedKernelFiles": 88,
+  "runtimeFiles": [
+    "workbench/round-item-detail.js"
+  ],
+  "files": [
+    {
+      "path": "workbench/round-item-detail.js",
+      "role": "runtime",
+      "baselineSha256": "689bd86ab21c4e68abeb69a297bbfcd331300dfc3d1747508e233b0daaef00a4",
+      "sha256": "81b78539c526a7ff047668b069c5a80961eda7d9f2dbdc128c7de7ba84df2007"
+    },
+    {
+      "path": "workbench/scripts/receipt-association-ui.test.mjs",
+      "role": "test",
+      "baselineSha256": "98f281666f2c419c9f24d07c8fe71f3433a4c88b4600f1b7c04f12a12201ab93",
+      "sha256": "d8d190cd1730488d5e12420a6ee5d52366c8f0682df27a614e86a9f7dff76c51"
+    },
+    {
+      "path": "docs/kernel-baselines/20261022-before-submit-receipt-r2.json",
+      "role": "baseline",
+      "baselineSha256": null,
+      "sha256": "78fc29b5d750ef13935ff46e37b72b4841aeb55ebce0f11b58bc6a7ad0a2ed6d"
+    }
+  ],
+  "deploymentAllowed": false
+}

@@ -1,0 +1,71 @@
+// Independent real DOM acceptance using temporary data and an allowlisted random port.
+import assert from 'node:assert/strict';
+import {createServer} from 'node:http';
+import {mkdir,writeFile,mkdtemp,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {resolve,join} from 'node:path';
+import {chromium} from 'playwright';
+import {SourceStore} from '../source-store.mjs';
+import {BatchWorkflow} from '../batch-workflow.mjs';
+import {ProductApi} from '../product-api.mjs';
+import {TravelOsApi} from '../travel-os-api.mjs';
+import {createStaticHandler} from '../static-files.mjs';
+const root=resolve(import.meta.dirname,'../..'),out=resolve(root,'../qa-phase1');await mkdir(out,{recursive:true});
+const runtime=await mkdtemp(join(tmpdir(),'recovery-location-qa-')),store=new SourceStore(':memory:');
+const shop={id:'shop-b',name:'独立核验乙店'},other={id:'shop-a',name:'独立核验甲店'};
+const task={shopId:shop.id,priority:1,source:{sheet:'隔离测试',row:2},listing:{type:'city',country:'测试国家',city:'定位商品',title:'定位商品测试标题'},business:{shop_name:shop.name,price_cny:20,inventory:10},assets:{main:[],secondary:[],details:[]},adapterIssues:[]};
+const importId=store.imported({sourceHash:'LOCATION_INDEPENDENT_QA',tasks:[task],summary:{total:1}});
+const flow={store,runtime,artifacts:runtime,active:null,preflight:async()=>{},launch(){throw Error('EXECUTOR_FORBIDDEN');}};
+const owner={sessions:new Map(),status:async()=>({running:true,loggedIn:true,loginState:'LOGGED_IN',checkedAt:new Date().toISOString()})};
+const product=new ProductApi({source:flow,batch:new BatchWorkflow(flow),owner,shop,runtime,integrity:async()=>({ok:true,files:0,revision:'ISOLATED_LOCATION_QA'}),checkFiles:async()=>{},launch:async()=>{throw Error('BROWSER_FORBIDDEN');}});
+await product.round.create({importId,repairVersion:'ISOLATED_LOCATION_QA',expectedCount:1,authorization:{allowLive:true,maxSafeRecoveries:2,confirmedShop:shop.name,expectedCount:1}});
+const os=new TravelOsApi({product:async()=>product,shops:async()=>[other,shop],browser:owner,runtime});
+const fixture=await os.snapshot();fixture.engine.shop=shop;
+const r=fixture.engine.round;Object.assign(r,{id:'round-b',shop:shop.id,state:'RESULT_UNKNOWN',active:false,reason:'原提交结果待核验',currentItem:'item-b',current:{key:'item-b',destination:'定位商品',state:'RESULT_UNKNOWN',submitted:true,submissionUncertain:true,stage:'existing-listing-query'},window:{id:'window-b',roundId:'round-b',shop:shop.id,sequence:1,total:1,ended:0,state:'RESULT_UNKNOWN',counts:{RESULT_UNKNOWN:1},finished:null,autoContinue:false},windowHistory:[]});
+fixture.engine.active=null;fixture.engine.settings.executionEnabled=true;
+const detail={roundId:'round-b',windowId:'window-b',key:'item-b',revision:'detail-r1',shopId:shop.id,manifestHash:'manifest-b',taskHash:'task-b',current:{key:'item-b',title:task.listing.title,destination:'定位商品',state:'RESULT_UNKNOWN',submitted:true,submissionUncertain:true,reason:'提交结果待核验'},submissionEvidence:true,retryBlocked:true,parking:null,attempts:[],capabilities:{park:{allowed:false,code:'ITEM_PARK_VERIFICATION_REQUIRED'},skip:{allowed:false,code:'ITEM_SKIP_SUBMISSION_PROTECTED'},retry:{allowed:false,code:'ITEM_RETRY_BUDGET_EXHAUSTED'},verify:{allowed:false,code:'ITEM_VERIFY_WINDOW_ADAPTER_REQUIRED'}}};
+let mismatch=false;const checks=[],requests=[],external=[],errors=[],streams=new Set();
+const json=(res,value,status=200)=>{res.writeHead(status,{'content-type':'application/json'});res.end(JSON.stringify(value));};
+const serve=createStaticHandler(join(root,'workbench'));
+const server=createServer(async(req,res)=>{try{
+ const u=new URL(req.url,'http://localhost');requests.push({method:req.method,path:req.url});
+ if(req.method!=='GET')return json(res,{error:'WRITES_FORBIDDEN'},405);
+ if(u.pathname==='/api/os/state')return json(res,fixture);
+ if(u.pathname==='/api/v1/state')return json(res,fixture.engine);
+ if(u.pathname==='/api/v1/events'){res.writeHead(200,{'content-type':'text/event-stream'});res.write('event: state\ndata: '+JSON.stringify(fixture.engine)+'\n\n');streams.add(res);req.on('close',()=>streams.delete(res));return;}
+ if(u.pathname==='/api/v1/rounds/window')return json(res,{...r.window,shop:mismatch?other.id:shop.id,items:[r.current]});
+ if(u.pathname==='/api/v1/rounds/item')return json(res,detail);
+ if(u.pathname.startsWith('/api/'))return json(res,{});
+ await serve(req,res);
+ }catch(e){json(res,{error:e.message},500);}});
+let browser,inspectionPage;
+try{
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;assert.notEqual(server.address().port,4318);
+ browser=await chromium.launch({channel:'chrome',headless:true});const context=await browser.newContext({viewport:{width:1440,height:1000},serviceWorkers:'block'});
+ await context.route('**/*',route=>{if(new URL(route.request().url()).origin!==base){external.push(route.request().url());return route.abort();}return route.continue();});
+ const page=await context.newPage();inspectionPage=page;page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(12000);
+ const check=(ok,label)=>{assert(ok,label);checks.push(label);};
+ const target=base+'/travel-os.html?shop=shop-b&round=round-b&window=window-b&item=item-b#tasks';
+ await page.goto(target);await page.locator('#roundItemPanel .round-item-detail').waitFor();
+ check((await page.locator('#editorBody').innerText()).includes('定位商品'),'深链打开准确商品详情');
+ const content=await page.locator('#editorBody').innerText();check(content.includes('先核验原商品')&&content.includes('已停止窗口'),'不可执行动作显示中文原因及下一条合法路径');
+ check(!/ITEM_PARK_|ITEM_SKIP_|ITEM_VERIFY_/.test(content),'用户界面不暴露机器错误码');
+ check(requests.filter(x=>new URL(x.path,base).pathname==='/api/v1/rounds/item').every(x=>new URL(x.path,base).searchParams.get('executionShop')===shop.id),'详情请求保持店铺归属');
+ check(requests.every(x=>x.method==='GET'),'打开通知只读，没有启动、核验、挂起或提交');
+ await page.screenshot({path:join(out,'location-desktop.png'),fullPage:true});
+ await page.setViewportSize({width:390,height:844});check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'390px整页无水平溢出');await page.screenshot({path:join(out,'location-mobile.png'),fullPage:true});
+ await page.setViewportSize({width:1440,height:1000});mismatch=true;await page.reload();await page.locator('.toast').filter({hasText:'无法确认'}).waitFor();
+ check(await page.locator('#roundItemPanel').count()===0,'跨店窗口不能打开商品操作面板');
+ await page.screenshot({path:join(out,'location-cross-shop-rejected.png'),fullPage:true});
+ mismatch=false;r.state='STOPPED';r.window.state='STOPPED';r.window.finished=new Date().toISOString();
+ await page.goto(base+'/travel-os.html?shop=shop-b#tasks');
+ const configure=page.getByRole('button',{name:'检查剩余商品并设置下一轮',exact:true});await configure.waitFor();
+ check(await page.locator('[data-action="round-resume"]').count()===0,'已结束窗口不再提供原窗口继续入口');
+ await configure.click();await page.locator('#windowLimit').waitFor();
+ check(await page.locator('#windowLimit').inputValue()==='100','停止后下一轮配置入口可用且保持100条上限');
+ await page.screenshot({path:join(out,'location-stopped-next-window.png'),fullPage:true});
+ check(external.length===0,'没有访问外部服务');check(requests.every(x=>x.method==='GET'),'全部场景没有写请求');check(errors.length===0,'无页面脚本错误');
+ await writeFile(join(out,'ui-independent-result.json'),JSON.stringify({passed:checks.length,checks,requests,external,errors},null,2));
+ console.log(JSON.stringify({passed:checks.length,out}));
+}catch(error){await writeFile(join(out,'ui-independent-failure.json'),JSON.stringify({message:error.message,body:await inspectionPage?.locator('body').innerText(),requests,errors,checks},null,2));throw error;}
+finally{await browser?.close();for(const res of streams)res.end();await new Promise(resolve=>server.close(resolve));os.store.db.close();store.close();await rm(runtime,{recursive:true,force:true});}

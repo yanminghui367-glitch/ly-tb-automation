@@ -4,6 +4,7 @@ import {join} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {sellerTable,listingEvidence} from './listing-verification.mjs';
 import {classifyListingIdentity,auditInventoryIdentity,LOCATION_ALIAS_EVIDENCE} from './listing-identity.mjs';
+import {recoverOriginalReceipt} from './submission-receipt.mjs';
 import {readSubmittedListing,submissionLookupWindow} from './result-reconciliation.mjs';
 
 const issue=(code,message,details={})=>Object.assign(Error(message),{code,...details});
@@ -24,8 +25,13 @@ export class RoundVerification {
    await mkdir(join(originalDir,'attempts'),{recursive:true});
    await mkdir(dir);
   }
+  let originalReceipt;
   // Missing ID after an original submit is reconciliation, even when the shop
   // policy ignores destination duplicates. It can never authorize publication.
+  if(!itemId&&run?.state==='RESULT_UNKNOWN'){
+   const receipt=await recoverOriginalReceipt({context:this.context(),run,events:submissionEvents,guard:this.guard,assertUnused:assertUnusedItemId});
+   if(receipt){originalReceipt=receipt;itemId=receipt.itemId;await mkdir(dir,{recursive:true});await writeFile(join(dir,'original-submission-receipt.json'),JSON.stringify(receipt,null,2),{flag:'wx'});}
+  }
   if(!itemId&&['SUBMITTING','RESULT_UNKNOWN'].includes(run?.state)){
    return readSubmittedListing({context:this.context(),task,target:run.target==='WAREHOUSE'||task.business.listing_time==='放入仓库'?'WAREHOUSE':'SOURCE',
     dir:join(dir,'receipt-recovery',randomUUID()),guard:this.guard,window:submissionLookupWindow(submissionEvents||[]),assertUnused:assertUnusedItemId,
@@ -39,7 +45,8 @@ export class RoundVerification {
   if(itemId){
    const found=await table.search({itemId:String(itemId)}),row=found.records.find(r=>r.itemId===String(itemId));
    if(!row||row.title!==task.listing.title)throw issue('RESULT_UNKNOWN','原商品ID未能与当前后台标题交叉核实，禁止重发：'+itemId);
-   return this.evidence(table,row,task,dir,{newSubmission:['SUBMITTING','RESULT_UNKNOWN'].includes(run?.state)});
+   const result=await this.evidence(table,row,task,dir,{newSubmission:['SUBMITTING','RESULT_UNKNOWN'].includes(run?.state)});
+   return originalReceipt?{...result,submissionReceipt:originalReceipt}:result;
   }
   const duplicatePolicy=current.round.policies?.['ignore-destination-duplicates'];
   if(duplicatePolicy?.enabled===true&&duplicatePolicy.scope==='THIS_ROUND_ONLY'&&duplicatePolicy.manifestHash===current.round.manifest_hash&&duplicatePolicy.shop===task.shopId){

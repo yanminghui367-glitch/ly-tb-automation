@@ -677,7 +677,9 @@ export const workbenchServer = createServer((req,res)=>executions.run(new URL(re
     if(executions.id()!=='wuzhou-changyou'&&req.method==='POST'&&['/api/source/import','/api/batch/import'].includes(url.pathname))return json(res,409,{error:'本店请使用资料设置的标准模板导入'});
     const currentProduct=await product();
     const sourceWorkflow=currentProduct.source,batchWorkflow=currentProduct.batch;
+    if(req.method==='POST'&&executions.preparing()&&!['/api/v1/material-preparation/pause','/api/v1/material-preparation/cancel','/api/program/shutdown'].includes(url.pathname))return json(res,409,{error:'图片准备中，请先暂停图片准备并等待当前批次落账'});
     // Pausing cannot be discarded behind a slow product status/configuration request.
+    if(req.method==='POST'&&['/api/v1/material-preparation/pause','/api/v1/material-preparation/cancel'].includes(url.pathname))return await currentProduct.materialPreparation.handle(req,res,url,{body,json});
     if(req.method==='POST'&&url.pathname==='/api/v1/pause'){req.resume();return json(res,200,(await product()).pause());}
     if(req.method==='POST'&&url.pathname==='/api/source/pause'&&batchWorkflow?.round?.active){req.resume();return json(res,200,batchWorkflow.round.pause());}
     if(req.method==='POST'&&['/api/v1/rounds/pause','/api/v1/rounds/stop'].includes(url.pathname))return await (await product()).handleRound(req,res,url,{body,json});
@@ -697,7 +699,7 @@ export const workbenchServer = createServer((req,res)=>executions.run(new URL(re
     if(req.method==='POST'&&executionRoute(url.pathname))await (await product()).assertExecution({legacy:true});
     if(url.pathname.startsWith('/api/os/'))return await travelOs().handle(req,res,url,{body,json});
     if(url.pathname.startsWith('/api/v1/')){
-      if(req.method==='POST'&&['start','continue','retry','resume-single','reconcile','create','rounds/create','rounds/start','rounds/resume','rounds/window-create','rounds/success-goal-create','content-preparation/create','content-preparation/review','content-preparation/repair'].includes(url.pathname.slice(8))&&travelOs().store.removed((await product()).shop.id))return json(res,409,{error:'执行店铺已从管理中移除，禁止创建或启动任务'});
+      if(req.method==='POST'&&['start','continue','retry','resume-single','reconcile','create','rounds/create','rounds/start','rounds/resume','rounds/window-create','rounds/success-goal-create','content-preparation/create','content-preparation/review','content-preparation/repair','material-preparation/start','material-preparation/resume'].includes(url.pathname.slice(8))&&travelOs().store.removed((await product()).shop.id))return json(res,409,{error:'执行店铺已从管理中移除，禁止创建或启动任务'});
       return await (await product()).handle(req,res,url,{body,json});
     }
     if (req.method === "GET" && url.pathname === "/api/browser/status") { const { shop } = await context(); return json(res, 200, { shop: { id: shop.id, name: shop.name, port: shop.port }, browser: await browserEnvironment.status(shop) }); }
@@ -762,7 +764,7 @@ export const workbenchServer = createServer((req,res)=>executions.run(new URL(re
   } catch (error) { return json(res, error.statusCode || 500, { error: /^\/api\/(v1|os)\//.test(req.url) ? redact(error.message||String(error)) : error.message || String(error) }); }
   finally { if (holdsMutation) mutationBusy = false; }
 }));
-if (process.env.WORKBENCH_NO_LISTEN !== "1") workbenchServer.listen(PORT, network.bind, async () => { console.log(`旅行上架工作台：http://127.0.0.1:${PORT}${process.env.WORKBENCH_LAN_ADDRESS ? ' 局域网：http://'+process.env.WORKBENCH_LAN_ADDRESS+':'+PORT : ''}`); try { const { shop } = await context(); await launchChrome(shop); } catch { console.error("专用 Chrome 未启动，请在工作台查看浏览器状态后重试。"); } });
+if (process.env.WORKBENCH_NO_LISTEN !== "1") workbenchServer.listen(PORT, network.bind, async () => { console.log(`旅行上架工作台：http://127.0.0.1:${PORT}${process.env.WORKBENCH_LAN_ADDRESS ? ' 局域网：http://'+process.env.WORKBENCH_LAN_ADDRESS+':'+PORT : ''}`); try { if(process.env.WORKBENCH_BROWSER_AUTOSTART!=='0'){ const { shop } = await context(); await launchChrome(shop); } } catch { console.error("专用 Chrome 未启动，请在工作台查看浏览器状态后重试。"); } });
 
 let stopping = false;
 async function shutdownProgram() {

@@ -1,3 +1,4 @@
+import {recordRecoveredReceipt} from './submission-receipt.mjs';
 import {parkFailureEvidence} from './round-item-park.mjs';
 // Isolated candidate. Uses the existing round owner and verifier; never pumps or publishes.
 import {createHash} from 'node:crypto';
@@ -200,6 +201,7 @@ export class RoundItemVerify {
    const receipt=o.source.store.transaction(()=>{
     this.owned(req);const current=this.reader.read(req);if(current.revision!==revision)fail('ITEM_VERIFY_STALE_REVISION');
     o.assertContentForTask(current.x.task,req.roundId);o.assertResultIdentity(req.roundId,req.key,result);
+    recordRecoveredReceipt(o.source.store,s.run,result);
     const isNew=!!(s.x.entered_publish&&s.run&&o.wasSubmitted(s.run));
     if(s.run){
      // Same RESULT_UNKNOWN -> VERIFIED transition as SourceStore.move, inside this all-projection transaction.

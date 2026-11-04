@@ -48,6 +48,9 @@ const hooks=registerHooks({load(url,ctx,next){
  export const PROJECT_ROOT=${JSON.stringify(process.cwd())};
  export const visibleChallenge=async page=>{f().challengeChecks++;return page?.challenge===true;};`};
  if(url.endsWith('/publishing-pages.mjs'))return {format:'module',shortCircuit:true,source:common+`
+ export const assertAuxiliaryPage=(page,role)=>{
+  if(role!=='verification'||page!==f().verificationPage||page.kind!=='list')throw Error('WRONG_VERIFICATION_PAGE');
+ };
  export const closeVerifiedOwnedPage=async(_page,options,guard)=>{
   await guard();if(!options.verifiedPersisted)throw Error('CLEANUP_BEFORE_PERSIST');
   f().cleanups++;return {closed:true};

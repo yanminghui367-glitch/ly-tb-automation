@@ -1,3 +1,4 @@
+import {recordRecoveredReceipt} from './submission-receipt.mjs';
 import {randomUUID} from 'node:crypto';
 import {mkdir,writeFile,rename} from 'node:fs/promises';
 import {join} from 'node:path';
@@ -386,6 +387,7 @@ export class ListingRound {
   if(!result){if(itemId||run?.state==='VERIFIED'||['SUBMITTING','RESULT_UNKNOWN'].includes(run?.state))throw Object.assign(Error('已有商品记录未能在原店铺核实，禁止重新发布'),{code:'RESULT_UNKNOWN'});return false;}
   if(!isEvidence(result)||itemId&&String(result.itemId)!==String(itemId))throw Object.assign(Error('已有商品核验缺少完整或一致证据，禁止发布'),{code:'RESULT_UNKNOWN'});
   this.assertResultIdentity(id,x.key,result);
+  recordRecoveredReceipt(this.source.store,run,result);
   if(['SUBMITTING','RESULT_UNKNOWN'].includes(run?.state))this.source.store.move(run.id,'VERIFIED','本轮后台核验原商品；未重新提交',result);
   else this.source.store.history(x.task,result);
   const isNew=!!(x.entered_publish&&run&&this.wasSubmitted(run));

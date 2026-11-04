@@ -1,0 +1,40 @@
+{
+  "at": "2026-11-03T15:42:56.169Z",
+  "verdict": "PASS",
+  "reviewType": "STATIC_BOUND_SCRIPT_AND_SYNTHETIC_GUARD_REVIEW",
+  "reviewer": "independent stability_qa",
+  "maintenanceSha256": "8bffa6e0cec0c2def730265aa73846fb959f873dce18f6a218f590c67bcbdfbf",
+  "sceneGuardSha256": "8b9fa3253c0f963d1005e44032009ce363d97415fa59351a41731d77ae335b78",
+  "candidateManifestSha256": "8c8effd0c87765e4f0576ed98c00d1c590538b53b88f6df07923043325d34cc6",
+  "authorizationSha256": "52c63b81cd0a361fcfde9c0f15b6b16c0c19a5a9eddaa72a2091fd8b1ba7baea",
+  "nextLockSha256": "062244e6609bd1a88791f774328d66362a3fa1fc57d4a340b2de7815cf405a7d",
+  "sceneGuard": "inspect-stopped-browsers.mjs",
+  "sceneMode": "ALL8_BROWSERS_STOPPED_NO_PAGE_DISPOSAL",
+  "independentGuardTests": 11,
+  "independentGuardPass": 11,
+  "scope": "r2 exact4-file UI-only installation under the same all8 browsers STOPPED-only maintenance gates. No browser scene disposal, identity approval, task action, quota change or business-data migration.",
+  "requiredGates": [
+    "Signed6-file manifest and next lock match",
+    "Original9 database table digests and8 settings/round snapshots unchanged before preparation and again after watcher pause",
+    "9 SQLite backups, integrity checks and source/old-lock backups",
+    "Only original2 watchers temporarily disabled; running instances drained",
+    "Current and settled PID match preparation PID",
+    "Normal shutdown, captured PID exits and4318 refuses connections; other socket errors/timeouts are not closed",
+    "4318 rechecked before each atomic source write; lock written last",
+    "Restart with browser autostart disabled; no task start/resume/retry/claim",
+    "New PID/start time and exact kernel/delivery hashes; all9 tables and8 settings/rounds preserved before original watcher states restored"
+  ],
+  "failureBehavior": "Failed guard stops maintenance. Preserve evidence and keep watchers/execution stopped while repairing source-only installation. Do not restore or alter business databases. Partial copies require source-only recovery from backed-up bytes; do not treat completed-install rollback as an automatic partial-copy repair.",
+  "installationExecutedByQa": false,
+  "productionPostsByQa": 0,
+  "realBrowserConnectionsByQa": 0,
+  "businessWritesByQa": 0,
+  "installationPassClaimed": false,
+  "evidence": {
+    "guardTestsSha256": "097a137bac53796aab16273ed385206254bcacb2b7352f5472a4800ca68e65a1",
+    "initialBeforeSha256": "b8bfd5fc5024084e4cf49aed37f3fdc5b0831e94a97601aa21bd600c77675f82",
+    "shopBaselineSha256": "778af5dedc97eb1c936a63d3cac70c12b9ee41095e78b0d2b1b35fd466ce593d"
+  },
+  "byteReview": "Maintenance code is byte-identical to independently reviewed r1 except the historical baseline filename r1 to r2; stopped guard byte-identical. Previous11 guard tests apply to these unchanged guard bytes.",
+  "priorMaintenanceTicketSha256": "725c95e0dbc26e7413d87987f477f9c2879d5e6fe9fa72b37e56039d23319c2a"
+}

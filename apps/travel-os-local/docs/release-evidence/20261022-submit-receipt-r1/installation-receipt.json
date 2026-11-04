@@ -1,0 +1,51 @@
+{
+  "at": "2026-10-22T15:50:04.035Z",
+  "pid": 44216,
+  "processStartedAt": "2026-10-22T15:49:43.4342454Z",
+  "kernel": {
+    "ok": true,
+    "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+    "revision": "20261022-submit-receipt-r1",
+    "files": 88,
+    "changed": []
+  },
+  "staticFiles": [
+    {
+      "path": "round-item-detail.js",
+      "sha256": "689bd86ab21c4e68abeb69a297bbfcd331300dfc3d1747508e233b0daaef00a4"
+    },
+    {
+      "path": "ui-copy.js",
+      "sha256": "37e49f3c7f9eb495a3b921c09ecf6fdb1663dc840038e5eaae2c29e6989f9234"
+    }
+  ],
+  "differences": [
+    {
+      "database": "shop-execution\\shop-7949a469\\source-workflow\\state.sqlite",
+      "table": "round_events",
+      "before": {
+        "rows": 2961,
+        "sha256": "136c30ea0b7f759aa7d5bff2c2b0d941f2f0d3f676174f29938ac520225666f9"
+      },
+      "after": {
+        "rows": 2962,
+        "sha256": "5b9dd08b9eb539ff8179941eaf735f979bfb6e0d810c58f03da459b490f3d548"
+      }
+    },
+    {
+      "database": "shop-execution\\shop-7949a469\\source-workflow\\state.sqlite",
+      "table": "round_items",
+      "before": {
+        "rows": 700,
+        "sha256": "4c8063a73ffa3d509f2aaca1416ce47da4ac693c7b2c10945e2914c83b957fa0"
+      },
+      "after": {
+        "rows": 700,
+        "sha256": "cca54d5cb3c50738d75bbbcf58de46edcab96773dd02321e09ecceab4ea892a1"
+      }
+    }
+  ],
+  "productionItemActions": 0,
+  "businessReview": "Only normal startup reconciliation appends one RESULT_UNKNOWN event and refreshes current reason/stage/time. All task states, attempts, success histories, denominators, settings unchanged.",
+  "productActions": 0
+}

@@ -1,7 +1,9 @@
 // Read-only seller lookup followed by an atomic local reconciliation.
 // No publish, edit, duplicate-listing or batch-start operation exists here.
 import {mkdir,readFile} from 'node:fs/promises';
-import {join} from 'node:path';
+import {join,relative,resolve} from 'node:path';
+import {RoundManualSkip} from './round-manual-skip.mjs';
+import {assertAuxiliaryPage} from './publishing-pages.mjs';
 import {randomUUID} from 'node:crypto';
 import {expect} from 'playwright/test';
 import {digest} from './source-store.mjs';
@@ -14,7 +16,7 @@ const normalize=s=>String(s).replace(/\s+/g,' ').trim();
 export function submissionWindow(events){
  const start=events.findLast(x=>x.kind==='SUBMITTING');
  const end=start&&events.find(x=>x.seq>start.seq&&x.kind==='RESULT_UNKNOWN');
- if(!start||!end||!Number.isFinite(Date.parse(start.at))||!Number.isFinite(Date.parse(end.at)))fail('缺少原任务提交时间证据，保持待核验');
+ if(!start||!end||!Number.isFinite(Date.parse(start.at))||!Number.isFinite(Date.parse(end.at))||Date.parse(end.at)<Date.parse(start.at))fail('缺少原任务提交时间证据，保持待核验');
  return {from:Math.floor(Date.parse(start.at)/60000)*60000,to:Math.ceil(Date.parse(end.at)/60000)*60000};
 }
 // The original submit interval, never a new recovery's wall clock. A missing
@@ -93,29 +95,16 @@ export function validateListing(row,task,itemId,window){
  return {createdAt:times[0],timeZone:'Asia/Shanghai',submissionWindow:window};
 }
 
-export async function inspectExistingListing({context,task,itemId,target,dir,guard,window}){
- const {getAuxiliaryPage}=await import('./publishing-pages.mjs');
- const address='https://myseller.taobao.com/home.htm/SellManage/all';
- const page=await getAuxiliaryPage(context,{role:'verification',shopId:task.shopId,url:address,guard});
- const tab=page.getByRole('tab',{name:target==='WAREHOUSE'?/^仓库中\(/:/^全部\(/});await tab.click();
- await page.locator('#queryTitle').fill('');await page.locator('#queryItemId').fill(itemId);await guard(page);
- await page.getByRole('button',{name:'搜索',exact:true}).click();
- const row=page.locator('tr').filter({hasText:new RegExp('ID\\s*[:：]\\s*'+itemId+'(?!\\d)')});
- await expect(row).toHaveCount(1,{timeout:10000});
- const table=row.locator('xpath=ancestor::table[1]'),headers=await table.locator('thead th').allInnerTexts();
- const fields={};
- for(const [key,label] of [['name','商品名称'],['price','价格'],['inventory','库存'],['created','创建时间']]){
-  const indices=headers.map((h,i)=>normalize(h).startsWith(label)?i:-1).filter(i=>i>=0);
-  if(indices.length!==1)fail('无法识别后台的'+label+'列，保持待核验');
-  fields[key]=await row.locator('td').nth(indices[0]).innerText();
- }
- const timeEvidence=validateListing(fields,task,itemId,window),rowText=await row.innerText();
- if(target==='WAREHOUSE')await expect(tab).toHaveAttribute('aria-selected','true');
- else if(!rowText.includes('出售中'))fail('原任务要求出售中，后台商品状态不一致');
- await guard(page);await mkdir(dir,{recursive:true});
- const screenshot=join(dir,'reconciled-'+randomUUID()+'.png');await page.screenshot({path:screenshot,fullPage:true,timeout:5000});
- await guard(page);
- return {itemId,url:'https://item.taobao.com/item.htm?id='+itemId,status:target==='WAREHOUSE'?'仓库中':'出售中',rowText,screenshot,verifiedAt:new Date().toISOString(),...timeEvidence};
+export async function inspectExistingListing({context,task,itemId,target,dir,guard,window,tableFactory,evidence}){
+ if(!tableFactory||!evidence){const defaults=await import('./listing-verification.mjs');tableFactory??=defaults.sellerTable;evidence??=defaults.listingEvidence;}
+ const table=await tableFactory(context,task,guard),found=await table.search({itemId});await guard(table.page);
+ const rows=found.records.filter(row=>String(row.itemId)===itemId);
+ if(rows.length!==1)fail('后台未找到唯一的原商品 ID，保持待核验');
+ const row=rows[0],cell=label=>{const values=(row.cells||[]).filter(c=>normalize(c.label).startsWith(label));if(values.length!==1)fail('后台'+label+'列缺失或不唯一');return values[0].text;};
+ const timeEvidence=validateListing({name:row.title+'\nID: '+row.itemId,price:cell('价格'),inventory:cell('库存'),created:cell('创建时间')},task,itemId,window);
+ if(target==='WAREHOUSE'?row.status!=='仓库中':row.status!=='出售中')fail('后台商品状态与原上架目标不一致，保持待核验');
+ const result=await evidence(table,row,task,dir,{newSubmission:true});await guard(table.page);
+ return {...result,...timeEvidence};
 }
 
 export class ResultReconciliation {
@@ -128,14 +117,49 @@ export class ResultReconciliation {
   const itemId=String(input.itemId||'').trim();
   if(!/^\d{6,30}$/.test(itemId)||input.confirmed!==true)fail('请输入后台商品 ID，并确认核对原店铺与商品');
   if(!/^[a-f0-9-]{36}$/i.test(input.requestId||''))fail('缺少操作编号，请重新打开核验窗口');
+  const requestHash=digest({id:input.id,itemId,confirmed:input.confirmed,confirmedBy:input.confirmedBy??null,reason:input.reason??null,roundId:input.roundId??null,windowId:input.windowId??null,key:input.key??null,expectedRevision:input.expectedRevision??null});
   const previous=store.db.prepare('SELECT * FROM product_actions WHERE id=?').get(input.requestId);
-  if(previous){const result=JSON.parse(previous.result);if(previous.action!=='reconcile'||previous.target!==input.id||result.itemId!==itemId)fail('请求编号不能用于其他关联');return {...result,replayed:true};}
+  if(previous){const result=JSON.parse(previous.result);if(previous.action!=='reconcile'||previous.target!==input.id||result.itemId!==itemId||result.requestHash&&result.requestHash!==requestHash)fail('请求编号不能用于其他关联');return {...result,replayed:true};}
   if(api.reconciling||api.capturing||source.active||batch.active)fail('有任务运行或核验中，请等待停止后再关联');
   const run=store.run(input.id);
   if(run.state!=='RESULT_UNKNOWN'||run.mode!=='LIVE'||run.task.shopId!==shop.id||run.task.business.shop_name!==shop.name)fail('只允许核验原店铺中正式提交结果不明的任务');
   if(run.checkpoint.itemId&&run.checkpoint.itemId!==itemId)fail('原断点已有不同商品 ID，不能替换');
   this.assertUnused(run,itemId);const window=submissionWindow(store.events(run.id));
   const revision=digest(run),queue=store.db.prepare('SELECT id,batch FROM batch_items WHERE run_id=?').get(run.id);
+  const queueRevision=queue?digest(batch.store.item(queue.id)):null;
+  const round=api.round,bindings=round?store.db.prepare('SELECT round_id,key FROM round_items WHERE run_id=?').all(run.id):[];
+  if(bindings.length>1)fail('原任务对应多个轮次，不能自动关联');
+  let bound=null,reader=null;
+  const readBound=()=>{
+   round.assertIdle();if(round.creating||round.hasUnsettledExecution()||round.executionAttempts?.blocked)fail('轮次执行尚未停稳，请等待后再核验');
+   const r=round.assertManifest(bindings[0].round_id),w=round.windows.open(r.id);
+   if(!w||w.finished)fail('原轮次窗口已结束，请使用原商品核验入口');
+   const current=reader.read({roundId:r.id,windowId:w.id,key:bindings[0].key});
+   if(current.x.state!=='RESULT_UNKNOWN'||current.run?.id!==run.id||current.run.state!=='RESULT_UNKNOWN'||current.assignment.outcome||!current.x.entered_publish||['content-review','content-preflight'].includes(current.x.failure_stage))fail('原商品当前状态不允许关联结果');
+   if(!['RESULT_UNKNOWN','PAUSED','SYSTEM_BLOCKED','WAITING_HUMAN','STOPPED'].includes(r.state))fail('原轮次当前状态不允许关联结果');
+   if(store.db.prepare('SELECT id FROM round_item_attempts WHERE key=? AND finished_at IS NULL').get(current.x.key))fail('原商品还有未完成操作，请先核对原请求');
+   round.assertContentForTask(current.x.task,r.id);
+   return current;
+  };
+  if(bindings.length){
+   reader=new RoundManualSkip(round,{readOnly:true});bound=readBound();
+   if(input.roundId!==undefined&&(input.roundId!==bound.r.id||input.windowId!==bound.w.id||input.key!==bound.x.key||input.expectedRevision!==bound.revision))fail('原商品或窗口已变化，请刷新后核验');
+  }else if(input.roundId!==undefined)fail('原商品不属于请求的轮次');
+  const actor={name:String(input.confirmedBy||'本机操作者').trim(),identitySource:'LOCAL_OPERATOR_DECLARATION'};
+  if(!actor.name||actor.name.length>80)fail('请填写本次核验确认人');
+  const reason=String(input.reason||'操作者确认原提交回执商品 ID，并请求后台交叉核验').trim();
+  if(!reason||reason.length>1000)fail('请填写有效核验原因');
+  const assertOriginal=()=>{
+   if(digest(store.run(run.id))!==revision)fail('原任务已变化，请重新核验');
+   if(queue&&digest(batch.store.item(queue.id))!==queueRevision)fail('原队列记录已变化，请重新核验');
+   if(bound){
+    // source.active is this read-only association's lease; do not treat it as another publisher.
+    if(round.active||batch.active||source.active!==run.id||api.round!==round)fail('核验执行归属已变化');
+    const current=reader.read({roundId:bound.r.id,windowId:bound.w.id,key:bound.x.key});
+    if(current.revision!==bound.revision||round.windows.open(bound.r.id)?.id!==bound.w.id)fail('原轮次或商品记录已变化，请重新核验');
+    round.assertContentForTask(current.x.task,bound.r.id);
+   }
+  };
   if(queue&&batch.store.item(queue.id).state!=='WAITING_HUMAN')fail('原队列状态不支持关联，请先检查任务');
   api.reconciling=true;source.active=run.id;source.stop=false;
   const context=owner.sessions.get(shop.id)?.context;
@@ -145,7 +169,7 @@ export class ResultReconciliation {
    if(status.loginState==='PAUSED_CAPTCHA'||page&&await visibleChallenge(page))fail('出现验证码，请人工处理后重新核验');
    if(!status.running||!status.loggedIn||owner.sessions.get(shop.id)?.context!==context)fail('请先在原店铺执行 Chrome 登录，保留会话');
    if(page){
-    if(!page.url().startsWith('https://myseller.taobao.com/home.htm/SellManage/'))fail('核验页面已改变，保持待核验');
+    assertAuxiliaryPage(page,'verification');
     const identity=page.locator('div.shopName--x6nyUylx');await expect(identity).toHaveCount(1);await expect(identity).toHaveText(shop.name,{useInnerText:true});
    }
   };
@@ -153,21 +177,37 @@ export class ResultReconciliation {
    if(!(await api.integrity()).ok)fail('内核完整性未通过，不能关联');
    if(!context)fail('原店铺执行 Chrome 未连接');await guard();
    const target=run.target==='WAREHOUSE'||run.task.business.listing_time==='放入仓库'?'WAREHOUSE':'SOURCE';
-   const result=await this.inspect({context,task:run.task,itemId,target,dir:join(source.artifacts,run.id),guard,window});
+   const result=await this.inspect({context,task:run.task,itemId,target,dir:join(source.artifacts,run.id,'association',input.requestId),guard,window});
    await guard();
    if(result.itemId!==itemId||!result.rowText||!result.status||!result.verifiedAt||!result.createdAt)fail('缺少完整的后台核验证据');
    const image=await readFile(result.screenshot);if(image.length<8||!image.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])))fail('核验截图无效，保持待核验');
-   const receipt={accepted:true,id:run.id,itemId,state:'VERIFIED',batchId:queue?.batch||null,batchContinued:false};
+   if(!(await api.integrity()).ok)fail('核验期间内核发生变化，保持待核验');await guard();assertOriginal();
+   if(bound)round.assertResultIdentity(bound.r.id,bound.x.key,result);
+   let originalEvidence=null;
+   if(run.checkpoint.screenshot){
+    const root=resolve(source.artifacts,run.id),path=resolve(run.checkpoint.screenshot),rel=relative(root,path);
+    if(rel&&!rel.startsWith('..')&&!rel.includes(':')){
+     try{const bytes=await readFile(path);if(bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])))originalEvidence={path,sha256:digest(bytes),at:run.checkpoint.screenshotAt||null};}catch{}
+    }
+   }
+   const audit={actor,reason,confirmed:true,originalEvidence,submissionWindow:window,originalRunId:run.id,roundId:bound?.r.id||null,windowId:bound?.w.id||null,key:run.key};
+   const receipt={accepted:true,requestHash,id:run.id,itemId,state:'VERIFIED',batchId:queue?.batch||null,batchContinued:false};
    store.transaction(()=>{
-    if(digest(store.run(run.id))!==revision)fail('原任务已变化，请重新核验');
+    assertOriginal();
     this.assertUnused(run,itemId);
-    store.checkpoint(run.id,{itemId,screenshot:result.screenshot,screenshotAt:result.verifiedAt,screenshotError:null,reconciliation:{requestId:input.requestId,itemId,verifiedAt:result.verifiedAt,screenshot:result.screenshot}});
+    store.checkpoint(run.id,{itemId,screenshot:result.screenshot,screenshotAt:result.verifiedAt,screenshotError:null,reconciliation:{requestId:input.requestId,itemId,verifiedAt:result.verifiedAt,screenshot:result.screenshot,...audit}});
     store.db.prepare("UPDATE runs SET state='VERIFIED',reason='',result=? WHERE id=? AND state='RESULT_UNKNOWN'").run(JSON.stringify(result),run.id);
-    store.history(run.task,result);store.event(run.id,'RESULT_RECONCILED',{itemId,requestId:input.requestId,result});store.event(run.id,'VERIFIED',{reason:'原商品关联核验',result});
+    store.history(run.task,result);store.event(run.id,'RESULT_RECONCILED',{itemId,requestId:input.requestId,result,...audit});store.event(run.id,'VERIFIED',{reason:'原商品关联核验',result});
     if(queue){
      batch.store.move(queue.id,'SUCCEEDED','原商品关联核验；未启动余下任务',result);
      const remaining=batch.store.items(queue.batch).some(x=>['PENDING','RETRY','WAITING_HUMAN','RUNNING'].includes(x.state));
      batch.store.setBatch(queue.batch,remaining?'PAUSED':'COMPLETED',remaining?'原商品已核验，剩余任务需重新确认后继续':'原商品已核验，本批结束');
+    }
+    if(bound){
+     store.event(run.id,'SUBMIT_EVIDENCE',{method:'original-receipt-backend-reconciliation',itemId,requestId:input.requestId,screenshot:result.screenshot,originalEvidence,submittedByThisAction:false});
+     round.update(bound.r.id,bound.x.key,{state:'NEW_SUCCESS',result,...round.submissionFlags(store.run(run.id),bound.r.id),finished:new Date().toISOString(),reason:'原提交回执商品已在后台核验，未再次提交'});
+     round.event(bound.r.id,bound.x.key,'ITEM_RESULT_ASSOCIATED',{requestId:input.requestId,itemId,windowId:bound.w.id,...audit,submittedByThisAction:false});
+     round.state(bound.r.id,bound.r.stopped?'STOPPED':'PAUSED','原商品核验完成；其余商品保持原状态，可检查后继续本轮');
     }
     store.db.prepare('INSERT INTO product_actions VALUES(?,?,?,?,?)').run(input.requestId,'reconcile',run.id,new Date().toISOString(),JSON.stringify(receipt));
    });

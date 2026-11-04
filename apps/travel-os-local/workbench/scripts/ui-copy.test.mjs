@@ -87,3 +87,25 @@ test('maintenance-only failures name the limit of website recovery rather than p
  const unknown=copy.diagnose('UNKNOWN_INTERNAL_FAULT',{stage:'select-detail-1'});
  assert.equal(unknown.known,false);assert.match(unknown.cause,/不足以确认/);assert.match(unknown.action,/维护人员/);
 });
+
+test('material observation and total safety budgets remain distinct and grant no safe retry',()=>{
+ for(const code of ['MATERIAL_GUARD_BUDGET_EXHAUSTED','MATERIAL_PREPARED_CARD_TIMEOUT']){
+  const issue=copy.diagnose(code);
+  assert.equal(issue.known,true);assert.equal(hasLatin(issue.title+issue.cause+issue.action),false);
+  assert.match(issue.action,/后台|后台可用/);assert.doesNotMatch(issue.action,/点击“检查并继续本轮”/);
+  assert.doesNotMatch(copy.reason(code),/系统内部异常/);
+  assert.match(copy.diagnose(code,{submissionUncertain:true}).title,/先核验/);
+  assert.match(copy.diagnose('PAUSED_CAPTCHA '+code).title,/验证码/);
+ }
+ assert.match(copy.diagnose('MATERIAL_GUARD_BUDGET_EXHAUSTED').cause,/不代表安全检查通过/);
+ assert.match(copy.diagnose('MATERIAL_PREPARED_CARD_TIMEOUT').cause,/页面观察时间/);
+});
+
+test('readiness log stage and timing fields render as Chinese without mutating the original diagnostic',()=>{
+ const raw='已准备图片等待超时：包含安全检查的总等待预算已用完；stage=prepared-material-card；observeMs=3500；guardMs=24000；elapsedMs=27500；expected=visible=true；actual={"visible":false}';
+ const rendered=copy.reason(raw);
+ assert.match(rendered,/安全检查总等待预算已用完/);assert.match(rendered,/阶段：已准备图片/);
+ assert.match(rendered,/页面观察用时 3500 毫秒/);assert.match(rendered,/安全检查用时 24000 毫秒/);assert.match(rendered,/总用时 27500 毫秒/);
+ assert.equal(hasLatin(rendered),false);assert.match(raw,/stage=prepared-material-card/);
+ assert.match(copy.reason(raw.replace('包含安全检查的总等待预算已用完','观察预算已用完')),/页面观察预算已用完/);
+});

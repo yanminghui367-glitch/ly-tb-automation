@@ -43,7 +43,11 @@ test('two visible detail picker hosts are ambiguous',async()=>{
  await mount(`<div class="media-img-plug"><iframe src="${url}"></iframe><iframe src="${url}"></iframe></div>`);await assert.rejects(waitDetailMaterialFrame(page,guard,options),/DETAIL_MATERIAL_FRAME_AMBIGUOUS/);
 });
 test('wrong origin or path rejected even if host exists',async()=>{
- for(const src of ['about:blank','https://example.com/picker',url+'-wrong']){await mount(`<div class="media-img-plug"><iframe src="${src}"></iframe></div>`);await assert.rejects(waitDetailMaterialFrame(page,guard,options),/DETAIL_MATERIAL_FRAME_ORIGIN/);}
+ for(const src of ['https://example.com/picker',url+'-wrong']){await mount(`<div class="media-img-plug"><iframe src="${src}"></iframe></div>`);await assert.rejects(waitDetailMaterialFrame(page,guard,options),e=>e.code==='SAFE_RETRY_DETAIL_FRAME_ORIGIN'&&/DETAIL_MATERIAL_FRAME_ORIGIN/.test(e.message));}
+});
+test('about blank is bounded loading, not evidence of a wrong material origin',async()=>{
+ await mount('<div class="media-img-plug"><iframe src="about:blank"></iframe></div>');
+ await assert.rejects(waitDetailMaterialFrame(page,guard,{timeout:200}),e=>e.code==='SAFE_RETRY_DETAIL_PANEL'&&e.materialReadiness.timeoutReason==='OBSERVATION_TIMEOUT'&&/DETAIL_MATERIAL_FRAME_NOT_READY/.test(e.message));
 });
 test('replaced or hidden retained host cannot silently switch to another picker',async()=>{
  for(const mutation of ['document.querySelector("iframe").remove()','document.querySelector("iframe").style.display="none"']){
