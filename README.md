@@ -1,3 +1,16 @@
+# 星途 Travel OS 当前入口（2026-11-04）
+
+星途正式应用位于 **[apps/travel-os-local/](apps/travel-os-local/)**，当前版本 `20261103-stability-recheck-r2`、92项内核。完整源码、界面、工具、测试、空白模板、最新状态和操作恢复流程已纳入本次交付范围。
+
+- [当前使用与恢复流程](apps/travel-os-local/docs/CURRENT_USAGE_20261104.md)
+- [最新项目状态](apps/travel-os-local/docs/PROJECT_STATUS.md)
+- [公开同步范围与验证说明](apps/travel-os-local/docs/GITHUB_PUBLIC_SYNC_20261104.md)
+- [版本检查与历史测试限制](apps/travel-os-local/VERIFICATION.md)
+
+新电脑运行仓库根部“安装星途工作台.cmd”，再从应用目录运行“启动上架工作台.vbs”；旧主机只做源码同步，不自动重启或发布。GitHub不包含店铺登录、原始业务库、商品图片及任务进度；业务迁移和人工登录另行完成。329条图片准备已核对可复用但未启动上架，长崎留给人工。仓库根部原FastAPI项目及下方历史说明保留。
+
+---
+
 # ly-tb-automation
 
 ## 当前版本同步（2026-10-06）

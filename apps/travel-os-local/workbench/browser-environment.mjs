@@ -115,40 +115,51 @@ export async function visibleChallenge(page) {
   return false;
 }
 export async function inspectLogin(pages, shop) {
-  let loggedIn = false, hasLogin = false, wrongShop = false;
-  const identityEvidence = [];
-  for (const page of pages) {
-    if (page.isClosed()) continue;
-    let u; try { u = new URL(page.url()); } catch { continue; }
-    if (!/(^|\.)(taobao|tmall)\.com$/.test(u.hostname)) continue;
-    let phase = 'challenge';
-    try {
-    if (await visibleChallenge(page)) return { loginState: 'PAUSED_CAPTCHA', loggedIn: false, reason: '出现验证码或滑块，任务已暂停；请在专用 Chrome 人工处理后恢复。' };
-    if (/login|passport|signin/.test(u.hostname + u.pathname)) { hasLogin = true; continue; }
-    if (!sellerHosts.has(u.hostname)) continue;
-    phase = 'identity';
-    const identity = page.locator('div.shopName--x6nyUylx');
-    if (await identity.count() === 1 && await identity.isVisible()) {
-      const name = (await identity.innerText()).trim();
-      // A mounted shell can still have an empty shop label while loading.
-      // It supplies no identity; only an explicit different name proves a mismatch.
-      identityEvidence.push({ page: u.origin + u.pathname, name: name.slice(0, 120) });
-      if (name && name === shop.name) loggedIn = true; else if (name) wrongShop = true;
+  // Every invocation freshly inspects every eligible page. Only scheduling is
+  // bounded-concurrent; no login, challenge or identity result is cached.
+  const inspect=async page=>{
+    if(page.isClosed())return {};
+    let u,sampledUrl;try{sampledUrl=page.url();u=new URL(sampledUrl);}catch{return {};}
+    if(!/(^|\.)(taobao|tmall)\.com$/.test(u.hostname))return {};
+    let phase='challenge';
+    try{
+      if(await visibleChallenge(page))return {challenge:true};
+      if(/login|passport|signin/.test(u.hostname+u.pathname))return {hasLogin:true};
+      if(!sellerHosts.has(u.hostname))return {};
+      phase='identity';const identity=page.locator('div.shopName--x6nyUylx');
+      if(await identity.count()===1&&await identity.isVisible()){
+        const name=(await identity.innerText()).trim();
+        const identityEvidence={page:u.origin+u.pathname,name:name.slice(0,120)};
+        if(name&&name!==shop.name)return {wrongShop:true,identityEvidence};
+        if(page.isClosed())return {};
+        if(page.url()!==sampledUrl)return {unstableIdentity:true,identityEvidence};
+        return {loggedIn:!!name&&name===shop.name,wrongShop:!!name&&name!==shop.name,identityEvidence,pageRef:page,sampledUrl};
+      }
+      return {};
+    }catch(error){
+      if(page.isClosed())return {};
+      const failure=new Error('LOGIN_PAGE_INSPECTION_FAILED');
+      failure.inspectionFailure={page:u.origin+u.pathname,phase,kind:/Execution context was destroyed|Cannot find context with specified id/i.test(String(error?.message||''))?'NAVIGATION_INTERRUPTED':'PAGE_READ_FAILED'};
+      return {failure};
     }
-    } catch (error) {
-      // A success page may close after this scan took its page snapshot.
-      // Only an actually closed page can be discarded; a live unreadable page
-      // still prevents publication. Previously observed wrong-shop or challenge
-      // evidence is never replaced by a cached logged-in result.
-      if (page.isClosed()) continue;
-      const failure = new Error('LOGIN_PAGE_INSPECTION_FAILED');
-      failure.inspectionFailure = { page: u.origin + u.pathname, phase, kind: /Execution context was destroyed|Cannot find context with specified id/i.test(String(error?.message || '')) ? 'NAVIGATION_INTERRUPTED' : 'PAGE_READ_FAILED' };
-      throw failure;
+  };
+  const results=new Array(pages.length);let next=0;
+  await Promise.all(Array.from({length:Math.min(4,pages.length)},async()=>{
+    for(;;){const index=next++;if(index>=pages.length)return;
+      try{results[index]=await inspect(pages[index]);}catch(failure){results[index]={failure};}
     }
-  }
-  if (wrongShop) return { loginState: 'WRONG_SHOP', loggedIn: false, reason: '当前店铺与任务店铺不一致，已暂停。', identityEvidence };
-  if (loggedIn) return { loginState: 'LOGGED_IN', loggedIn: true, reason: '已检测到目标店铺登录状态；所有任务复用此专用浏览器。' };
-  return { loginState: hasLogin ? 'LOGIN_REQUIRED' : 'LOGIN_UNVERIFIED', loggedIn: false, reason: '请在专用 Chrome 人工登录目标店铺，并进入商家后台；登录状态由 Chrome 持久化保存。', identityEvidence };
+  }));
+  // Wait for all inspections, including late bad evidence, before accepting any
+  // good tab. A challenge wins over other errors; unreadable live pages fail.
+  if(results.some(x=>x.challenge))return {loginState:'PAUSED_CAPTCHA',loggedIn:false,reason:'出现验证码或滑块，任务已暂停；请在专用 Chrome 人工处理后恢复。'};
+  const failed=results.find(x=>x.failure);if(failed)throw failed.failure;
+  const identityEvidence=results.flatMap(x=>x.identityEvidence?[x.identityEvidence]:[]);
+  if(results.some(x=>x.wrongShop))return {loginState:'WRONG_SHOP',loggedIn:false,reason:'当前店铺与任务店铺不一致，已暂停。',identityEvidence};
+  // Revalidate fast good evidence after all slower inspections have completed.
+  for(const x of results)if(x.loggedIn){try{if(x.pageRef.isClosed())x.loggedIn=false;else if(x.pageRef.url()!==x.sampledUrl){x.loggedIn=false;x.unstableIdentity=true;}}catch{x.loggedIn=false;x.unstableIdentity=true;}}
+  if(results.some(x=>x.unstableIdentity))return {loginState:'LOGIN_UNVERIFIED',loggedIn:false,reason:'店铺身份页面在检查期间发生跳转，请等待页面稳定后重新检查。',identityEvidence};
+  if(results.some(x=>x.loggedIn))return {loginState:'LOGGED_IN',loggedIn:true,reason:'已检测到目标店铺登录状态；所有任务复用此专用浏览器。'};
+  return {loginState:results.some(x=>x.hasLogin)?'LOGIN_REQUIRED':'LOGIN_UNVERIFIED',loggedIn:false,reason:'请在专用 Chrome 人工登录目标店铺，并进入商家后台；登录状态由 Chrome 持久化保存。',identityEvidence};
 }
 
 // This owner lives with the workbench, never with a product task. No storageState,
@@ -211,12 +222,21 @@ export class BrowserEnvironment {
     if (!s) return { running: false, persistent: true, loggedIn: false, loginState: 'STOPPED', profileDir: this.profilePath(shop.id) };
     if (s.checking) return s.checking;
     s.checking = (async () => {
+      const stale=()=>this.sessions.get(shop.id)!==s;
+      const staleResult=()=>({running:this.sessions.has(shop.id),persistent:true,generation:this.sessions.get(shop.id)?.generation,checkedAt:new Date().toISOString(),loginState:this.sessions.has(shop.id)?'LOGIN_UNVERIFIED':'STOPPED',loggedIn:false,reason:'执行浏览器会话已变化，请人工重新核验店铺身份后继续。'});
       let state;
       try { state = await inspectLogin(s.context.pages(), shop); }
       catch (error) { state = { loginState: 'LOGIN_UNVERIFIED', loggedIn: false, reason: '页面暂时无法核验，自动化保持暂停。', inspectionFailure: error?.inspectionFailure || { phase: 'scan', kind: 'PAGE_READ_FAILED' } }; }
+      if(stale())return staleResult();
       const result = { running: true, persistent: true, profileDir: s.profileDir, generation: s.generation, checkedAt: new Date().toISOString(), ...state };
       if (s.last?.loginState !== result.loginState) {
+        // Serialize checkpoint writes across generations, not login results.
+        // A late old write must finish before a new generation's checkpoint.
+        const writes=this.checkpointWrites??=new Map();
+        const writing=(writes.get(shop.id)||Promise.resolve()).catch(()=>{}).then(async()=>{
+        if(stale())return;
         await mkdir(this.checkpointRoot, { recursive: true });
+        if(stale())return;
         const record = { shopId: shop.id, at: result.checkedAt, state: result.loginState, taskMayResume: result.loggedIn, resumeRequiresRevalidation: true };
         if (state.inspectionFailure) {
           record.inspectionFailure = state.inspectionFailure;
@@ -233,8 +253,13 @@ export class BrowserEnvironment {
           const page = pages.find(p => /taobao|tmall/.test(p.url()));
           if (page) { const path = join(this.checkpointRoot, `${shop.id}-paused.png`); await page.screenshot({ path }).catch(() => {}); record.screenshot = path; }
         }
+        if(stale())return;
         await writeFile(join(this.checkpointRoot, `${shop.id}.json`), JSON.stringify(record, null, 2));
+        });
+        writes.set(shop.id,writing);
+        try{await writing;}catch(error){if(!stale())throw error;}finally{if(writes.get(shop.id)===writing)writes.delete(shop.id);}
       }
+      if(stale())return staleResult();
       s.last = result; return result;
     })();
     try { return await s.checking; } finally { s.checking = null; }
@@ -249,7 +274,7 @@ export class BrowserEnvironment {
   async close(shop) {
     const s = this.sessions.get(shop.id); if (!s) return;
     clearInterval(s.timer); if (s.checking) await s.checking.catch(() => {});
-    await s.context.close(); this.sessions.delete(shop.id);
+    await s.context.close(); if(this.sessions.get(shop.id)===s)this.sessions.delete(shop.id);
   }
   async focus(shop) {
     const s=this.sessions.get(shop.id);if(!s)return;

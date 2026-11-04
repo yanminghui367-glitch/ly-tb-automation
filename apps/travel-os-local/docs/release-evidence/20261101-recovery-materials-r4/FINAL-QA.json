@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "verdict": "PASS",
+  "qaAgent": "/root/independent_qa",
+  "at": "2026-11-01T15:41:29.788Z",
+  "revision": "20261101-recovery-materials-r4",
+  "candidateManifestSha256": "d497fc08db5decdeb6d6bcf1e440706c801321c2559f62a0f374565e3f2724c3",
+  "nextLockSha256": "b86a17d2ce802c1828545fb098982f3b86ac556198399adef3e43e85691a1997",
+  "maintenanceSha256": "8efacb333668e7804f8d649a20cf617d2d12020776b8dd27c04f088e741d056d",
+  "files": {
+    "workbench/material-preparation-api.mjs": "d51140e78dc430273d1237d9ee1204e543044137a9234a12a2564d58d5cb650a",
+    "workbench/scripts/material-preparation-api.test.mjs": "48896baba404b5d5e51f9f945b98f347fc6a6b92b8e0167e545b553bcfe383c6"
+  },
+  "allowedInstallation": true,
+  "productionPublishingAllowed": false,
+  "platformUploadVerified": false,
+  "installationVerified": false,
+  "kernel": {
+    "ok": true,
+    "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+    "revision": "20261101-recovery-materials-r4",
+    "files": 91,
+    "changed": []
+  },
+  "scope": "Incremental R3→R4: one runtime and its API test only. Missing/known unreadable declared local files and explicit content/spec failures become per-item exclusions; unknown code, SQL, identity/configuration failures still abort.",
+  "tests": {
+    "finalCombined": {
+      "tests": 65,
+      "pass": 65,
+      "fail": 0,
+      "skipped": 0,
+      "log": "qa/final-regression.log"
+    },
+    "independentSubset": {
+      "tests": 5,
+      "includedIn65": true,
+      "script": "qa/independent-preview.test.mjs"
+    },
+    "baselineNegative": {
+      "tests": 3,
+      "pass": 0,
+      "fail": 3,
+      "expected": true,
+      "log": "qa/baseline-negative.log",
+      "note": "Same missing-file/SHA/padding acceptance conditions fail against unchanged installed R3, demonstrating the pre-existing issue."
+    }
+  },
+  "boundaries": [
+    "Missing workbook/image/padded image gets position/destination/basename in Chinese without raw local paths",
+    "Only verified declared path IO error or explicit content/spec failure is excluded; EACCES without a declared path, SQL and general validator errors are rethrown",
+    "Failed item contributes no partial images; valid items continue; original task snapshots unchanged",
+    "Cross-shop and corrupted snapshot still reject",
+    "Preview uses no login/browser/upload/product action; no-eligible start remains rejected",
+    "Original resume/recheck/unknown-upload and UI controls pass unchanged"
+  ],
+  "maintenanceReview": "Exact byte-equivalent R3 reviewed maintenance script apart from deeper child path. Backups, hash checks, original table/round/settings equality, no autostart, historical lock snapshot protection retained.",
+  "limitations": [
+    "Original R3 QA and installation reports are retained unchanged. This incremental PASS does not reassert earlier platform results.",
+    "No real image upload, shop login, product claim/submit or asset restoration was performed. Real source files remain missing and must be restored/reimported by the operator.",
+    "This approves only hash-bound maintenance installation; post-install verification remains required."
+  ]
+}

@@ -1,0 +1,195 @@
+{
+  "at": "2026-11-01T15:43:58.842Z",
+  "verdict": "PASS",
+  "qaAgent": "/root/independent_qa",
+  "readOnly": true,
+  "pid": 42188,
+  "started": "2026-11-01T15:42:17.8214953Z",
+  "kernel": {
+    "ok": true,
+    "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+    "revision": "20261101-recovery-materials-r4",
+    "files": 91,
+    "changed": []
+  },
+  "candidateManifestSha256": "d497fc08db5decdeb6d6bcf1e440706c801321c2559f62a0f374565e3f2724c3",
+  "files": {
+    "workbench/material-preparation-api.mjs": "d51140e78dc430273d1237d9ee1204e543044137a9234a12a2564d58d5cb650a",
+    "workbench/scripts/material-preparation-api.test.mjs": "48896baba404b5d5e51f9f945b98f347fc6a6b92b8e0167e545b553bcfe383c6"
+  },
+  "preservedR3": {
+    "workbench/execution-notifications.mjs": "a37161febe6554f5101fa49eb2c420e76cd5418bbcb6e68a43e5ac58fd4e3b0a",
+    "workbench/travel-os.js": "c13fe4bb6c7046152025cd5d473d06a22b76c9ec1973022a7c725bb7236b3e2c",
+    "workbench/round-item-detail.js": "531325e7a08b79fb7f6752b1bc08f08c298aad1660e43710b1595316045b9307",
+    "tools/notify-workbench.ps1": "94dfcf63ccbd98c516c33d3f756804361aca2a7debf8ab30a0d802db87e8ba5c",
+    "workbench/page-ownership.mjs": "13085292336b5eab5c2ab14d20c1f82f9dc382082417ba7afd6a01d65ba97030",
+    "workbench/pre-submit-page-recovery.mjs": "0208bb1145b9d6591d204506f7147e1581a83e6bdfa99f4d3e5217a8971adb56",
+    "workbench/source-workflow.mjs": "eb2a4c127a01c4e37e19a72b54bf644ba10a8f85fcb6f8b8f8e16d8a458aae0d",
+    "workbench/publishing-materials.mjs": "16e7d284edb296494465a7ef18eb8633f20688da383643202756c9f02b1b378e",
+    "workbench/taobao-publisher.mjs": "f0ed6fef4d1f3997541436e703e18d6ab4af813cce38863ddac7fc77d1d65d35",
+    "workbench/material-upload-preparation.mjs": "9a20785cc8deb1eaaaab41f052b14f03072beb778540c8a4f058c73c07e782eb",
+    "workbench/product-api.mjs": "15cafb3e475c5927462857ba54a3469f666602aab6ec7461a04e0a9d1c27fd1a",
+    "workbench/shop-execution.mjs": "bcd20a5a8ee42bc5e537a4c9aba64fce5e8473e09f64a16734b325b33218c126",
+    "workbench/server.mjs": "63b0cf2ab30b2cbf948a4a3fb9b6c051e1a2bb14888877922ec7df5710b62f03"
+  },
+  "staticFiles": {
+    "travel-os.js": "c13fe4bb6c7046152025cd5d473d06a22b76c9ec1973022a7c725bb7236b3e2c",
+    "round-item-detail.js": "531325e7a08b79fb7f6752b1bc08f08c298aad1660e43710b1595316045b9307"
+  },
+  "shops": [
+    {
+      "id": "wuzhou-changyou",
+      "active": false,
+      "browserRunning": false,
+      "roundUnchanged": true
+    },
+    {
+      "id": "shop-8a239d1b",
+      "active": false,
+      "browserRunning": false,
+      "roundUnchanged": true
+    },
+    {
+      "id": "shop-863c2e33",
+      "active": false,
+      "browserRunning": false,
+      "roundUnchanged": true
+    },
+    {
+      "id": "shop-cee4eabf",
+      "active": false,
+      "browserRunning": false,
+      "roundUnchanged": true
+    },
+    {
+      "id": "shop-fa0b135e",
+      "active": false,
+      "browserRunning": false,
+      "roundUnchanged": true
+    },
+    {
+      "id": "shop-79139216",
+      "active": false,
+      "browserRunning": false,
+      "roundUnchanged": true
+    },
+    {
+      "id": "shop-7949a469",
+      "active": false,
+      "browserRunning": false,
+      "roundUnchanged": true
+    },
+    {
+      "id": "shop-26d68af6",
+      "active": false,
+      "browserRunning": false,
+      "roundUnchanged": true
+    }
+  ],
+  "databases": {
+    "source-workflow\\state.sqlite": {
+      "unchanged": true,
+      "tableCount": 31
+    },
+    "shop-execution\\shop-8a239d1b\\source-workflow\\state.sqlite": {
+      "unchanged": true,
+      "tableCount": 28
+    },
+    "shop-execution\\shop-863c2e33\\source-workflow\\state.sqlite": {
+      "unchanged": true,
+      "tableCount": 28
+    },
+    "shop-execution\\shop-cee4eabf\\source-workflow\\state.sqlite": {
+      "unchanged": true,
+      "tableCount": 28
+    },
+    "shop-execution\\shop-fa0b135e\\source-workflow\\state.sqlite": {
+      "unchanged": true,
+      "tableCount": 28
+    },
+    "shop-execution\\shop-79139216\\source-workflow\\state.sqlite": {
+      "unchanged": true,
+      "tableCount": 28
+    },
+    "shop-execution\\shop-7949a469\\source-workflow\\state.sqlite": {
+      "unchanged": true,
+      "tableCount": 32
+    },
+    "shop-execution\\shop-26d68af6\\source-workflow\\state.sqlite": {
+      "unchanged": true,
+      "tableCount": 28
+    },
+    "travel-os/product.sqlite": {
+      "unchanged": true,
+      "tableCount": 4
+    }
+  },
+  "roundsUnchanged": true,
+  "settingsUnchanged": true,
+  "watchers": [
+    {
+      "name": "TravelOS-Internal-KeepAlive",
+      "enabled": true,
+      "state": "Ready"
+    },
+    {
+      "name": "TravelOS-Huanqiu-700-Watchdog-10m",
+      "enabled": true,
+      "state": "Ready"
+    }
+  ],
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/v1/health"
+    },
+    {
+      "method": "GET",
+      "path": "/travel-os.js"
+    },
+    {
+      "method": "GET",
+      "path": "/round-item-detail.js"
+    },
+    {
+      "method": "GET",
+      "path": "/api/os/state"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/state?executionShop=wuzhou-changyou"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/state?executionShop=shop-8a239d1b"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/state?executionShop=shop-863c2e33"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/state?executionShop=shop-cee4eabf"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/state?executionShop=shop-fa0b135e"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/state?executionShop=shop-79139216"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/state?executionShop=shop-7949a469"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/state?executionShop=shop-26d68af6"
+    }
+  ],
+  "realImageUploads": 0,
+  "productExecutionActions": 0,
+  "productionPublishingAllowed": false,
+  "platformUploadVerified": false
+}

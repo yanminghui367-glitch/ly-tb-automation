@@ -60,3 +60,17 @@ test('fresh final guard and final readiness cannot be skipped',async()=>{
   content=ready;await mount();let calls=0;await assert.rejects(waitMainMaterialFrame(page,async()=>{if(++calls!==2)return;if(type==='stop')throw Error('PAUSED_BY_USER');if(type==='disable')await page.frameLocator('#mainImagesGroup').getByPlaceholder('搜索图片名称').evaluate(e=>e.disabled=true);if(type==='detail')await page.evaluate(html=>document.body.insertAdjacentHTML('beforeend',html),host(''));},options),/PAUSED_BY_USER|MAIN_MATERIAL_FRAME_NOT_READY|MAIN_MATERIAL_FRAME_AMBIGUOUS/);
  }
 });
+
+for(const [label,fn]of [['main',waitMainMaterialFrame],['detail',waitDetailMaterialFrame]])test(label+' frame slow guards use separate budgets and total exhaustion is never SAFE_RETRY',async t=>{
+ content=ready+(label==='detail'?'<button>确定</button>':'');await mount(label==='main'?host():host(''));
+ let now=performance.now(),calls=0,diagnostic;t.mock.method(performance,'now',()=>now);
+ const found=await fn(page,async()=>{calls++;now+=4500;},{timeout:1000,onDiagnostic:d=>{diagnostic=d;}});
+ assert(found);assert.equal(calls,2);assert.equal(diagnostic.status,'ready');assert(diagnostic.guardMs>=9000);assert.equal(diagnostic.overallTimeoutMs,21000);assert(diagnostic.observeMs<1000);
+ calls=0;
+ await assert.rejects(fn(page,async()=>{calls++;now+=22000;},{timeout:1000}),e=>e.code==='MATERIAL_GUARD_BUDGET_EXHAUSTED'&&e.materialReadiness.timeoutReason==='OVERALL_GUARD_TIMEOUT');
+ assert.equal(calls,1);
+});
+test('optional detail frame absence does not evade an exhausted safety-check budget',async t=>{
+ await page.setContent('<main>no picker</main>');let now=performance.now();t.mock.method(performance,'now',()=>now);
+ await assert.rejects(waitDetailMaterialFrame(page,async()=>{now+=22000;},{required:false,timeout:1000}),e=>e.code==='MATERIAL_GUARD_BUDGET_EXHAUSTED');
+});

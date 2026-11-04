@@ -1,0 +1,43 @@
+{
+  "at": "2026-10-22T15:58:57.710Z",
+  "reviewer": "/root/receipt_qa",
+  "verdict": "PASS_CANDIDATE_ONLY",
+  "revision": "20261022-submit-receipt-r2",
+  "manifestSha256": "0a772786ab6a655842c01d64e11656e4b0cb1e07dc64b37e95b789ba324a8b5a",
+  "nextLockSha256": "8348e21a78ba56dc16b2b78848d0f96e178084dc6dbf306e7fdef15f3c6a0a80",
+  "kernel": {
+    "ok": true,
+    "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+    "revision": "20261022-submit-receipt-r2",
+    "files": 88,
+    "changed": []
+  },
+  "files": [
+    {
+      "path": "workbench/round-item-detail.js",
+      "role": "runtime",
+      "baselineSha256": "689bd86ab21c4e68abeb69a297bbfcd331300dfc3d1747508e233b0daaef00a4",
+      "sha256": "81b78539c526a7ff047668b069c5a80961eda7d9f2dbdc128c7de7ba84df2007"
+    },
+    {
+      "path": "workbench/scripts/receipt-association-ui.test.mjs",
+      "role": "test",
+      "baselineSha256": "98f281666f2c419c9f24d07c8fe71f3433a4c88b4600f1b7c04f12a12201ab93",
+      "sha256": "d8d190cd1730488d5e12420a6ee5d52366c8f0682df27a614e86a9f7dff76c51"
+    },
+    {
+      "path": "docs/kernel-baselines/20261022-before-submit-receipt-r2.json",
+      "role": "baseline",
+      "baselineSha256": null,
+      "sha256": "78fc29b5d750ef13935ff46e37b72b4841aeb55ebce0f11b58bc6a7ad0a2ed6d"
+    }
+  ],
+  "test": {
+    "log": "qa/final-ui.log",
+    "sha256": "011aec2bfce5d53027d1a6f7e84b0cd60d90d1d2ae7ee6c39192fe8a5840316a",
+    "pass": 1,
+    "fail": 0
+  },
+  "review": "Exactly one user-facing success notice changed, no execution logic changes. Original stopped window requires configure-next-window, no misleading old resume instruction remains. Browser test covers checkbox, lost-response replay, no auto-submit, cleared form and 390px.",
+  "deploymentAllowed": false
+}

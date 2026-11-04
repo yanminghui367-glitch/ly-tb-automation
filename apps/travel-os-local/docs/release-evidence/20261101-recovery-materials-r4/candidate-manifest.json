@@ -1,0 +1,27 @@
+{
+  "at": "2026-11-01T15:40:38.795Z",
+  "revision": "20261101-recovery-materials-r4",
+  "fromRevision": "20261101-recovery-materials-r3",
+  "beforeLockSha256": "f5219b68f061cf1d068ba30e044349b6aeae8ffb01ce374b6b9cc3c383776bdb",
+  "previousManifest": "docs/kernel-baselines/20261101-before-recovery-materials-r4.json",
+  "scope": "Follow-up live preview: isolate known local asset failures per item and show exact missing filenames; unknown code/DB/identity failures still propagate. No business file changes or publishing.",
+  "runtimeFiles": [
+    "workbench/material-preparation-api.mjs"
+  ],
+  "files": [
+    {
+      "path": "workbench/material-preparation-api.mjs",
+      "role": "runtime",
+      "baselineSha256": "4250fbae38791fe72a91b15848427b9e5035070ea04fec88fe5315b798f86294",
+      "sha256": "d51140e78dc430273d1237d9ee1204e543044137a9234a12a2564d58d5cb650a"
+    },
+    {
+      "path": "workbench/scripts/material-preparation-api.test.mjs",
+      "role": "test",
+      "baselineSha256": "67229491dadbe43d6086050a05aed1bc2cbbd1930e4be7dcf5e4a11346ae2132",
+      "sha256": "48896baba404b5d5e51f9f945b98f347fc6a6b92b8e0167e545b553bcfe383c6"
+    }
+  ],
+  "productionPublishingAllowed": false,
+  "phase1Evidence": "../qa-phase1/FINAL-QA.json"
+}

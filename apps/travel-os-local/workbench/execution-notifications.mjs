@@ -2,6 +2,9 @@ import {readFile,writeFile,rename,mkdir} from 'node:fs/promises';
 import {dirname,join} from 'node:path';
 import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
+import {existsSync} from 'node:fs';
+import {homedir} from 'node:os';
+import {isAbsolute} from 'node:path';
 
 const alertStates=new Set(['SYSTEM_BLOCKED','WAITING_HUMAN','RESULT_UNKNOWN','NEEDS_REVIEW','PAUSED_CAPTCHA']);
 const manualPause=reason=>/操作者暂停|本轮已停止|已安全暂停，恢复将沿用原任务/.test(String(reason||''));
@@ -23,10 +26,38 @@ export function notificationDecision(state,reason=''){
 async function readState(file){try{return JSON.parse(await readFile(file,'utf8'));}catch(e){if(e.code==='ENOENT')return {version:1,rounds:{},events:[]};throw e;}}
 async function writeState(file,value){await mkdir(dirname(file),{recursive:true});const temp=file+'.tmp';await writeFile(temp,JSON.stringify(value,null,2),'utf8');await rename(temp,file);}
 
-export function createWindowsPopup({script=fileURLToPath(new URL('../tools/notify-workbench.ps1',import.meta.url)),powershell='powershell.exe'}={}){
+const locationField=value=>typeof value==='string'&&/^[\w:.-]{1,256}$/.test(value);
+export function notificationUrl({shopId,roundId,windowId,key}={}){
+ const url=new URL('http://127.0.0.1:4318/travel-os.html#tasks');
+ if(!locationField(shopId))return url.href;
+ url.searchParams.set('shop',shopId);
+ if(locationField(roundId)){
+  url.searchParams.set('round',roundId);
+  if(locationField(windowId)&&locationField(key)){url.searchParams.set('window',windowId);url.searchParams.set('item',key);}
+ }
+ return url.href;
+}
+export function validatedNotificationUrl(value){
+ const url=new URL(value),keys=[...url.searchParams.keys()];
+ if(url.origin!=='http://127.0.0.1:4318'||url.username||url.password||url.pathname!=='/travel-os.html'||url.hash!=='#tasks'||keys.some(k=>!['shop','round','window','item'].includes(k)||url.searchParams.getAll(k).length!==1||!locationField(url.searchParams.get(k)))||keys.length&&!url.searchParams.has('shop')||url.searchParams.has('window')!==url.searchParams.has('item')||url.searchParams.has('window')&&!url.searchParams.has('round'))throw Error('执行提醒定位地址不合法');
+ return url.href;
+}
+
+export function notificationPowerShell({env=process.env,exists=existsSync,home=homedir()}={}){
+ if(env.TRAVEL_OS_POWERSHELL){if(!isAbsolute(env.TRAVEL_OS_POWERSHELL)||!exists(env.TRAVEL_OS_POWERSHELL))throw Error('执行提醒的 PowerShell 配置不存在或不是绝对路径');return env.TRAVEL_OS_POWERSHELL;}
+ const candidates=[join(env.ProgramFiles||'C:/Program Files','PowerShell','7','pwsh.exe'),join(home,'.cache','codex-runtimes','codex-primary-runtime','dependencies','native','powershell','pwsh.exe')];
+ return candidates.find(exists)||'powershell.exe';
+}
+export function createWindowsPopup({script=fileURLToPath(new URL('../tools/notify-workbench.ps1',import.meta.url)),powershell=null,spawnProcess=spawn,readyTimeoutMs=10000}={}){
  return event=>new Promise((resolve,reject)=>{
-  const child=spawn(powershell,['-NoLogo','-NoProfile','-NonInteractive','-STA','-WindowStyle','Hidden','-File',script,'-Title',String(event.title).slice(0,60),'-Message',String(event.message).replace(/[\r\n]+/g,' ').slice(0,220),'-Url','http://127.0.0.1:4318/travel-os.html#tasks'],{windowsHide:true,detached:true,stdio:'ignore'});
-  child.once('error',reject);child.once('spawn',()=>{child.unref();resolve({accepted:true});});
+  const url=validatedNotificationUrl(event.url);
+  const child=spawnProcess(powershell||notificationPowerShell(),['-NoLogo','-NoProfile','-NonInteractive','-STA','-WindowStyle','Hidden','-File',script,'-Title',String(event.title).slice(0,60),'-Message',String(event.message).replace(/[\r\n]+/g,' ').slice(0,220),'-Url',url],{windowsHide:true,detached:true,stdio:['ignore','pipe','ignore']});
+  let done=false,output='';
+  const finish=error=>{if(done)return;done=true;clearTimeout(timer);if(error)reject(error);else{child.unref();child.stdout?.unref?.();resolve({accepted:true});}};
+  const timer=setTimeout(()=>{finish(Error('Windows 提醒初始化超时，未确认弹窗已建立'));child.kill?.();},readyTimeoutMs);timer.unref?.();
+  child.once('error',finish);
+  child.once('exit',code=>finish(Error('Windows 提醒初始化失败，退出码：'+code)));
+  child.stdout?.on('data',data=>{output=(output+data.toString()).slice(-256);if(output.includes('TRAVEL_OS_NOTIFICATION_READY'))finish();});
  });
 }
 
@@ -59,7 +90,8 @@ export class ExecutionNotificationMonitor{
      const id=`${round.id}:${latest?.id||'round'}:${status}:${this.now().getTime()}`;
      const destination=current?.task?.listing?.city||current?.task?.listing?.country||'';
      const shop=product.shop?.name||'当前店铺';
-     const event={id,kind:decision.kind,title:decision.title,message:`${shop}${destination?' · '+destination:''}。${decision.message}`,url:'http://127.0.0.1:4318/travel-os.html#tasks',at:this.now().toISOString()};
+     const shopId=product.shop?.id||round.shop,scopeMatches=!round.shop||round.shop===shopId;
+     const event={id,kind:decision.kind,title:decision.title,message:`${shop}${destination?' · '+destination:''}。${decision.message}`,url:notificationUrl({shopId,roundId:scopeMatches?round.id:null,windowId:latest?.id,key:round.current_item}),at:this.now().toISOString()};
      state.events.push({...event,delivery:'queued'});state.events=state.events.slice(-300);changed=true;
      // Persist the dedupe key before spawning the Windows notifier: a process
      // restart must never duplicate a popup for the same state transition.

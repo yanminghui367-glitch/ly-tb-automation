@@ -2,8 +2,8 @@
   "description": "复用现有SourceWorkflow/BatchWorkflow单浏览器执行器；固定轮次持久化、官方后台查重与结果核验、安全有限恢复、暂停续跑、首1→5→100门槛、原批次ID与快照保留。",
   "baselineCommit": "25a47febfe08f8af6bfade20198d787354b76bff",
   "files": {
-    "workbench/taobao-publisher.mjs": "5f6b5d77447fa34a783ed58f8f407dc1b64b4be48398822773759b229b660582",
-    "workbench/source-workflow.mjs": "f1ed2e5f268c141d531aad14be82f38df4ba52981e8e1b11753218451da7ff49",
+    "workbench/taobao-publisher.mjs": "70210c80f901ad27dac9dd61754fa1a6027d65ddbf86debdf7889ede7e4f0f89",
+    "workbench/source-workflow.mjs": "eb2a4c127a01c4e37e19a72b54bf644ba10a8f85fcb6f8b8f8e16d8a458aae0d",
     "workbench/source-store.mjs": "f2229992bdefdb23e15e1cca53fd405c55e43ba9067fb672cb34826deb828d40",
     "engine/v2/adapter.py": "086d59dee6c6c832231d7a7ada467aaba4b7dc883ba013a7ab6ac6bb10837cff",
     "engine/v2/heat_queue_adapter.py": "eb092402a227c4f9258faa3af1b5c2ee609645d06d0c8f55105b4d35e0a89096",
@@ -11,31 +11,31 @@
     "workbench/batch-workflow.mjs": "129a4d4caadaeb4d181ccd934a945ac4b6b8cda11847357982e72aba387fba31",
     "workbench/batch-store.mjs": "11bc08027a50da9aaac22929feb5fc567d2b15f1feccc7061c2b3f3883601b7d",
     "workbench/session-guard.mjs": "4d15ae4a780521f6f5b72dbb8675ead264d8ca27b99e151e6b506480e2320fba",
-    "workbench/browser-environment.mjs": "0750e17ad521819b15320d996e80b54705070369363d3e67f5b4a72b00049b00",
+    "workbench/browser-environment.mjs": "1278bc8cf61b9cd8a90674d9b66b885d473371969251b23fa83e5940cac76c47",
     "workbench/publishing-attributes.mjs": "acd12a52963628c5ae4e4c908de37932ba46e368391f0fbcf2b7e41d8903d4af",
     "workbench/task-screenshot.mjs": "8ba331237f2a45001f42543254c0979fae0d844da95760ab6a55ec5ed1cb919c",
-    "workbench/result-reconciliation.mjs": "5da487ee2e3fcf84ebd77916e3e3a4abf0cef940001e39263fb127c34d7bfc38",
+    "workbench/result-reconciliation.mjs": "c85d18a27d76dd69d8527e33a2b545ed4756dabecbf02544340e4bb656d3a9c7",
     "workbench/batch-policy.mjs": "0c719ae35ac9eaf922ad62e97ed64f7fe6e948882e127b7aae4acc8cb1e21df9",
-    "workbench/publishing-materials.mjs": "304500f53f12f18a08bba327e8d77ca1985c3316c97e94719977708acbd6ea29",
+    "workbench/publishing-materials.mjs": "d349932fc9c58e3685b7a062b022687286e198d49fd1547684fd456fc195ada0",
     "workbench/publishing-pages.mjs": "e9a3c43dec273e15896128ecaf1bcb3c769ac70c97ef987c91c465d5a2fc3914",
-    "workbench/listing-round.mjs": "0cb4c3dcbeb4c215cdeecae716dba7cd00deed8a52fb2aba6288d495fbadb629",
+    "workbench/listing-round.mjs": "eee0ba4419549a96173c54021425dcd6ca5c247b0879840dc0cae69a7f302a26",
     "workbench/listing-identity.mjs": "bf6be77ffc5fe95cce27215a5182cb264b7d51f87aef090fdbda99bdc9d495c1",
     "workbench/listing-verification.mjs": "43a8f834758583bcfa6884240e9cf659c08ca8710d3c5b3056a460dde73cef47",
-    "workbench/round-verification.mjs": "b7a2775eb1ddece78167bb776cdca2441812c6e352b0a5b323e8de92de7385ee",
-    "workbench/product-api.mjs": "1dad14bb972393eca77f5b3674dfac42d7c816b704ee34923193fc3a759334d4",
-    "workbench/server.mjs": "1665a7afc3bb7c8bc594626658ed8363127b0096d243b6d5ecf56dbe5bca46ee",
+    "workbench/round-verification.mjs": "12f7ef320ba3be8337876a2614a5edeae6817629d237b86f16238ad9a023d89e",
+    "workbench/product-api.mjs": "15cafb3e475c5927462857ba54a3469f666602aab6ec7461a04e0a9d1c27fd1a",
+    "workbench/server.mjs": "63b0cf2ab30b2cbf948a4a3fb9b6c051e1a2bb14888877922ec7df5710b62f03",
     "workbench/kernel-integrity.mjs": "422e481abf069cc93622e9eafb7649bb35a3826bbe3e3a43904f2b515ca267d1",
     "workbench/publishing-content-review.mjs": "14352c10bd5808bc9d936bba595917c02db07859aa4a438559c2be3f1d16a947",
     "workbench/round-windows.mjs": "b8ab76cd501ffefad1fb294da25e4ce0eb6257e17340c538331e4f1004f7d7e6",
     "workbench/page-protection.mjs": "700a016e7db04af1e7b789fbe32dba551bcde2e59c321c0e205cd5f781283095",
-    "workbench/page-ownership.mjs": "e084aa11c6761244292c98a221437e6440a147af3adfc3511c37a125a35e47a9",
+    "workbench/page-ownership.mjs": "13085292336b5eab5c2ab14d20c1f82f9dc382082417ba7afd6a01d65ba97030",
     "workbench/publishing-address.mjs": "426c7736b6286589e35016bb036684630730611d4656ac1593efffa47df8d9a8",
     "workbench/round-item-attempts.mjs": "ac8927413fdf88121d5f53ef6b5beae2ac53e1b4aacf2c0b376cd58d0e51582b",
     "workbench/round-manual-skip.mjs": "95e2c474dd659674805e008d594a8b56e4018af964a9b4210bc49705493067bf",
     "workbench/round-item-api.mjs": "91c4d82f7abddeaa1892febe37741d6cb670c460c14bd8bab72c072e38d1e1a6",
     "workbench/round-item-host.mjs": "e92a151a92bc27fc21e17f07e227086462f4df7e6492d20817e6d3b91903b4ba",
     "workbench/round-item-host-api.mjs": "92b7b341c9802f642100a8f5fe404af078e7b711f8034282d6839dbfa48dab5d",
-    "workbench/round-item-verify.mjs": "39a5ee24bce903dc48f182b5b5ba5732913f0c0f577a235767f2f61fae5390f0",
+    "workbench/round-item-verify.mjs": "be7a5975328d7e68fa4271fdece58224dea9d2e2c7b840ac5cf54ffd3d8c2634",
     "workbench/round-item-verify-api.mjs": "2c2908fb7f0fff6df4af0856567321245ae90ba1e41d6d010ca2ed9d3944acc6",
     "workbench/round-item-candidates.mjs": "681525c7e515fbfd82fe1c141fbe5cb1f4a7413f4e0853383ab45308d66d2399",
     "workbench/round-execution-attempts.mjs": "286617f77c1b02e890c06769d295c54d88a40067611d502eadd6354e52fcf36b",
@@ -44,16 +44,16 @@
     "workbench/operations-api.mjs": "018fa727a9e82949fb52f3f6f500938be55fb635549b20ff504e8bc2ebbbdcf0",
     "workbench/operations-catalog.mjs": "89215b98f00c317e746f6ffa31e256634f97ddf5075a9224cc422b13a3d3e50c",
     "workbench/round-selection.mjs": "4628dbb3e311a52da3d17072c32738aa23dc3a319f57c635d911e2d0f21e7c74",
-    "workbench/travel-os.js": "c3b2a248270f55329f8360d8bd67b09c8577fb732a423f6be4f2611e8ccc66c2",
-    "workbench/round-item-detail.js": "ed8b97c839c466e101691507d984124a469c2294cb3b74064b95af20f7ac31c6",
-    "workbench/ui-copy.js": "99b5bc32bce37f50048ede0b7ae6c1f4930a321a219a87a8a8df71330af23690",
-    "workbench/shop-execution.mjs": "aac493caa739bcec0278d24e44765c276edd5d6ef836f1bd451c2b5e1d63c75c",
+    "workbench/travel-os.js": "e77371721a002d7445012b1cf12d08f45706a4386e30bc6fd52a22ed476a71f1",
+    "workbench/round-item-detail.js": "531325e7a08b79fb7f6752b1bc08f08c298aad1660e43710b1595316045b9307",
+    "workbench/ui-copy.js": "b9393b2c74f841d46fd5f59e3408f2252978624ac8b7cc55627dd36ecb20c0c0",
+    "workbench/shop-execution.mjs": "bcd20a5a8ee42bc5e537a4c9aba64fce5e8473e09f64a16734b325b33218c126",
     "workbench/shop-scope.js": "d702a0791aca90a1140fbb5e7a95fb2e5b9d55cec2113c9b2fec21ea8fb356d1",
     "workbench/setup-flow.mjs": "83a14a9a2979e1dd2ee210c29fcd9b5049a117aacac02b48c018aac992d137ba",
     "workbench/setup-ui.js": "31b5eaa9d564f7fefc263c8e5a90de5a6f542529f7fb5d06f0bebc13e7ce6f9c",
     "workbench/travel-os-api.mjs": "ec0c2e4c56094df0570f3b81801f303804a981d804b9bdf000d05029d49eb296",
     "workbench/publishing-rules-ui.js": "43b9b955c7298961f0e670c8a1e73d33b221f24b3538495648cbde78f2b15558",
-    "workbench/operations-catalog-ui.js": "7b828343c4b931fa6c5a66c1daf7e0d493dcd37ceb494a3d2b63b889bb3ce8c5",
+    "workbench/operations-catalog-ui.js": "e9cac1ecf2f5758a98902fc35f7635d08aeb74659aa0b835a7fa067372104aca",
     "workbench/static-files.mjs": "aa976fc7815c5ac43213e897d24715b71b5c00f43e8d8fb1c4af21a015afe251",
     "workbench/destination-catalog.mjs": "3a076f37352082372c348cfa54792488c5b9c758b91b3284edf64fdf6a9d2e89",
     "workbench/travel-os.html": "d350138abdfc5bd07879509ef4ad7afc8b9e8bf3e59bfc0e8827331a69ced6d7",
@@ -85,12 +85,17 @@
     "workbench/execution-timing.mjs": "72d81eaf89421f22991e6b41c97a884ee14ca5e93f84249fde6e048d8e119bdb",
     "workbench/execution-steps.mjs": "2b7742e5a616ff76dedf3dbaf35635e658b0b1d2852cdda3a6900a5bd15554f0",
     "workbench/execution-evidence-policy.mjs": "a6a5cad17d25fa8ec2559b6c62698f6067aacdb874a759154a3cae1d8653ff73",
-    "workbench/execution-notifications.mjs": "1c56e6dc50079f571cd5de4a83d35d5ace927a959872453a1640a214a0ac55ee",
+    "workbench/execution-notifications.mjs": "a37161febe6554f5101fa49eb2c420e76cd5418bbcb6e68a43e5ac58fd4e3b0a",
     "workbench/round-item-park.mjs": "26b6196d68c57565d334bb826d2305933875de8e6f6211368c88e7f4f54871ee",
-    "workbench/pre-submit-page-recovery.mjs": "0f74fb9cec5596553966aa4332a6229812f020710c939eb13f6206c4f70d262f",
-    "workbench/round-success-goal.mjs": "772a6db3d3c40bdcfa8a48b6c54b85cd3147d97ae018ca0213dc17826a8aa76c"
+    "workbench/pre-submit-page-recovery.mjs": "0208bb1145b9d6591d204506f7147e1581a83e6bdfa99f4d3e5217a8971adb56",
+    "workbench/round-success-goal.mjs": "772a6db3d3c40bdcfa8a48b6c54b85cd3147d97ae018ca0213dc17826a8aa76c",
+    "workbench/submission-receipt.mjs": "e39aee5082725249a0af52621de16d85f850674f82aa9535d34dad902758d723",
+    "tools/notify-workbench.ps1": "94dfcf63ccbd98c516c33d3f756804361aca2a7debf8ab30a0d802db87e8ba5c",
+    "workbench/material-upload-preparation.mjs": "bad9ba08a00b3249131acb398d6cf537ae62fac102cd620fda09aabea0166acb",
+    "workbench/material-preparation-api.mjs": "d51140e78dc430273d1237d9ee1204e543044137a9234a12a2564d58d5cb650a",
+    "workbench/material-native-files.mjs": "368826b350d2ff08674beb17d7ea82f4795e2ed1b3c23d95b1c92f56d05abfbb"
   },
-  "revision": "20261019-success-target-r1",
+  "revision": "20261103-stability-recheck-r2",
   "previousManifest": "docs/kernel-baselines/20261013-before-user-round-policy.json",
   "authorization": "原固定700授权保持；20261009新增目标：网站独立100、持久执行轮次、安全暂停及停止；代码与隔离验证不等同真实100验收。目标文件 SHA256 6987926f300acc3190909dbf56979cd4e5f8cb5eaadd3c7b73bce832ad59952f；r15原生页面归属/固定保护/预算/结果落盘后清理，未改变商品资料和提交规则。；r16固定清单旧批次start/retry/skip归属守卫，不改变任务资料或新增发布者。；r17兼容实测item.manager新增发布页，保留双确切来源、同页身份、唯一回执与页面清理保护，不修改资料或新增执行者。；r18登录检查忽略检查期间已关闭页，活页异常仍暂停并保存净化诊断；不缓存登录放行、不更改发布资料。；r19等待同一官方详情素材弹窗就绪，恢复复用原弹窗；保留身份风控、资料和提交保护，不刷新或重复打开。；r20库存稳定观察窗口从首次受保护采样开始，避免前置身份检查耗尽预算；不改库存业务值、稳定阈值、两次填写上限及提交保护。；r21仅价格空值有界补填一次，非空异值立即暂停，逐次身份控件校验和独立证据；不改原商品价格、其他字段或提交保护。；候选：原轮次单条详情、未提交手动跳过、原商品仅核验及原请求恢复；新尝试只追加，原任务资料与发布规则不变。未获生产部署放行。；单条人工重试候选：原执行者、同队列、原任务身份，先查重、只处理所选商品并暂停；追加历史、断线原请求核对和中断记录恢复，不修改商品业务值。独立复查与网站模拟结果不代替真实上架验收。；20261011 P0/P1：兼容实测千牛商品管理入口，保持同店、全部商品、响应与DOM一致及完整分页校验；未改变提交、资料和恢复授权。；20261011 P1单条诊断增量：等待同一官方主图素材面板就绪，主图与详情面板明确区分；保留原任务、提交、防重、上传逻辑及人工风控，不增加发布范围。；20261011 P1单条诊断增量：主图单次点击超时后以原表单全部已插入图片精确对账，禁止重复点击；保留原任务、提交、防重、上传逻辑及人工风控，不增加发布范围。；20261011 P1：自定义属性仅单次点击，超时后在原页面及身份风控校验下精确回读冻结选中值和菜单关闭状态；不重新点击、不变更随机结果或发布范围。；20261011 P1：单条重试按钮、POST受理和实际claim共用原只读预算检查，明确拒绝原因，防止已耗尽任务空跑；不提高次数、不改基线或历史、不新增发布。；20261011网站总表与选择范围：用户授权统一状态、批量执行与异常恢复及网站验收；复用原执行器，原资料/预算/人工与提交保护保持，保存范围不启动，最多100条分窗仅处理勾选项。明确单商品未提交资料错误可继续，其余系统或提交不明暂停。代码验证不是真实100验收。；20261012正式700预检性能：仅同一同步检查内批量读取原事件、授权与店铺元数据，每次revision重新读取，不跨await缓存；哈希、阻塞、预算及执行逻辑保持。；20261012主图恢复核验：仅在原表单、原店铺守卫通过且完整有序图片清单精确匹配时，将已插入主图与执行断点对账；保留原单击、超时暂停和提交边界，不改变任务范围、商品内容或发布规则。独立QA复审与浏览器回归通过，生产恢复仍须网站检查。；20261013仅在主图选择后识别精确的淘宝主图操作菜单并以Escape关闭、验证关闭后再填写标题；不改任务资料、商品状态、执行范围或提交行为。；r22批量任务快照合并SQLite读取，保持原执行范围摘要字段及人工/安全闸门不变，降低状态查询单线程阻塞；未访问执行浏览器或提交商品。；r23将完整SSE快照降为15秒、页面静默断连判断改为45秒；启动器先探测4318监听端口，服务繁忙时等待健康检查而不重复启动。；r24状态视图将队列、核验记录、资料异常和成功事件改为批量索引读取，预检异常列表按导入及持久事件版本缓存，保持数据与筛选口径。；r25 当前轮次单条手动跳过后继续：仅已确认未提交且当前暂停项允许，复用原幂等跳过与原轮次恢复接口；保留提交/结果不明/人工处理保护，不扩展发布范围。隔离模拟验证，不代表正式轮次操作或真实上架。；r26：仅取消‘本执行器新建且成功核验页面’因Chrome当前选中标签而暂停的误判；保持固定/未知页面、挑战、页面身份、成功回执、导航和店铺守卫；不触发历史商品或自动恢复。；r27 用户要求在本轮操作区增加跳过此条：对当前未提交的验证码暂停或卡顿项保存幂等人工跳过决定，再沿原轮次恢复检查；保留提交、结果不明、内容、身份及平台验证码保护，不触发正式轮次操作或改变商品资料。；r28 用户要求当前固定700轮忽略店内同目的地候选阻塞，并将美国戴德姆/德德姆这一单条译名差异按用户确认视为同一地点；仅追加轮次规则审计，不改manifest/授权快照/商品资料，只有确认未提交项可释放；商品ID对账、提交未知、验证码、资料与页面守卫保持，应用规则不自动恢复或提交。；20261013中文交互状态与日志：仅增加显示层状态码/步骤码翻译和异常中文提示，不更改队列状态、执行流程、平台请求或提交行为。；r28 当前验证码未提交人工跳过同时读取原轮次暂停原因与维护恢复后的run原因，保留所有提交和身份保护；用户明确要求本轮操作区一键跳过。；执行监控UI：用户确认合并轮次与当前状态，仅更新travel-os.js界面与只读日志绑定哈希；28项隔离界面、35项轮次回归通过，未改变后台执行或启动正式任务。；20261013中文界面增量修复：异常原因、任务步骤、状态与日志内容统一通过显示层中文化；将ui-copy.js纳入冻结校验，仅改显示文案，不改执行流程与提交行为。；20261013中文交互增量：将旧界面任务状态与批次异常也接入相同中文显示层；仅改状态、步骤和诊断呈现，不改任务执行逻辑。；20261014 仅修复历史提交前查重候选被误判为提交证据：原尝试未绑定run、快照所有提交标记明确为false且有同范围原始未提交隔离事件时，才排除该历史状态；不修改账本或执行发布。；20261014 跳过与单条操作入口复用已有支持局域网HTTP的requestId，保留稳定UUID、防重、历史与所有发布保护；只更新前端，不重启执行浏览器或操作真实商品。；20261015 内容准备修复：网站显式创建完整固定清单，逐条原图审核记录，不自动PASS或启动；LIVE内容检查前移到扣次/创建run/模式转换之前。仅精确未打开填写页的原内容缺失历史可追加一次固定抵扣，保留原始次数、run、快照与事件，抵扣限定原轮次许可；其他提交/验证码/未知保护保持。；20261015 用户明确要求图片默认批量完成且不增加独立审核页面：按user-batch-confirmation记录用户授权及冻结素材/清单版本，缺失记录自动批量确认；保留已有明确结论，不伪造逐图目视记录；移除新增审核入口，原清单/队列/次数保持，不自动启动。；20261015用户要求资料在设置阶段完成核对，启动不再重复整批资料核对：导入记录自动核对状态，任务范围分配取消逐条重复读取文件，单击开始直接沿原范围执行；超过100自动分轮，等待失败有明确结束状态及稳定请求编号，原执行器逐条文件/身份/提交防重保持。20261017 用户授权增加 Windows 执行提醒：异常暂停与单轮完成各提醒一次，主动暂停/停止与单条跳过不提醒；提醒点击回到任务页，不自动恢复或重试；守护进程检测近期非正常服务中断。只新增通知与状态观察，不改变商品数据、发布规则或实际执行范围。",
   "uiRevision": "20261014-batch-recheck",
@@ -296,5 +301,159 @@
     "beforeLockSha256": "e483fc91774e2a0657c0febcd6f63bba4f7b19c23b08e97a7f903e738a1390a6",
     "fromRevision": "20261019-park-and-continue-r1",
     "toRevision": "20261019-success-target-r1"
+  },
+  "submitReceiptReview": {
+    "at": "2026-10-22T15:48:06.868Z",
+    "qaAgent": "/root/receipt_qa",
+    "evidence": "docs/release-evidence/20261022-submit-receipt-r1/FINAL-QA.md",
+    "candidateManifestSha256": "88b38dc52fecee66e5a156a50086f07e3784692bfcabe9da0ca8aa08f376e75e",
+    "scope": "One-click receipt preservation and audited original-ID reconciliation; no retry/skip/credit changes",
+    "previousManifest": "docs/kernel-baselines/20261022-before-submit-receipt-r1.json",
+    "beforeLockSha256": "ad8912f825a1df02febf4dfa29e5f17fb449afdc520166711d047a325f368161",
+    "fromRevision": "20261019-success-target-r1",
+    "toRevision": "20261022-submit-receipt-r1"
+  },
+  "submitReceiptNoticeReview": {
+    "at": "2026-10-22T15:57:52.608Z",
+    "qaAgent": "/root/receipt_qa",
+    "evidence": "docs/release-evidence/20261022-submit-receipt-r2/FINAL-QA.md",
+    "candidateManifestSha256": "0a772786ab6a655842c01d64e11656e4b0cb1e07dc64b37e95b789ba324a8b5a",
+    "scope": "UI success notice only: preserve user stop and avoid directing to absent resume button; no execution behavior change",
+    "previousManifest": "docs/kernel-baselines/20261022-before-submit-receipt-r2.json",
+    "beforeLockSha256": "78fc29b5d750ef13935ff46e37b72b4841aeb55ebce0f11b58bc6a7ad0a2ed6d",
+    "fromRevision": "20261022-submit-receipt-r1",
+    "toRevision": "20261022-submit-receipt-r2"
+  },
+  "recoveryMaterialsReview": {
+    "at": "2026-11-01T15:30:21.259Z",
+    "qaAgent": "/root/independent_qa",
+    "evidence": "docs/release-evidence/20261101-recovery-materials-r3/independent-qa.md",
+    "candidateManifestSha256": "ac944b3ea7ffb0ceddede2d4a7ed032a0a5ed392ea413fc3f51669d66085da22",
+    "scope": "Stage 1 anomaly locations, recovery guidance and proven pre-submit recovered-page disposal; after independent stage-1 PASS, stage 2 scoped material preparation with per-image receipts, cancellation and no product execution",
+    "previousManifest": "docs/kernel-baselines/20261101-before-recovery-materials-r3.json",
+    "beforeLockSha256": "8348e21a78ba56dc16b2b78848d0f96e178084dc6dbf306e7fdef15f3c6a0a80",
+    "fromRevision": "20261022-submit-receipt-r2",
+    "toRevision": "20261101-recovery-materials-r3",
+    "productionPublishingAllowed": false
+  },
+  "previewDataDiagnosticsReview": {
+    "at": "2026-11-01T15:40:38.879Z",
+    "qaAgent": "/root/independent_qa",
+    "evidence": "docs/release-evidence/20261101-recovery-materials-r4/independent-qa.md",
+    "candidateManifestSha256": "d497fc08db5decdeb6d6bcf1e440706c801321c2559f62a0f374565e3f2724c3",
+    "scope": "Follow-up live preview: isolate known local asset failures per item and show exact missing filenames; unknown code/DB/identity failures still propagate. No business file changes or publishing.",
+    "previousManifest": "docs/kernel-baselines/20261101-before-recovery-materials-r4.json",
+    "beforeLockSha256": "f5219b68f061cf1d068ba30e044349b6aeae8ffb01ce374b6b9cc3c383776bdb",
+    "fromRevision": "20261101-recovery-materials-r3",
+    "toRevision": "20261101-recovery-materials-r4",
+    "productionPublishingAllowed": false
+  },
+  "materialUploadRecoveryReview": {
+    "at": "2026-11-01T16:23:26.611Z",
+    "revision": "20261102-material-upload-recovery-r1",
+    "scope": "Repair original image preparation only: Windows long paths, current official search/card/icon receipts, durable per-file reconciliation and strictly proven pre-upload empty-file recovery. No product execution or publication.",
+    "beforeLockSha256": "b86a17d2ce802c1828545fb098982f3b86ac556198399adef3e43e85691a1997",
+    "files": [
+      "workbench/publishing-materials.mjs",
+      "workbench/material-native-files.mjs",
+      "workbench/material-upload-preparation.mjs",
+      "workbench/taobao-publisher.mjs"
+    ],
+    "unchangedProductAttempts": true,
+    "unknownProtectionPreserved": true
+  },
+  "materialUploadRecoverySdkReview": {
+    "at": "2026-11-01T16:31:09.776Z",
+    "revision": "20261102-material-upload-recovery-r2",
+    "beforeLockSha256": "4429871b4ec727d175d836ba81db5b02325c34c8b6a9e6bbccec2a1adc6e01d1",
+    "sdkSha256": "59b6d21fe7c5e646b1bad7bd3502854ef87060cd9c5bd72811faeda77844a6a7"
+  },
+  "20261103-prepared-cache-time-r1": {
+    "scope": "仅prepared素材URL比较容忍同路径/变体、唯一13位t相差不超过1秒；其余参数逐字保留",
+    "fromRevision": "20261102-publish-prepared-reuse-r1",
+    "toRevision": "20261103-prepared-cache-time-r1",
+    "beforeLockSha256": "2fbd1e318571a3c10e09ebaf631faa7df461aa25a349e6598cd5a003c7984cf5",
+    "qaReport": "output/next-hundred-live-20261102/resume-confirmed-category/material354/QA-CANDIDATE.json",
+    "files": [
+      {
+        "path": "workbench/taobao-publisher.mjs",
+        "baselineSha256": "f31c6d4a404804936d9ba8b203d0c20c70807cf46245c45343ad80a238583f0f",
+        "sha256": "5656340eb34d3406a9a73f402020e6a348a819b0209d5b4181ace1c7cb7562db"
+      }
+    ]
+  },
+  "20261103-stability-optimization-r1": {
+    "scope": "98条证据下的素材就绪、中文恢复/窗口展示、实时检查并发及诊断汇总优化；无真实上架/次数变化",
+    "fromRevision": "20261103-prepared-cache-time-r1",
+    "beforeLockSha256": "6d58730a3f202e81331a182c9fd3ef41534d138860017bc82b60b477326e96d0",
+    "qaReport": "output/stability-optimization-20261103/QA-CANDIDATE.json",
+    "files": [
+      {
+        "path": "workbench/taobao-publisher.mjs",
+        "baselineSha256": "5656340eb34d3406a9a73f402020e6a348a819b0209d5b4181ace1c7cb7562db",
+        "sha256": "77fe4bea50639ab4d4d815ed67076ba56595d8a9458ebcdaed3520dd77564cba"
+      },
+      {
+        "path": "workbench/browser-environment.mjs",
+        "baselineSha256": "0750e17ad521819b15320d996e80b54705070369363d3e67f5b4a72b00049b00",
+        "sha256": "f06390939b03681b493b5133d78842638456c9dd9261d0824c9a495d9121bc55"
+      },
+      {
+        "path": "workbench/publishing-materials.mjs",
+        "baselineSha256": "fd91a3b2d44224c43edecebdb37e0525b8884684ca6dbba764743b104d0efc8c",
+        "sha256": "a63de19c8f02322b3d3ea68f507d02227a559053f2bc3c4d038ea88f4c95eea1"
+      },
+      {
+        "path": "workbench/travel-os.js",
+        "baselineSha256": "c13fe4bb6c7046152025cd5d473d06a22b76c9ec1973022a7c725bb7236b3e2c",
+        "sha256": "eab42f36b194367c54bee7b06ddd0d6cb93d8114df220ae863ce8fcb6e18c35d"
+      },
+      {
+        "path": "workbench/ui-copy.js",
+        "baselineSha256": "37e49f3c7f9eb495a3b921c09ecf6fdb1663dc840038e5eaae2c29e6989f9234",
+        "sha256": "b9393b2c74f841d46fd5f59e3408f2252978624ac8b7cc55627dd36ecb20c0c0"
+      }
+    ]
+  },
+  "20261103-stability-recheck-r1": {
+    "scope": "增量复查：身份页失效、旧关闭回调、句柄清理诊断、安全检查总超时不重开；不改业务额度或提交",
+    "fromRevision": "20261103-stability-optimization-r1",
+    "beforeLockSha256": "641cee13e9ab25025817edfe945dc3e15c3ebb775a3fb2684fc6bed431f38541",
+    "qaReport": "output/stability-recheck-20261103/QA-CANDIDATE.json",
+    "files": [
+      {
+        "path": "workbench/taobao-publisher.mjs",
+        "baselineSha256": "77fe4bea50639ab4d4d815ed67076ba56595d8a9458ebcdaed3520dd77564cba",
+        "sha256": "70210c80f901ad27dac9dd61754fa1a6027d65ddbf86debdf7889ede7e4f0f89"
+      },
+      {
+        "path": "workbench/browser-environment.mjs",
+        "baselineSha256": "f06390939b03681b493b5133d78842638456c9dd9261d0824c9a495d9121bc55",
+        "sha256": "1278bc8cf61b9cd8a90674d9b66b885d473371969251b23fa83e5940cac76c47"
+      },
+      {
+        "path": "workbench/publishing-materials.mjs",
+        "baselineSha256": "a63de19c8f02322b3d3ea68f507d02227a559053f2bc3c4d038ea88f4c95eea1",
+        "sha256": "d349932fc9c58e3685b7a062b022687286e198d49fd1547684fd456fc195ada0"
+      }
+    ]
+  },
+  "20261103-stability-recheck-r2": {
+    "scope": "总表显示层接入现有中文原因转换，保留原始记录、状态、选择与执行能力",
+    "fromRevision": "20261103-stability-recheck-r1",
+    "beforeLockSha256": "cf133c30dc4d16328cddfbf7f6e4b3a07c87b494cfd64bc052305a52d1a3d908",
+    "qaReport": "output/stability-recheck-copy-20261103/QA-CANDIDATE.json",
+    "files": [
+      {
+        "path": "workbench/travel-os.js",
+        "baselineSha256": "eab42f36b194367c54bee7b06ddd0d6cb93d8114df220ae863ce8fcb6e18c35d",
+        "sha256": "e77371721a002d7445012b1cf12d08f45706a4386e30bc6fd52a22ed476a71f1"
+      },
+      {
+        "path": "workbench/operations-catalog-ui.js",
+        "baselineSha256": "7b828343c4b931fa6c5a66c1daf7e0d493dcd37ceb494a3d2b63b889bb3ce8c5",
+        "sha256": "e9cac1ecf2f5758a98902fc35f7635d08aeb74659aa0b835a7fa067372104aca"
+      }
+    ]
   }
 }

@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {verifyLegacyMaterialSdk,LEGACY_MATERIAL_SDK_SHA256} from '../material-native-files.mjs';
+test('legacy SDK replay is pinned to the audited SHA rather than requiring a restored page script tag',()=>{assert.match(LEGACY_MATERIAL_SDK_SHA256,/^[a-f0-9]{64}$/);assert.throws(()=>verifyLegacyMaterialSdk('return 0===a.size?!0:void n.files.push(new g(n.ruid,a))'),/组件版本无法确认/);});
+test('altered or empty SDK source cannot grant zero-file recovery even when it advertises the same API',()=>{for(const s of ['', 'window.mOxie={FileInput(){}}', '/* SDK 0.0.11 */ return 0===a.size?!0:void n.files.push(new g(n.ruid,a))'])assert.throws(()=>verifyLegacyMaterialSdk(s),/组件版本无法确认/);});

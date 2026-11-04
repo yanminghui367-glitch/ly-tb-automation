@@ -4,7 +4,7 @@ import test,{before,after} from 'node:test';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {createHash} from 'node:crypto';
-import {mkdtemp,rm,readFile,writeFile} from 'node:fs/promises';
+import {mkdtemp,mkdir,rm,readdir,readFile,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join,sep,resolve,dirname,basename} from 'node:path';
 import * as publisher from '../taobao-publisher.mjs';
@@ -201,11 +201,16 @@ test('pre-submit review persists the no-SKU result and refuses to write PASS for
 
 test('partial detail recovery reuses proven inserted prefix even when that asset is absent in the picker',async t=>{
  const f=await form(t),next={path:join(f.dir,'second.txt'),sha256:f.task.assets.details[0].sha256};await writeFile(next.path,'isolated source');f.task.assets.details.push(next);
+ await page.route('https://fixture.invalid/second.png',route=>route.fulfill({contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aN1cAAAAASUVORK5CYII=','base64')}));
  const picker='https://market.m.taobao.com/app/crs-qn/sucai-selector-ng/index';
- await page.route(picker,route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<input placeholder="搜索图片名称"><div class="PicList_pic_background__pGTdV"><span class="PicList_tip_title__aQfti">second.txt</span><div class="PicList_pic_imgBox__c0HXw" onclick="document.querySelector('input[type=checkbox]').checked=true"><img src="https://fixture.invalid/second.png"></div><input type="checkbox"></div><button onclick="parent.postMessage('insert-second','https://item.upload.taobao.com')">确定</button>`}));
+ await page.route(picker,route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<input placeholder="搜索图片名称"><div class="PicList_pic_background__pGTdV"><span class="PicList_tip_title__aQfti">second.txt</span><div class="PicList_pic_imgBox__c0HXw" style="width:64px;height:64px" onclick="document.querySelector('input[type=checkbox]').checked=true"><img src="https://fixture.invalid/second.png"></div><input type="checkbox"></div><button onclick="parent.postMessage('insert-second','https://item.upload.taobao.com')">确定</button>`}));
  await page.evaluate(url=>{window.addEventListener('message',e=>{if(e.origin==='https://market.m.taobao.com'&&e.data==='insert-second'){document.querySelector('#sell-field-descRepublicOfSell').insertAdjacentHTML('beforeend','<img class="image-item" src="https://fixture.invalid/second.png">');document.querySelector('.media-img-plug').remove();}});document.body.insertAdjacentHTML('beforeend','<div class="media-img-plug"><iframe src="'+url+'"></iframe></div>');},picker);
  const steps=[];const result=await publisher.fillTask({page,task:f.task,dir:f.dir,target:'ONSALE',guard:async()=>{},step:async(name,fn)=>{steps.push(name);if(name.startsWith('select-detail-')||name==='insert-details'||name==='pre-submit-review')await fn();}});
  assert.equal(result.details.length,2);assert.equal(result.details[0].source.path,f.task.assets.details[0].path);assert.equal(result.details[1].source.path,next.path);assert.equal(await page.locator('#sell-field-descRepublicOfSell img').count(),2);assert(steps.includes('pre-submit-review'));
+ const review=JSON.parse(await readFile(join(f.dir,'review.json'),'utf8'));
+ assert(review.materialReadiness.some(d=>d.stage==='detail-panel'&&d.status==='ready'));
+ assert(review.materialReadiness.some(d=>d.stage==='thumbnail'&&d.decoded===true&&d.guardMs>=0&&d.observeMs>=0&&d.overallTimeoutMs===50000));
+ assert.equal((await readdir(f.dir)).filter(name=>/^detail-readiness-.*\.json$/.test(name)).length,0,'successful readiness is aggregated into review, not per-stage JSON');
 });
 test('partial detail recovery refuses missing receipt, wrong source, reordered image or changed bound version',async()=>{
  const a={path:'original.png',sha256:'fixed'},r={order:1,source:a,url:'https://fixture.invalid/original.png'};
@@ -213,4 +218,80 @@ test('partial detail recovery refuses missing receipt, wrong source, reordered i
  await assert.rejects(publisher.verifyInsertedDetails([r.url],[{...a,sha256:'edited'}],[r]),/SOURCE_MISMATCH/);
  await assert.rejects(publisher.verifyInsertedDetails(['https://fixture.invalid/other.png'],[a],[r]),/EXISTING_DETAIL_MISMATCH/);
  await assert.rejects(publisher.verifyInsertedDetails([r.url],[{...a,materialVersion:{version:2}}],[r]),/SOURCE_MISMATCH/);
+});
+
+test('failed material readiness still writes independent evidence with visibility and both timing budgets',async t=>{
+ const f=await form(t);
+ await page.evaluate(()=>document.body.insertAdjacentHTML('beforeend','<div class="media-img-plug"><iframe src="https://example.com/wrong-picker"></iframe></div>'));
+ await assert.rejects(publisher.fillTask({page,task:f.task,dir:f.dir,target:'ONSALE',guard:async()=>{},step:async()=>{}}),e=>e.code==='SAFE_RETRY_DETAIL_FRAME_ORIGIN');
+ const names=(await readdir(f.dir)).filter(name=>/^detail-readiness-.*\.json$/.test(name));assert.equal(names.length,1);
+ const evidence=JSON.parse(await readFile(join(f.dir,names[0]),'utf8'));
+ assert.equal(evidence.status,'failed');assert.equal(evidence.stage,'detail-panel');assert.equal(evidence.count,1);assert.equal(evidence.visible,true);
+ assert.equal(evidence.observationTimeoutMs,20000);assert.equal(evidence.overallTimeoutMs,40000);assert(evidence.guardMs>=0&&evidence.observeMs>=0);assert(Array.isArray(evidence.priorReady));
+});
+
+async function preparedForm(t){
+ const f=await form(t),runtime=join(f.dir,'prepared-runtime'),shopId='prepared-final-review-fixture',assets=[];
+ f.task.shopId=shopId;
+ const folder=join(runtime,'material-upload-preparation',digest(JSON.stringify(shopId)).slice(0,24),'receipts');await mkdir(folder,{recursive:true});
+ for(let i=0;i<14;i++){
+  const path=join(f.dir,'prepared-'+i+'.png'),bytes=Buffer.from('synthetic prepared source '+i);await writeFile(path,bytes);
+  const asset={path,sha256:digest(bytes),materialVersion:{revision:'approved-prepared-fixture'}};
+  const uploadName='prepared-'+i+'--'+asset.sha256+'.png',url='https://img.alicdn.com/imgextra/fixture/prepared-'+i+'.png_320x320?t=1793548320000';
+  await writeFile(join(folder,asset.sha256+'.json'),JSON.stringify({version:1,shopId,sha256:asset.sha256,uploadName,materialName:uploadName,url,aliases:[{path,materialVersion:asset.materialVersion}]}));
+  assets.push({asset,url});
+ }
+ f.task.assets={main:[assets[0].asset],secondary:assets.slice(1,5).map(x=>x.asset),details:assets.slice(5).map(x=>x.asset)};
+ f.receipts={main:assets.slice(0,5).map((x,i)=>({order:i+1,source:x.asset,url:x.url})),details:assets.slice(5).map((x,i)=>({order:i+1,source:x.asset,url:x.url}))};
+ const inserted=url=>url.replace(/\.png_320x320\?t=\d{13}$/u,'.png_320x320q80_.webp');
+ await page.locator('#sell-field-mainImagesGroup').evaluate((el,urls)=>{el.replaceChildren(...urls.map(url=>{const img=document.createElement('img');img.src=url;return img;}));},f.receipts.main.map(x=>inserted(x.url)));
+ await page.locator('#sell-field-descRepublicOfSell').evaluate((el,urls)=>{el.replaceChildren(...urls.map(url=>{const img=document.createElement('img');img.className='image-item';img.src=url;return img;}));},f.receipts.details.map(x=>inserted(x.url)));
+ await writeFile(join(f.dir,'main-receipts.json'),JSON.stringify(f.receipts.main));await writeFile(join(f.dir,'detail-receipts.json'),JSON.stringify(f.receipts.details));
+ return {...f,runtime,folder};
+}
+
+test('prepared-only 5+9 image final review uses original runtime and observed CDN transform without legacy sidecars',async t=>{
+ const f=await preparedForm(t),before=JSON.stringify(f.task),step=async(name,fn)=>{if(name==='pre-submit-review')await fn();};
+ await assert.rejects(publisher.verifyForm(page,f.task,'ONSALE',f.receipts),/BOUND_MATERIAL_UPLOAD_UNVERIFIED/);
+ await publisher.verifyForm(page,f.task,'ONSALE',f.receipts,null,null,f.runtime);
+ const filled=await publisher.fillTask({page,task:f.task,dir:f.dir,target:'ONSALE',preparationRuntime:f.runtime,guard:async()=>{},step});
+ assert.equal(filled.main.length,5);assert.equal(filled.details.length,9);assert.equal(JSON.stringify(f.task),before);
+ const review=JSON.parse(await readFile(join(f.dir,'review.json'),'utf8'));assert.equal(review.decision,'PASS_SOURCE_AND_FORM');assert.equal(review.noSku.status,'VERIFIED_EMPTY');
+ for(const a of Object.values(f.task.assets).flat())await assert.rejects(readFile(a.path+'.upload.json'),e=>e.code==='ENOENT');
+ assert.equal(await page.evaluate(()=>window.clicks||0),0);
+});
+
+test('prepared final review rejects an altered receipt and a wrong inserted detail suffix',async t=>{
+ const f=await preparedForm(t),asset=f.task.assets.details[0],file=join(f.folder,asset.sha256+'.json'),receipt=JSON.parse(await readFile(file,'utf8'));
+ await publisher.verifyForm(page,f.task,'ONSALE',f.receipts,null,null,f.runtime);
+ await writeFile(file,JSON.stringify({...receipt,url:receipt.url.replace('prepared-5','unapproved-image')}));
+ await assert.rejects(publisher.verifyForm(page,f.task,'ONSALE',f.receipts,null,null,f.runtime),/BOUND_MATERIAL_UPLOAD_UNVERIFIED/);
+ await writeFile(file,JSON.stringify(receipt));
+ await page.locator('#sell-field-descRepublicOfSell img').first().evaluate(el=>{el.src=el.src.replace('_320x320q80_.webp','_UNRECOGNIZED');});
+ await assert.rejects(publisher.verifyForm(page,f.task,'ONSALE',f.receipts,null,null,f.runtime),/DETAIL_IMAGE_ORDER/);
+});
+
+const exactDetailAsset={path:'synthetic-detail.png',sha256:'synthetic-hash'};
+const cdnReceipt='https://img.alicdn.com/imgextra/fixture/detail.png_320x320?t=1793548320000';
+const detailReceipt=url=>({order:1,source:exactDetailAsset,url});
+for(const [name,actual,expected]of [
+ ['observed WebP transform','https://img.alicdn.com/imgextra/fixture/detail.png_320x320q80_.webp',cdnReceipt],
+ ['13-digit cache timestamp',cdnReceipt.replace('1793548320000','1793548320001'),cdnReceipt],
+ ['exact non-CDN fixture URL','https://fixture.invalid/detail.png?fixed=1','https://fixture.invalid/detail.png?fixed=1']
+])test('detail identity accepts '+name,async()=>{
+ assert.equal(await publisher.verifyInsertedDetails([actual],[exactDetailAsset],[detailReceipt(expected)]),1);
+});
+for(const [name,actual,expected]of [
+ ['different image prefix',cdnReceipt.replace('/detail.png','/detail-other.png'),cdnReceipt],
+ ['unrecognized image suffix',cdnReceipt.replace('_320x320','_UNRECOGNIZED'),cdnReceipt],
+ ['unknown query parameter',cdnReceipt+'&unrecognized=1',cdnReceipt],
+ ['non-cache timestamp format',cdnReceipt.replace('1793548320000','179354832000'),cdnReceipt],
+ ['foreign hostname',cdnReceipt.replace('img.alicdn.com','fixture.invalid'),cdnReceipt],
+ ['non-CDN fixture query change','https://fixture.invalid/detail.png?fixed=2','https://fixture.invalid/detail.png?fixed=1']
+])test('detail identity rejects '+name,async()=>{
+ await assert.rejects(publisher.verifyInsertedDetails([actual],[exactDetailAsset],[detailReceipt(expected)]),/EXISTING_DETAIL_MISMATCH/);
+});
+test('detail identity rejects swapped image order despite recognized thumbnail variants',async()=>{
+ const a=exactDetailAsset,b={path:'synthetic-second.png',sha256:'second-hash'},other=cdnReceipt.replace('detail.png','second.png');
+ await assert.rejects(publisher.verifyInsertedDetails([other,cdnReceipt],[a,b],[detailReceipt(cdnReceipt),{order:2,source:b,url:other}]),/EXISTING_DETAIL_MISMATCH/);
 });

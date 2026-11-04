@@ -24,6 +24,7 @@ import {RoundVerification} from './round-verification.mjs';
 import {PublishingContentReviews} from './publishing-content-review.mjs';
 import {ContentPreparation} from './content-preparation.mjs';
 import {setPageScope,getPageLedger} from './page-ownership.mjs';
+import {MaterialPreparationApi} from './material-preparation-api.mjs';
 
 export const executionRoute=path=>/^\/api\/batch\/(start|continue|retry)$/.test(path)||/^\/api\/source\/(start|resume)$/.test(path)||/^\/api\/tasks\/[^/]+\/(start|resume|acknowledge-manual|complete-dry-run)$/.test(path);
 const err=(message,statusCode=409)=>Object.assign(new Error(message),{statusCode});
@@ -80,7 +81,7 @@ export class ProductApi {
     batch.round=this.round;
     this.roundItems=typeof isShopRemoved==='function'?createHostedRoundItemApi(this,{isShopRemoved}):null;
     this.round.verificationControl=id=>this.roundItems?.verification?.verifier?.controlView(id)||null;
-    this.contentPreparation=new ContentPreparation(this);
+    this.contentPreparation=new ContentPreparation(this);this.materialPreparation=new MaterialPreparationApi(this);
     source.assertContentForLive=async task=>{const round=this.round.round();if(!round)throw err('CONTENT_REVIEW_REQUIRED: 缺少固定清单与主图内容审核');const review=this.round.assertContentForTask(task,round.id);await this.contentReviews.verifyEvidence(review,task);return review;};
     source.beforeVerified=(run,result)=>this.round.active?this.round.assertResultIdentity(this.round.active,run.key,result):undefined;
     this.roundVerifier=new RoundVerification({context:()=>{const context=this.owner.sessions.get(this.shop.id)?.context;if(!context)throw Error('专用浏览器未运行');return context;},
@@ -207,7 +208,7 @@ export class ProductApi {
     this.source.store.db.prepare('INSERT INTO product_actions VALUES(?,?,?,?,?)').run(input.requestId,'rounds/'+action,target,new Date().toISOString(),JSON.stringify({accepted:true,id:result.id,...(input.attemptId?{attemptId:input.attemptId,inputHash:digest(input)}:{})}));
     json(res,200,result);return true;
   }
-  assertRulesIdle(){if(this.batch.active||this.source.active||this.capturing)throw err('任务执行或属性读取中，请等待结束');}
+  assertRulesIdle(){if(this.materialPreparation?.active||this.materialPreparationOtherBusy?.())throw err('图片准备中，请先暂停图片准备并等待当前批次落账');if(this.batch.active||this.source.active||this.capturing)throw err('任务执行或属性读取中，请等待结束');}
   assertImportRules(id){
     const imported=this.source.store.batch(id),preset=this.rules.preset(this.shop.id);
     if(imported&&(imported.tasks.some(t=>t.shopId!==this.shop.id)||(imported.sourceBinding&&imported.sourceBinding.shopId!==this.shop.id)))throw err('商品资料与当前执行店铺不一致，请在对应店铺重新导入');
@@ -297,6 +298,7 @@ export class ProductApi {
     this.checkResult=null;return this.settings();
   }
   async assertExecution({legacy=false}={}) {
+    if(this.materialPreparation?.active||this.materialPreparationOtherBusy?.())throw err('图片准备中，暂不能开始商品执行');
     if(legacy){const round=this.round?.round();if(round&&round.state!=='COMPLETED')throw err('已有固定清单轮次，请从原轮次继续；不能另起批次执行');}
     if(this.capturing)throw err('正在读取属性，请等待完成后再启动或恢复任务');
     if(!this.batch.active&&!this.source.active&&this.source.store.list().some(r=>['RUNNING','SUBMITTING'].includes(r.state)))throw err('任务状态待检查：请重启程序恢复持久状态，不能开始新执行');
@@ -458,11 +460,12 @@ export class ProductApi {
     const events=runId?store.events(runId).slice(-35).map(e=>this.event(e)):[];
     const settings=await this.settings(),frozen=await this.integrity();
     const pageManagement=getPageLedger(this.owner.sessions.get(this.shop.id)?.context)?.snapshot()||null;
-    return {version:'1.0.0',at:new Date().toISOString(),shop:{id:this.shop.id,name:this.shop.name},service:{state:'RUNNING',startedAt:this.startedAt},browser,pageManagement,execution:pauseView(flow,this.source,runs),currentTask:runs.find(r=>r.id===this.source.active)?.task.listing||null,round:this.round.summary(),configuration:this.checkResult,publishingRules:{...this.rules.summary(this.shop.id),checkpoint:JSON.parse(store.db.prepare('SELECT payload FROM publishing_captures WHERE id=?').get('checkpoint-'+this.shop.id)?.payload||'null')},settings,kernel:frozen,active:flow.active||this.source.active,batch,batches,records,exceptions,events,overview:{published:records.filter(x=>x.verified).length,totalBatches:batches.length,waiting:exceptions.filter(x=>!x.retryable).length,failed:exceptions.filter(x=>x.retryable).length},latestImport:store.batch()?.id||null};
+    return {version:'1.0.0',at:new Date().toISOString(),shop:{id:this.shop.id,name:this.shop.name},service:{state:'RUNNING',startedAt:this.startedAt},browser,pageManagement,materialPreparation:await this.materialPreparation.latest(),execution:pauseView(flow,this.source,runs),currentTask:runs.find(r=>r.id===this.source.active)?.task.listing||null,round:this.round.summary(),configuration:this.checkResult,publishingRules:{...this.rules.summary(this.shop.id),checkpoint:JSON.parse(store.db.prepare('SELECT payload FROM publishing_captures WHERE id=?').get('checkpoint-'+this.shop.id)?.payload||'null')},settings,kernel:frozen,active:flow.active||this.source.active,batch,batches,records,exceptions,events,overview:{published:records.filter(x=>x.verified).length,totalBatches:batches.length,waiting:exceptions.filter(x=>!x.retryable).length,failed:exceptions.filter(x=>x.retryable).length},latestImport:store.batch()?.id||null};
   }
   async handle(req,res,url,{body,json}) {
     const path=url.pathname;
     if(!path.startsWith('/api/v1/'))return false;
+    if(path==='/api/v1/material-preparation'||path.startsWith('/api/v1/material-preparation/'))return this.materialPreparation.handle(req,res,url,{body,json});
     if(path==='/api/v1/content-preparation'||path.startsWith('/api/v1/content-preparation/'))return this.contentPreparation.handle(req,res,url,{body,json});
     if(path.startsWith('/api/v1/rounds/'))return this.handleRound(req,res,url,{body,json});
     const action=path.slice('/api/v1/'.length);

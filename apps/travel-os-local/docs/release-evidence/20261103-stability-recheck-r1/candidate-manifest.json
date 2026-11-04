@@ -1,0 +1,52 @@
+{
+  "at": "2026-11-03T15:31:54.589Z",
+  "revision": "20261103-stability-recheck-r1",
+  "fromRevision": "20261103-stability-optimization-r1",
+  "runtimeFiles": [
+    "workbench/browser-environment.mjs",
+    "workbench/taobao-publisher.mjs",
+    "workbench/publishing-materials.mjs"
+  ],
+  "files": [
+    {
+      "path": "workbench/taobao-publisher.mjs",
+      "baselineSha256": "77fe4bea50639ab4d4d815ed67076ba56595d8a9458ebcdaed3520dd77564cba",
+      "sha256": "70210c80f901ad27dac9dd61754fa1a6027d65ddbf86debdf7889ede7e4f0f89"
+    },
+    {
+      "path": "workbench/browser-environment.mjs",
+      "baselineSha256": "f06390939b03681b493b5133d78842638456c9dd9261d0824c9a495d9121bc55",
+      "sha256": "1278bc8cf61b9cd8a90674d9b66b885d473371969251b23fa83e5940cac76c47"
+    },
+    {
+      "path": "workbench/publishing-materials.mjs",
+      "baselineSha256": "a63de19c8f02322b3d3ea68f507d02227a559053f2bc3c4d038ea88f4c95eea1",
+      "sha256": "d349932fc9c58e3685b7a062b022687286e198d49fd1547684fd456fc195ada0"
+    },
+    {
+      "path": "workbench/scripts/inspection-lifecycle.test.mjs",
+      "baselineSha256": null,
+      "sha256": "944e8268204804469774599003f062bda2d88fd9945b4d509be6c09e9238a7db"
+    },
+    {
+      "path": "workbench/scripts/material-readiness-budget.test.mjs",
+      "baselineSha256": "01be55388e3fb48955891cba1acc416b51932697274d3520e9618ebd41708d72",
+      "sha256": "e94bac11dd6651bea88d84ae6876379017d668bf19dfaa243e753d5e03dced12"
+    },
+    {
+      "path": "workbench/kernel-lock.json",
+      "baselineSha256": "641cee13e9ab25025817edfe945dc3e15c3ebb775a3fb2684fc6bed431f38541",
+      "sha256": "cf133c30dc4d16328cddfbf7f6e4b3a07c87b494cfd64bc052305a52d1a3d908"
+    }
+  ],
+  "beforeLockSha256": "641cee13e9ab25025817edfe945dc3e15c3ebb775a3fb2684fc6bed431f38541",
+  "kernelFiles": 92,
+  "deploymentAllowed": false,
+  "requiresIndependentCandidateAndMaintenanceQA": true,
+  "noLive": true,
+  "noNagasakiClaim": true,
+  "noQuota": true,
+  "noBusinessMigration": true,
+  "containsBusinessData": false,
+  "containsBrowserProfile": false
+}

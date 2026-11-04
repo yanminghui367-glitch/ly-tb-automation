@@ -15,7 +15,8 @@ import {ExecutionTiming} from './execution-timing.mjs';
 import {ExecutionSteps} from './execution-steps.mjs';
 import {evidenceMode as normalizeEvidenceMode,EVIDENCE_POLICY_VERSION} from './execution-evidence-policy.mjs';
 import {readSubmittedListing,submissionLookupWindow,assertUnclaimedSubmissionId} from './result-reconciliation.mjs';
-import {recoverPreSubmitNavigation,recoverableMaterialReadiness} from './pre-submit-page-recovery.mjs';
+import {originalPageBinding,recoverOriginalReceipt} from './submission-receipt.mjs';
+import {recoverPreSubmitNavigation,recoverableMaterialReadiness,disposeRecoveredPreSubmitPage} from './pre-submit-page-recovery.mjs';
 
 const exec = promisify(execFile);
 const defaults = { workbook: 'D:/桌面文件迁移/五洲畅游店铺：境外旅游目的地链接池_700.xlsx', assetRoot: 'D:/桌面文件迁移/五洲畅游---图片' };
@@ -183,7 +184,8 @@ export class SourceWorkflow {
       };
       if(r.state==='RESULT_UNKNOWN') {
         let itemId=r.checkpoint.itemId;
-        if(!itemId) {const success=context.pages().find(p=>p.url()===r.checkpoint.successUrl);if(success)itemId=(await success.locator('body').innerText()).match(/商品ID[：:]\s*(\d+)/)?.[1];}
+        if(!itemId){const receipt=await recoverOriginalReceipt({context,run:r,events:this.store.events(id),guard,db:this.store.db,assertUnused:value=>assertUnclaimedSubmissionId(this.store,r,value)});
+          if(receipt){itemId=receipt.itemId;checkpoint({itemId,successUrl:receipt.successUrl,submissionReceipt:receipt});this.store.event(id,'SUBMISSION_RECEIPT_RECOVERED',receipt);this.store.event(id,'SUBMIT_EVIDENCE',{kind:'ORIGINAL_PAGE_RECEIPT',...receipt});}}
         if(!itemId){const result=await confirmMissingReceipt();await this.beforeVerified?.(this.store.run(id),result);this.store.move(id,'VERIFIED','',result);return;}
         const result=await measure('result-verification',()=>verifyResult(context,r.task,itemId,target,dir,guard));await this.beforeVerified?.(this.store.run(id),result);this.store.move(id,'VERIFIED','',result);return;
       }
@@ -192,7 +194,7 @@ export class SourceWorkflow {
       try{await step('open-new-form',async()=>{page=await openTaskPage(context,r.task,r.checkpoint,guard,checkpoint,(p,ownership={})=>{page=p;createdThisExecution=ownership.createdThisExecution===true;});});}
       catch(error){
         page=await recoverPreSubmitNavigation({error,store:this.store,id,task:r.task,taskHash:digest(r.task),hash:digest,page,getPage:()=>page,createdThisExecution,
-          context,ledger:pageLedger,guard,readProtection:readPageProtection,checkpoint,attemptId,
+          context,ledger:pageLedger,guard,readProtection:readPageProtection,visibleChallenge,evidenceRoot:dir,checkpoint,attemptId,
           open:async onPage=>{await step('open-clean-navigation-form',async()=>{page=await openTaskPage(context,r.task,{},guard,checkpoint,async(p,ownership={})=>{
             page=p;createdThisExecution=ownership.createdThisExecution===true;await onPage(p,ownership);
           });});return page;}});
@@ -205,7 +207,7 @@ export class SourceWorkflow {
       // inside this execute/claim. Keep the old page and receipt files intact;
       // never recurse through execute(), claim another attempt, or clear intent.
       let fillDir=r.checkpoint.residualPageRefill?join(dir,'residual-refill-1')+sep:dir;
-      const fill=()=>fillTask({page,task:r.task,dir:fillDir,target,step,guard:formGuard,executionProfile,materialBinding});
+      const fill=()=>fillTask({page,task:r.task,dir:fillDir,target,step,guard:formGuard,executionProfile,materialBinding,preparationRuntime:this.runtime});
       let review;
       try{review=await fill();}
       catch(error){
@@ -262,16 +264,19 @@ export class SourceWorkflow {
         await formGuard();
         // Deliberately outside the catch above: a second missing receipt, or any
         // source/order/count mismatch, follows the original failure path.
+        await disposeRecoveredPreSubmitPage({store:this.store,id,task:r.task,hash:digest,oldPage,newPage:page,oldUrl,context,ledger:pageLedger,guard,readProtection:readPageProtection,visibleChallenge,evidenceRoot:dir,recoveryField:'residualPageRefill'});
         review=await fill();
       }
-      await guard();await measure('form-review',()=>verifyForm(page,r.task,target,review,executionProfile,materialBinding));
+      await guard();await measure('form-review',()=>verifyForm(page,r.task,target,review,executionProfile,materialBinding,this.runtime));
       if(r.mode==='DRY_RUN') {this.store.move(id,'DRY_RUN_COMPLETE','填写已核验，尚未提交');return;}
       // Persist intent before the only final submit. Recovery never clicks it twice.
       if(this.store.completed(r.task))throw Error('该目的地已有成功核验记录，禁止重复发布');
       await measure('content-review',()=>this.checkLiveContent(r.task));await guard();
-      submissionFormUrl=page.url();this.store.move(id,'SUBMITTING');
+      submissionFormUrl=page.url();const binding=originalPageBinding(pageLedger,page,this.store.run(id));if(binding)checkpoint({submissionPageBinding:binding});this.store.move(id,'SUBMITTING');
       let itemId,recoveredResult;
-      await step('submit-once',async()=>{itemId=await submitTask(page,guard,async()=>{this.store.event(id,'SUBMIT_CLICKED',{at:new Date().toISOString()});submitClicked=true;},{readBackend:async()=>{recoveredResult=await confirmMissingReceipt();return recoveredResult.itemId;}});checkpoint({itemId,successUrl:page.url()});});
+      await step('submit-once',async()=>{itemId=await submitTask(page,guard,async()=>{this.store.event(id,'SUBMIT_CLICKED',{at:new Date().toISOString()});submitClicked=true;},{onDispatch:async()=>{this.store.event(id,'SUBMIT_DISPATCH_STARTED',{at:new Date().toISOString()});},beforeClick:checkPause,
+        onReceipt:async receipt=>{await assertPublishIdentity(page,r.task,{submitted:true,formUrl:submissionFormUrl,shopName:shop.name});assertUnclaimedSubmissionId(this.store,this.store.run(id),receipt.itemId);checkpoint({itemId:receipt.itemId,successUrl:receipt.successUrl,submissionReceipt:receipt});this.store.event(id,'SUBMISSION_RECEIPT_OBSERVED',receipt);this.store.event(id,'SUBMIT_EVIDENCE',{kind:'ORIGINAL_PAGE_RECEIPT',...receipt});},
+        readBackend:async()=>{recoveredResult=await confirmMissingReceipt();return recoveredResult.itemId;}});checkpoint({itemId,successUrl:page.url()});});
       const submittedEvidence=await measure('evidence',()=>captureTaskScreenshot(page,dir,'submit-success'));
       this.store.event(id,'SUBMIT_EVIDENCE',submittedEvidence);
       let result=recoveredResult;

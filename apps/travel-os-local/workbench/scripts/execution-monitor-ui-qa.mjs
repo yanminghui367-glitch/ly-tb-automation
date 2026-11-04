@@ -22,9 +22,9 @@ const product=new ProductApi({source:flow,batch:new BatchWorkflow(flow),owner,sh
 await product.round.create({importId,repairVersion:'UI_FIXTURE',expectedCount:2,authorization:{allowLive:true,maxSafeRecoveries:2,confirmedShop:shop.name,expectedCount:2}});
 const os=new TravelOsApi({product:async()=>product,shops:async()=>[shop],browser:owner,runtime});
 const snapshot=await os.snapshot();
-const checks=[],writes=[],errors=[],streams=new Set();
+const checks=[],writes=[],reads=[],errors=[],streams=new Set();
 const check=(ok,label)=>{checks.push({ok:!!ok,label});console.log((ok?'PASS ':'FAIL ')+label);assert.ok(ok,label);};
-let fixture=structuredClone(snapshot),logFail=false,logDelay=null;
+let fixture=structuredClone(snapshot),logFail=false,logDelay=null,itemCapabilities={retry:{allowed:false,code:'ITEM_RETRY_BUDGET_EXHAUSTED'},skip:{allowed:false,code:'ITEM_SKIP_SUBMISSION_PROTECTED'},verify:{allowed:true,mode:'VERIFY'},park:{allowed:false,code:'ITEM_PARK_VERIFICATION_REQUIRED'}};
 const r=fixture.engine.round;
 Object.assign(r,{id:'ui-round',manifestHash:'ui-manifest',shop:fixture.engine.shop.id,state:'WAITING_HUMAN',active:false,reason:'PAUSED_CAPTCHA',executionRecovery:null,verificationControl:null,processed:259,total:700,currentItem:'current-key',current:{key:'current-key',destination:'当前测试城市',stage:'existing-listing-query',runId:'current-run',state:'WAITING_HUMAN',submitted:false,submissionUncertain:false,reason:'PAUSED_CAPTCHA'},window:{id:'ui-window',sequence:3,state:'WAITING_HUMAN',total:100,ended:59,submitted:40,resumedCount:1,counts:{NEW_SUCCESS:40,PREFLIGHT_SKIPPED:19,PENDING:41},autoContinue:false},windowHistory:[]});
 fixture.engine.active=null;fixture.engine.execution={state:'PAUSED',label:'已暂停',detail:'旧批次提示不应进入监控'};
@@ -37,10 +37,14 @@ const json=(res,x)=>{res.writeHead(200,{'content-type':'application/json'});res.
 const server=createServer(async(req,res)=>{try{
  const url=new URL(req.url,'http://localhost');
  if(req.method!=='GET'){let body='';for await(const x of req)body+=x;writes.push({path:url.pathname,input:JSON.parse(body||'{}')});return json(res,{accepted:true});}
+ reads.push(url.pathname);
  if(url.pathname==='/api/os/state')return json(res,fixture);
  if(url.pathname==='/api/v1/state')return json(res,fixture.engine);
  if(url.pathname==='/api/v1/events'){res.writeHead(200,{'content-type':'text/event-stream'});res.write('event: state\ndata: '+JSON.stringify(fixture.engine)+'\n\n');streams.add(res);req.on('close',()=>streams.delete(res));return;}
- if(url.pathname==='/api/v1/task'){const id=url.searchParams.get('id');if(logDelay&&id==='current-run')await logDelay;if(logFail){res.writeHead(500);return res.end('{"error":"isolated log failure"}');}return json(res,{id,events:[{at:new Date().toISOString(),label:id==='current-run'?'当前商品日志':'所选历史商品日志',kind:'STEP_INTENT',technical:{step:'attribute-style'},reason:''}],checkpoint:{step:'attribute-style'}});}
+ if(url.pathname==='/api/v1/rounds/item')return json(res,{roundId:r.id,windowId:r.window.id,key:r.current.key,revision:'mock-revision',current:r.current,submissionEvidence:r.current.submitted,capabilities:itemCapabilities,attempts:[],retryBlocked:r.current.submitted});
+ if(url.pathname==='/api/v1/rounds/window')return json(res,{...r.window,roundId:r.id,shop:r.shop,items:fixture.engine.batch.items.map(x=>({...x,key:x.id}))});
+ if(url.pathname==='/api/v1/batch')return json(res,fixture.engine.batch);
+ if(url.pathname==='/api/v1/task'){const id=url.searchParams.get('id');if(logDelay&&id==='current-run')await logDelay;if(logFail){res.writeHead(500);return res.end('{"error":"isolated log failure"}');}return json(res,{id,events:[{at:new Date().toISOString(),label:id==='current-run'?'当前商品日志':'所选历史商品日志',kind:'STEP_INTENT',technical:{step:'attribute-style'},reason:'已准备图片等待超时：包含安全检查的总等待预算已用完；stage=prepared-material-card；observeMs=3500；guardMs=24000；elapsedMs=27500；actual={"visible":false}'}],checkpoint:{step:'attribute-style'}});}
  if(url.pathname.startsWith('/api/'))return json(res,{});
  await serve(req,res);
  }catch(e){res.writeHead(500);res.end(e.message);}});
@@ -59,14 +63,15 @@ try{
  check(await monitor.locator('.monitor-status.attention').count()===1,'等待人工为橙色而非绿色');
  check((await monitor.locator('.monitor-progress').innerText()).includes('59 / 100'),'本轮59/100不与总清单259/700混合');
  check(!(await page.locator('#taskHistoryPanel').evaluate(el=>el.open)),'历史记录默认收起');
- await page.locator('[data-action=select-task][data-id=history-1]').click();
+ await page.locator('#taskHistoryPanel>summary').click();
  await page.waitForFunction(()=>document.getElementById('taskHistoryPanel')?.open===true);
- check(await page.locator('#taskHistoryPanel').evaluate(el=>el.open),'查看历史商品自动展开独立区域');
- check((await monitor.innerText()).includes('当前测试城市')&&!(await monitor.innerText()).includes('历史原因'),'选历史任务不会改变实时原因与商品');
+ check((await page.locator('#taskHistoryPanel').innerText()).includes('历史测试城市'),'历史商品在独立区域展示');
+ check((await monitor.innerText()).includes('当前测试城市')&&!(await monitor.innerText()).includes('历史原因'),'查看历史任务不会改变实时原因与商品');
  await page.locator('#taskHistoryPanel>summary').click();
  await page.locator('#monitorExecutionDetails>summary').click();
  await page.locator('#monitorExecutionDetails .log-list li').filter({hasText:'当前商品日志'}).waitFor();
  check(!(await page.locator('#monitorExecutionDetails').innerText()).includes('所选历史商品日志'),'监控日志独立绑定current run');
+ check((await page.locator('#monitorExecutionDetails').innerText()).includes('安全检查用时 24000 毫秒')&&!(await page.locator('#monitorExecutionDetails').innerText()).includes('guardMs'),'实际监控日志以中文显示阶段和分段用时，原审计响应保留');
  await page.locator('#monitorExecutionDetails>summary').click();
  await page.locator('[data-action=round-resume]').click();await page.locator('#roundHumanVerified').check();await page.locator('[data-action=round-human-resume]').click();
  await page.waitForFunction(()=>!document.getElementById('editor').open);
@@ -77,13 +82,74 @@ try{
   check(await monitor.locator('.monitor-status.'+tone).count()===1,'状态色与本轮一致 '+state);
   if(state==='RUNNING')check(await page.locator('[data-action=round-current-skip]').isDisabled(),'运行中保留跳过入口，需安全暂停后操作');
  }
+ // The completed window and parent manifest deliberately disagree, as in the
+ // preserved 98-success snapshot. This is presentation only, no DB adjustment.
+ const savedRound=structuredClone(r);
+ Object.assign(r,{state:'PAUSED',active:false,reason:'本轮已结束；自动衔接未开启，其他任务仍待处理',current:{key:'failed-key',runId:'failed-run',destination:'测试失败城市',state:'FAILED',stage:'select-detail-1',reason:'旧商品主图超时',submitted:false,submissionUncertain:false}});
+ Object.assign(r.window,{state:'COMPLETED',ended:99,total:100,submitted:99,parkedCount:1,counts:{NEW_SUCCESS:98,FAILED:1,RESULT_UNKNOWN:1},continuationPending:false});
+ const unchanged=JSON.stringify(r);await emit();
+ check((await monitor.locator('.monitor-status.complete').innerText())==='本轮处理结束','窗口完成优先于父清单暂停，显示正常结项');
+ const progressText=await monitor.locator('.monitor-progress').innerText();
+ check(progressText.includes('99 + 挂起 1 / 100')&&progressText.includes('新增核验\n98')&&progressText.includes('尝试后失败\n1')&&progressText.includes('待核验\n1'),'保留99终态+1挂起/100和98成功1失败1待核验，不改计数');
+ check(!(await monitor.locator('.monitor-guidance').innerText()).includes('继续本轮')&&!(await monitor.locator('.monitor-guidance').innerText()).includes('主图超时'),'结项指导不再混入旧失败和本轮继续提示');
+ check(await monitor.locator('[data-action=round-resume],[data-action=round-stop]').count()===0&&await monitor.getByRole('button',{name:'检查剩余商品并设置下一轮',exact:true}).count()===1,'已结束窗口没有继续或停止本轮按钮，保留新窗口检查入口');
+ await page.locator('#monitorLedger>summary').click();
+ check((await page.locator('#monitorLedger').innerText()).includes('自动衔接未开启'),'父清单原因留在独立总清单说明');
+ await page.locator('#monitorLedger>summary').click();
+ const writesBefore=writes.length,readsBefore=reads.length;
+ await monitor.getByRole('button',{name:'查看此条可用处理操作',exact:true}).click();await page.locator('.round-item-summary').waitFor();
+ check(reads.slice(readsBefore).includes('/api/v1/rounds/item')&&writes.length===writesBefore,'监控处理入口只GET后台详情，没有retry/resume请求');
+ check(await page.locator('#editor [data-item-action=retry]').count()===0&&(await page.locator('#editor').innerText()).includes('机会不足'),'后台拒绝重试时显示真实限制，不由监控粗判放行');
+ await page.locator('#closeEditor').click();
+ itemCapabilities.retry={allowed:true,mode:'RETRY'};
+ await monitor.getByRole('button',{name:'查看此条可用处理操作',exact:true}).click();await page.locator('#editor [data-item-action=retry]').waitFor();
+ check(writes.length===writesBefore,'即使后台允许重试，进入详情仍不自动执行');
+ await page.locator('#closeEditor').click();
+ await page.locator('#toast').waitFor({state:'hidden'});
+ await monitor.screenshot({path:join(out,'monitor-window-completed-98-1-1.png')});
+ await page.setViewportSize({width:390,height:844});check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'99终态+1挂起完成视图在390px无横向溢出');await monitor.screenshot({path:join(out,'monitor-window-completed-mobile.png')});await page.setViewportSize({width:1440,height:1000});
+ for(const res of streams)res.write('event: problem\ndata: {}\n\n');await monitor.locator('.monitor-status.offline').waitFor();
+ check((await monitor.locator('.monitor-guidance').innerText()).includes('连接中断')&&await monitor.locator('[data-action=window-configure]').isDisabled(),'已完成窗口断线后仍优先提示离线并禁用新窗口操作');await emit();
+ check(JSON.stringify(r)===unchanged,'展示与读取详情不修改合成窗口状态或计数');
+ r.window.state='STOPPED';await emit();
+ check((await monitor.locator('.monitor-status').innerText())==='已停止'&&await monitor.locator('[data-action=round-resume],[data-action=round-stop]').count()===0,'窗口STOPPED覆盖父PAUSED，不能继续或再次停止本轮');
+ r.window.state='COMPLETED';r.window.continuationPending=true;await emit();
+ check((await monitor.locator('.monitor-status').innerText()).includes('待衔接')&&await monitor.getByRole('button',{name:'检查并衔接下一轮',exact:true}).count()===1&&(await monitor.locator('.monitor-guidance').innerText()).includes('不代表成功目标已达到'),'待衔接与全部完成明确区分');
+ r.state='WAITING_HUMAN';r.reason='PAUSED_CAPTCHA';await emit();
+ check((await monitor.locator('.monitor-guidance').innerText()).includes('下一轮衔接受阻')&&(await monitor.locator('.monitor-guidance').innerText()).includes('验证码'),'窗口完成但衔接待人工处理时仍保留真实原因');
+ r.state='PAUSED';r.reason='本轮已结束；自动衔接未开启，其他任务仍待处理';
+ r.window.continuationPending=false;r.active=true;await emit();
+ check(await monitor.locator('.monitor-status.attention').count()===1&&(await monitor.locator('.monitor-guidance').innerText()).includes('状态不一致')&&await monitor.locator('[data-action=window-configure],[data-action=round-resume]').count()===0,'COMPLETED和active冲突保持警示，不误判绿色结束或新建窗口');
+ r.active=false;fixture.engine.active={id:'unexpected-active'};await emit();
+ check((await monitor.locator('.monitor-status').innerText())==='状态待核对','真实执行器活动同样阻止误报结项');
+ fixture.engine.active=null;r.executionRecovery={attemptId:'mock-recovery'};await emit();
+ check((await monitor.locator('.monitor-status').innerText()).includes('待恢复')&&await monitor.getByRole('button',{name:'恢复原处理记录',exact:true}).count()===1,'恢复记录优先于已结束窗口显示');
+ r.executionRecovery=null;r.verificationControl={id:r.id,windowId:r.window.id,key:r.current.key,verificationRequestId:'mock-verify'};await emit();
+ check((await monitor.locator('.monitor-status').innerText())==='正在核验原商品'&&await monitor.getByRole('button',{name:'停止核验',exact:true}).count()===1,'原商品核验优先于窗口结项，保留核验控制');
+ r.verificationControl=null;r.window.state='SYSTEM_BLOCKED';r.window.reason='MATERIAL_GUARD_BUDGET_EXHAUSTED';r.reason='PAUSED_CAPTCHA';await emit();
+ check((await monitor.locator('.monitor-guidance').innerText()).includes('素材安全检查总等待已到上限')&&!(await monitor.locator('.monitor-guidance').innerText()).includes('需要你完成验证码'),'未结束窗口使用本窗真实故障，父清单不同原因不覆盖');
+ r.window.state='WAITING_HUMAN';r.window.reason='PAUSED_CAPTCHA';r.current.state='WAITING_HUMAN';await emit();
+ check((await monitor.locator('.monitor-guidance').innerText()).includes('需要你完成验证码'),'未结束窗口的真实人工验证码原因保持可见');
+ r.window.state='RESULT_UNKNOWN';r.window.reason='提交结果待核验';r.current.state='RESULT_UNKNOWN';r.current.submitted=true;r.current.submissionUncertain=true;itemCapabilities={retry:{allowed:false,code:'ITEM_RETRY_SUBMISSION_PROTECTED'},skip:{allowed:false,code:'ITEM_SKIP_SUBMISSION_PROTECTED'},verify:{allowed:true,mode:'VERIFY'},park:{allowed:false,code:'ITEM_PARK_VERIFICATION_REQUIRED'}};await emit();
+ check((await monitor.locator('.monitor-guidance').innerText()).includes('先核验原商品结果')&&await monitor.locator('[data-action=round-current-skip]').isDisabled(),'未知提交不能普通跳过，仍优先核验原商品');
+ await monitor.getByRole('button',{name:'查看当前商品详情与处理记录 →',exact:true}).click();await page.locator('[data-item-action=verify]').waitFor();
+ check(await page.locator('[data-item-skip],[data-item-action=retry],[data-item-park]').count()===0,'已提交详情继续禁止跳过重发；挂起须后台核验能力允许');
+ await page.locator('#closeEditor').click();
+ itemCapabilities.park={allowed:true};
+ await monitor.getByRole('button',{name:'查看当前商品详情与处理记录 →',exact:true}).click();await page.locator('[data-item-park]').waitFor();
+ check(await page.locator('[data-item-park] [name=confirmedBy],[data-item-park] [name=reason]').count()===2&&writes.length===writesBefore,'后台允许后保留人工确认挂起路径，仅查看不提交');
+ await page.locator('#closeEditor').click();
+ await monitor.screenshot({path:join(out,'monitor-unknown-protected.png')});
+ r.window=null;r.state='COMPLETED';await emit();
+ check((await monitor.locator('.monitor-status').innerText())==='本轮处理结束'&&(await monitor.locator('.monitor-guidance').innerText()).includes('清单'),'无窗口的旧清单完成态也可安全显示');
+ for(const key of Object.keys(r))delete r[key];Object.assign(r,savedRound);await emit();
  r.state='SYSTEM_BLOCKED';r.active=false;r.window.state='SYSTEM_BLOCKED';r.reason='旧商品主图超时';
  r.current.state='MANUAL_SKIPPED';r.current.stage='manual-skip';r.captchaRecheck={eligible:true,count:1};
  fixture.engine.browser={running:true,loggedIn:true,loginState:'LOGGED_IN',checkedAt:new Date().toISOString(),stale:false};await emit();
  check((await monitor.locator('.monitor-status').innerText()).includes('已跳过 · 等待继续'),'已跳过商品的旧异常不再显示为当前执行异常');
  check((await monitor.locator('.monitor-guidance').innerText()).includes('等待继续后续商品'),'明确区分跳过已完成和后续尚未启动');
  check(await page.locator('[data-action=round-current-skip]').innerText()==='已跳过此条'&&await page.locator('[data-action=round-current-skip]').isDisabled(),'保留已跳过按钮状态，禁止重复操作');
- await page.locator('[data-action=round-resume]').click();
+ await Promise.all([page.waitForResponse(response=>new URL(response.url()).pathname==='/api/v1/rounds/resume'),page.locator('[data-action=round-resume]').click()]);
  check(writes.at(-1).path==='/api/v1/rounds/resume'&&!writes.at(-1).input.humanVerified,'浏览器正常时请求后端实时复查旧验证码，无需重复人工勾选');
  await page.locator('.monitor-guidance details>summary').click();
  check((await monitor.locator('.monitor-guidance details').innerText()).includes('旧商品主图超时'),'原异常保留在上一条暂停记录中');
@@ -119,4 +185,4 @@ try{
  check(errors.length===0,'页面无未捕获脚本错误');
  check(server.address().port!==4318&&writes.every(w=>w.input.id==='ui-round'),'执行请求仅发送到随机端口的隔离服务');
 }catch(e){await page.screenshot({path:join(out,'failure.png'),fullPage:true});throw e;}
-finally{await writeFile(join(out,'qa.json'),JSON.stringify({at:new Date().toISOString(),checks,writes,errors,productionWrites:0},null,2));for(const res of streams)res.end();await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));os.store.db.close();store.close();}
+finally{await writeFile(join(out,'qa.json'),JSON.stringify({at:new Date().toISOString(),checks,writes,reads,errors,productionWrites:0},null,2));for(const res of streams)res.end();await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));os.store.db.close();store.close();}

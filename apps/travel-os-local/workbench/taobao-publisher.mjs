@@ -8,15 +8,16 @@ import {basename} from 'node:path';
 import assert from 'node:assert/strict';
 import {visibleChallenge} from './browser-environment.mjs';
 import {fillAttributes,verifyAttributes,validateSelections,selectedCustomState} from './publishing-attributes.mjs';
-import {uploadMaterial,waitDetailThumbnail,materialDomSnippet} from './publishing-materials.mjs';
+import {uploadMaterial,waitDetailThumbnail,materialDomSnippet,waitMaterialReadiness,createMaterialReadinessBudget} from './publishing-materials.mjs';
 import {createBackgroundPage,getAuxiliaryPage,assertAuxiliaryPage} from './publishing-pages.mjs';
 import {captureTaskScreenshot} from './task-screenshot.mjs';
 import {setTimeout as delay} from 'node:timers/promises';
 import {sellerTable,listingEvidence} from './listing-verification.mjs';
 import {materialTask} from './round-material-binding.mjs';
+import {readPreparedMaterialReceipt} from './material-upload-preparation.mjs';
 export const MAPPING_VERSION = 'taobao-custom-service-20261008-controls';
 export const selectors = {title:'#sell-field-title input',guide:'#sell-field-shopping_title input',price:'#sell-field-price input',stock:'#sell-field-batchInventory-card input',main:'#sell-field-mainImagesGroup',details:'#sell-field-descRepublicOfSell img.image-item'};
-const norm=u=>u.split('?')[0].split('.png')[0];
+const norm=value=>{let address;try{address=new URL(value);}catch{return value;}return address.hostname==='img.alicdn.com'?mainImageKey(value):value;};
 export async function assertTaskFiles(task,{cache=new Map(),materialBinding=null}={}) {
  task=materialTask(task,materialBinding);
  for(const c of materialBinding?.changes||[]){let hash=cache?.get(c.path);if(!hash){hash=createHash('sha256').update(await readFile(c.path)).digest('hex');cache?.set(c.path,hash);}assert.equal(hash,c.toSha256,'SOURCE_OR_ASSET_CHANGED');}
@@ -126,10 +127,10 @@ function materialFrameLocation(value){
 }
 export async function waitDetailMaterialFrame(page,guard,{required=true,timeout=20000,onDiagnostic=async()=>{}}={}) {
  assert(Number.isFinite(timeout)&&timeout>0&&timeout<=30000,'DETAIL_WAIT_BUDGET_INVALID');
- const hosts=page.locator('.media-img-plug iframe:not(#mainImagesGroup):visible'),deadline=Date.now()+timeout;
- let host=null,frame=null,status='failed',actual={hosts:0,src:null,frameUrl:null},failure=null;const started=performance.now();
- const diagnostic=()=>({stage:'detail-panel',status,selector:'.media-img-plug iframe:not(#mainImagesGroup):visible',expected:'唯一官方详情面板、可编辑搜索框与可见确定按钮',actual,durationMs:Math.round((performance.now()-started)*1000)/1000,timeoutMs:timeout,screenshot:null});
- const notReady=()=>Object.assign(Error('DETAIL_MATERIAL_FRAME_NOT_READY'),{code:'SAFE_RETRY_DETAIL_PANEL'});
+ const hosts=page.locator('.media-img-plug iframe:not(#mainImagesGroup):visible'),budget=createMaterialReadinessBudget(timeout);
+ let host=null,frame=null,status='failed',actual={hosts:0,src:null,frameUrl:null},failure=null,timeoutReason=null;
+ const diagnostic=()=>({stage:'detail-panel',status,selector:'.media-img-plug iframe:not(#mainImagesGroup):visible',expected:'唯一官方详情面板、可编辑搜索框与可见确定按钮',actual,count:actual.hosts,visible:actual.visible??actual.searchVisible??null,decoded:null,...budget.snapshot(),timeoutReason,timedOut:!!timeoutReason,screenshot:null});
+ const notReady=()=>{timeoutReason=budget.reason();return Object.assign(Error('DETAIL_MATERIAL_FRAME_NOT_READY'),{code:timeoutReason==='OVERALL_GUARD_TIMEOUT'?'MATERIAL_GUARD_BUDGET_EXHAUSTED':'SAFE_RETRY_DETAIL_PANEL'});};
  const wrongOrigin=()=>Object.assign(Error('DETAIL_MATERIAL_FRAME_ORIGIN'),{code:'SAFE_RETRY_DETAIL_FRAME_ORIGIN'});
  const allowed=url=>{try{const u=new URL(url);return !u.username&&!u.password&&u.origin==='https://market.m.taobao.com'&&u.pathname==='/app/crs-qn/sucai-selector-ng/index';}catch{return false;}};
  const checkHost=async()=>{
@@ -141,8 +142,9 @@ export async function waitDetailMaterialFrame(page,guard,{required=true,timeout=
  };
  try {
   do {
-   await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');
-    const count=await hosts.count();actual={hosts:count,src:null,frameUrl:null};assert(count<=1,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
+   await budget.guard(async()=>{await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');});
+   if(budget.reason()==='OVERALL_GUARD_TIMEOUT')throw notReady();
+    const count=await hosts.count();actual={hosts:count,visible:count>0,src:null,frameUrl:null};assert(count<=1,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
    if(count)assert.equal(await page.locator('iframe#mainImagesGroup:visible').count(),0,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
     if(!host&&count===0&&!required){status='absent';return null;}
    if(!host&&count===1)host=await hosts.elementHandle();
@@ -161,24 +163,26 @@ export async function waitDetailMaterialFrame(page,guard,{required=true,timeout=
      assert((await search.count())<=1&&(await confirm.count())<=1,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
      if(await search.count()===1&&await search.isVisible()&&await search.isEditable()&&await confirm.count()===1&&await confirm.isVisible()){
       const readyUrl=frame.url();
-      await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');
+      await budget.guard(async()=>{await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');});
       const finalSrc=await checkHost();actual.frameUrl=materialFrameLocation(frame.url());
       assert(!frame.isDetached()&&frame.url()===readyUrl&&allowed(frame.url()),'DETAIL_MATERIAL_FRAME_CHANGED');
       if(!pendingMaterialFrameUrl(finalSrc)&&!allowed(finalSrc))throw wrongOrigin();
       assert(await search.count()<=1&&await confirm.count()<=1,'DETAIL_MATERIAL_FRAME_AMBIGUOUS');
       if(pendingMaterialFrameUrl(finalSrc))throw notReady();
       if(!(await search.count()===1&&await search.isVisible()&&await search.isEditable()&&await confirm.count()===1&&await confirm.isVisible()))throw notReady();
-      if(Date.now()>=deadline)throw notReady();status='ready';return frame;
+      if(!!budget.reason())throw notReady();status='ready';return frame;
      }
     }
    }
-   await delay(Math.min(150,Math.max(0,deadline-Date.now())));
-  }while(Date.now()<deadline);
+   await delay(Math.min(150,budget.remaining()));
+  }while(!budget.reason());
   throw notReady();
   }catch(error){failure=error;error.materialReadiness??=diagnostic();throw error;}
   finally{
-   await host?.dispose();
+   let cleanupError=null;
+   try{await host?.dispose();}catch(error){if(!failure){failure=error;status='failed';cleanupError=error;}failure.materialReadiness??=diagnostic();failure.materialReadiness.cleanupFailure={code:/^[A-Z][A-Z0-9_]{0,79}$/.test(error?.code||'')?error.code:'MATERIAL_FRAME_DISPOSE_FAILED'};}
    if(status!=='absent')try{const d=failure?.materialReadiness||diagnostic();d.dom_snippet=await materialDomSnippet(hosts);const evidence=await onDiagnostic(d);if(evidence)Object.assign(d,evidence);}catch{}
+   if(cleanupError)throw cleanupError;
   }
 }
 
@@ -186,11 +190,11 @@ export async function waitDetailMaterialFrame(page,guard,{required=true,timeout=
 // observed exact ID; wait for the same official iframe, never reopen/reload it.
 export async function waitMainMaterialFrame(page,guard,{timeout=20000,onDiagnostic=async()=>{}}={}) {
  assert(Number.isFinite(timeout)&&timeout>0&&timeout<=30000,'MAIN_WAIT_BUDGET_INVALID');
- const hosts=page.locator('.media-img-plug iframe#mainImagesGroup:visible'),deadline=Date.now()+timeout;
+ const hosts=page.locator('.media-img-plug iframe#mainImagesGroup:visible'),budget=createMaterialReadinessBudget(timeout);
  const allowed=url=>{try{const u=new URL(url);return !u.username&&!u.password&&u.origin==='https://market.m.taobao.com'&&u.pathname==='/app/crs-qn/sucai-selector-ng/index';}catch{return false;}};
- let host=null,frame=null,status='failed',actual={hosts:0,src:null,frameUrl:null},failure=null;const started=performance.now();
- const diagnostic=()=>({stage:'main-panel',status,selector:'.media-img-plug iframe#mainImagesGroup:visible',expected:'唯一官方主图面板及可编辑搜索框',actual,durationMs:Math.round((performance.now()-started)*1000)/1000,timeoutMs:timeout,screenshot:null});
- const notReady=()=>Object.assign(Error('MAIN_MATERIAL_FRAME_NOT_READY：主图素材面板未就绪，已停止；保留原页面后重试此条'),{code:'SAFE_RETRY_MAIN_PANEL'});
+ let host=null,frame=null,status='failed',actual={hosts:0,src:null,frameUrl:null},failure=null,timeoutReason=null;
+ const diagnostic=()=>({stage:'main-panel',status,selector:'.media-img-plug iframe#mainImagesGroup:visible',expected:'唯一官方主图面板及可编辑搜索框',actual,count:actual.hosts,visible:actual.visible??actual.searchVisible??null,decoded:null,...budget.snapshot(),timeoutReason,timedOut:!!timeoutReason,screenshot:null});
+ const notReady=()=>{timeoutReason=budget.reason();return Object.assign(Error('MAIN_MATERIAL_FRAME_NOT_READY：主图素材面板未就绪，已停止；保留原页面后重试此条'),{code:timeoutReason==='OVERALL_GUARD_TIMEOUT'?'MATERIAL_GUARD_BUDGET_EXHAUSTED':'SAFE_RETRY_MAIN_PANEL'});};
  const wrongOrigin=()=>Object.assign(Error('MAIN_MATERIAL_FRAME_ORIGIN'),{code:'SAFE_RETRY_MAIN_FRAME_ORIGIN'});
  const checkHost=async()=>{
   assert.equal(await hosts.count(),1,'MAIN_MATERIAL_FRAME_CHANGED');
@@ -201,8 +205,9 @@ export async function waitMainMaterialFrame(page,guard,{timeout=20000,onDiagnost
  };
  try{
   do{
-   await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');
-   const count=await hosts.count();actual={hosts:count,src:null,frameUrl:null};assert(count<=1,'MAIN_MATERIAL_FRAME_AMBIGUOUS');
+   await budget.guard(async()=>{await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');});
+   if(budget.reason()==='OVERALL_GUARD_TIMEOUT')throw notReady();
+   const count=await hosts.count();actual={hosts:count,visible:count>0,src:null,frameUrl:null};assert(count<=1,'MAIN_MATERIAL_FRAME_AMBIGUOUS');
    if(!host&&count===1)host=await hosts.elementHandle();
    if(host){
     const src=await checkHost();const current=await host.contentFrame();
@@ -215,23 +220,25 @@ export async function waitMainMaterialFrame(page,guard,{timeout=20000,onDiagnost
      const searches=await search.count();actual={...actual,search:searches,searchVisible:searches===1&&await search.isVisible(),searchEditable:searches===1&&await search.isEditable()};
      assert(searches<=1,'MAIN_MATERIAL_FRAME_AMBIGUOUS');
      if(await search.count()===1&&await search.isVisible()&&await search.isEditable()){
-      const readyUrl=frame.url();await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');
+      const readyUrl=frame.url();await budget.guard(async()=>{await guard();if(await visibleChallenge(page))throw Error('PAUSED_CAPTCHA');});
       const finalSrc=await checkHost();actual.frameUrl=materialFrameLocation(frame.url());
       assert(!frame.isDetached()&&frame.url()===readyUrl&&allowed(frame.url()),'MAIN_MATERIAL_FRAME_CHANGED');
       if(!pendingMaterialFrameUrl(finalSrc)&&!allowed(finalSrc))throw wrongOrigin();
       assert(await search.count()<=1,'MAIN_MATERIAL_FRAME_AMBIGUOUS');
-      if(pendingMaterialFrameUrl(finalSrc)||!(await search.count()===1&&await search.isVisible()&&await search.isEditable())||Date.now()>=deadline)throw notReady();
+      if(pendingMaterialFrameUrl(finalSrc)||!(await search.count()===1&&await search.isVisible()&&await search.isEditable())||!!budget.reason())throw notReady();
       status='ready';return frame;
      }
     }
    }
-   await delay(Math.min(150,Math.max(0,deadline-Date.now())));
-  }while(Date.now()<deadline);
+   await delay(Math.min(150,budget.remaining()));
+  }while(!budget.reason());
   throw notReady();
  }catch(error){failure=error;error.materialReadiness??=diagnostic();throw error;}
  finally{
-  await host?.dispose();
+  let cleanupError=null;
+  try{await host?.dispose();}catch(error){if(!failure){failure=error;status='failed';cleanupError=error;}failure.materialReadiness??=diagnostic();failure.materialReadiness.cleanupFailure={code:/^[A-Z][A-Z0-9_]{0,79}$/.test(error?.code||'')?error.code:'MATERIAL_FRAME_DISPOSE_FAILED'};}
   try{const d=failure?.materialReadiness||diagnostic();d.dom_snippet=await materialDomSnippet(hosts);const evidence=await onDiagnostic(d);if(evidence)Object.assign(d,evidence);}catch{}
+  if(cleanupError)throw cleanupError;
  }
 }
 
@@ -418,12 +425,39 @@ export async function inspectShippingArea(page,task,profile=null,guard=async()=>
  return {mode:'PLATFORM_TEMPLATE',rendered:false,template:name,standaloneRegionApplied:false,standaloneOriginApplied:false,contract:'taobao-template-shipping-20261015'};
 }
 
+// Only the observed one-second thumbnail cache timestamp drift is tolerated.
+// Preserve the original receipt, CDN path, resize variant and every other query byte.
+function samePreparedMaterialCacheTime(expected,observed){
+ if(typeof expected!=='string'||typeof observed!=='string')return false;
+ let a,b;try{a=new URL(expected);b=new URL(observed);}catch{return false;}
+ if(a.origin!=='https://img.alicdn.com'||b.origin!==a.origin||a.pathname!==b.pathname||a.username||a.password||b.username||b.password||a.hash||b.hash)return false;
+ const left=a.search.slice(1).split('&'),right=b.search.slice(1).split('&'),at=left.filter(p=>p.startsWith('t=')),bt=right.filter(p=>p.startsWith('t='));
+ if(a.searchParams.getAll('t').length!==1||b.searchParams.getAll('t').length!==1||at.length!==1||bt.length!==1||!/^t=\d{13}$/.test(at[0])||!/^t=\d{13}$/.test(bt[0]))return false;
+ if(Math.abs(Number(at[0].slice(2))-Number(bt[0].slice(2)))>1000)return false;
+ return JSON.stringify(left.filter(p=>!p.startsWith('t=')))===JSON.stringify(right.filter(p=>!p.startsWith('t=')));
+}
 export async function verifyMaterialUploadReceipt(asset,card){
+ if(asset.preparedMaterial){
+  const receipt=await readPreparedMaterialReceipt({runtime:asset.preparedMaterial.runtime,shopId:asset.preparedMaterial.shopId,asset});
+  assert(receipt&&receipt.uploadName===asset.preparedMaterial.uploadName,'MATERIAL_PREPARATION_RECEIPT_INVALID');
+  const url=typeof card==='string'?card:await card.locator('.PicList_pic_imgBox__c0HXw img').getAttribute('src');
+  let normalized;try{normalized=new URL(url,'https://qn.taobao.com').href;}catch{return false;}
+  return receipt.url===normalized||samePreparedMaterialCacheTime(receipt.url,normalized);
+ }
  if(!asset.materialVersion)return true;
  if(typeof card!=='string'&&typeof card?.locator!=='function')return false;
  const receipt=await readFile(asset.path+'.upload.json','utf8').then(JSON.parse).catch(()=>null);
  const url=typeof card==='string'?card:await card.locator('.PicList_pic_imgBox__c0HXw img').getAttribute('src');
  return !!receipt&&receipt.sha256===asset.sha256&&receipt.path===asset.path&&JSON.stringify(receipt.materialVersion)===JSON.stringify(asset.materialVersion)&&receipt.url===url;
+}
+export async function preparedMaterialAsset(asset,shopId,runtime){
+ const receipt=await readPreparedMaterialReceipt({runtime,shopId,asset});
+ return receipt?{...asset,preparedMaterial:{runtime,shopId,uploadName:receipt.uploadName,materialName:receipt.materialName}}:asset;
+}
+export const materialAssetName=asset=>asset.preparedMaterial?.materialName||asset.preparedMaterial?.uploadName||basename(asset.path);
+export async function waitPreparedMaterialCard(card,guard,{onDiagnostic}={}){
+ let sampled=null;
+ return waitMaterialReadiness('prepared-material-card',async()=>{const count=await card.count();sampled={matches:count,visible:null};assert(count<=1,'MATERIAL_PREPARATION_CARD_AMBIGUOUS：已准备图片不唯一');sampled.visible=count===1&&await card.isVisible();return {ready:sampled.visible,actual:sampled};},guard,{timeout:4000,selector:'精确准备上传名图片卡片',expected:'唯一且可见的已准备图片',onDiagnostic:async d=>{if(!d.actual&&sampled){d.actual=sampled;d.count=sampled.matches;d.visible=sampled.visible;}return onDiagnostic?.(d);}});
 }
 
 // Reuse only a proven prefix already inserted in the original form. Material
@@ -446,21 +480,25 @@ export async function verifyInsertedDetails(urls,assets,receipts){
  return urls.length;
 }
 
-export async function fillTask({page:p, task,dir,target,step,guard,executionProfile=null,materialBinding=null}) {
+export async function fillTask({page:p, task,dir,target,step,guard,executionProfile=null,materialBinding=null,preparationRuntime=null}) {
  const order=task.priority;
  const risk=async()=>{if(await visibleChallenge(p))throw Error('PAUSED_CAPTCHA');};
+ const materialReadiness=[];
  const detailReadiness={onDiagnostic:async (diagnostic,evidencePage=p)=>{
-  const evidence=diagnostic.status==='failed'?await captureTaskScreenshot(evidencePage,dir,'detail-readiness-'+diagnostic.stage):{};
-  await writeFile(dir+'detail-readiness-'+randomUUID()+'.json',JSON.stringify({at:new Date().toISOString(),...diagnostic,...evidence},null,2),{flag:'wx'});
+  if(diagnostic.status==='ready'){materialReadiness.push({at:new Date().toISOString(),...diagnostic});return {};}
+  const evidence=await captureTaskScreenshot(evidencePage,dir,'detail-readiness-'+diagnostic.stage);
+  await writeFile(dir+'detail-readiness-'+randomUUID()+'.json',JSON.stringify({at:new Date().toISOString(),...diagnostic,...evidence,priorReady:materialReadiness},null,2),{flag:'wx'});
   return evidence;
  }};
  async function fill(selector,value){const l=p.locator(selector);await guard();await l.fill(String(value));await l.press('Tab');await expect(l).toHaveValue(String(value));}
  async function radio(scope,text){const l=p.locator(scope).locator('label').filter({hasText:text}).filter({has:p.locator('input[type=radio]')}).first();await guard();await l.click();await expect(l.locator('input[type=radio]')).toBeChecked();}
   async function ensureMaterial(f,a,card,{detail=false}={}) {
+  if(a.preparedMaterial)await waitPreparedMaterialCard(card,guard,detailReadiness);
   if(await card.isVisible().catch(()=>false)){assert(await verifyMaterialUploadReceipt(a,card),'SOURCE_OR_ASSET_CHANGED: BOUND_MATERIAL_UPLOAD_UNVERIFIED：新版图片尚无上传回执，不能复用同名旧素材');return;}
   // The native Playwright owner handles the real file chooser; never injects uploads.
   const exists=await card.waitFor({state:'visible',timeout:4000}).then(()=>true).catch(()=>false);
   if(exists){assert(await verifyMaterialUploadReceipt(a,card),'SOURCE_OR_ASSET_CHANGED: BOUND_MATERIAL_UPLOAD_UNVERIFIED：新版图片尚无上传回执，不能复用同名旧素材');return;}
+  assert(!a.preparedMaterial,'MATERIAL_PREPARATION_CARD_MISSING：已准备图片不可用，不自动改为单张上传');
   await guard();
   // Use the official top-level material library; its native file chooser was
   // verified on September 21. Embedded chooser did not emit filechooser.
@@ -490,8 +528,8 @@ export async function fillTask({page:p, task,dir,target,step,guard,executionProf
  }
  await assertTaskFiles(task,{materialBinding});
  const effective=materialTask(task,materialBinding);
- const mains=[...effective.assets.main,...effective.assets.secondary];
- const details=await executionDetailImages(task,executionProfile,materialBinding);
+ const mains=await Promise.all([...effective.assets.main,...effective.assets.secondary].map(a=>preparedMaterialAsset(a,task.shopId,preparationRuntime)));
+ const details=await Promise.all((await executionDetailImages(task,executionProfile,materialBinding)).map(a=>preparedMaterialAsset(a,task.shopId,preparationRuntime)));
  await writeFile(dir+'task.json',JSON.stringify({...task,selectedDetails:details,executionInstruction:'User: new listings only, source order, existing listings unchanged'},null,2));
  p.setDefaultTimeout(8000);await guard();
  const currentTitle=await p.locator('#sell-field-title input').inputValue();assert(!currentTitle||currentTitle===task.listing.title,'ANOTHER_TASK_FORM');
@@ -507,12 +545,13 @@ export async function fillTask({page:p, task,dir,target,step,guard,executionProf
   if(existing.length>i)return;
   assert.equal(existing.length,i,'MAIN_IMAGE_COUNT_CHANGED：前序主图尚未插入，请保留原页面');
   if(!await p.locator('iframe#mainImagesGroup').isVisible())await p.locator('#sell-field-mainImagesGroup').getByText('上传图片',{exact:true}).first().click();
-  const f=await waitMainMaterialFrame(p,guard,{onDiagnostic:detailReadiness.onDiagnostic}),name=basename(a.path);
-  const card=f.locator('.PicList_pic_background__pGTdV').filter({hasText:name}).first();
-  if(!await card.count()){await f.getByPlaceholder('搜索图片名称').fill(name);await f.getByPlaceholder('搜索图片名称').press('Enter');}
+  const f=await waitMainMaterialFrame(p,guard,{onDiagnostic:detailReadiness.onDiagnostic}),name=materialAssetName(a);
+  const matchingCards=f.locator('.PicList_pic_background__pGTdV').filter({hasText:name}),card=a.preparedMaterial?matchingCards:matchingCards.first();
+  const cardCount=await card.count();
+  if(cardCount===0||(cardCount===1&&!await card.isVisible())){await f.getByPlaceholder('搜索图片名称').fill(name);await f.getByPlaceholder('搜索图片名称').press('Enter');}
   await ensureMaterial(f,a,card);
   await expect(card.locator('.PicList_tip_title__aQfti')).toHaveText(name);
-  const url=await card.locator('.PicList_pic_imgBox__c0HXw img').getAttribute('src');
+  const rawUrl=await card.locator('.PicList_pic_imgBox__c0HXw img').getAttribute('src'),url=a.preparedMaterial?new URL(rawUrl,'https://qn.taobao.com').href:rawUrl;
   receipts[i]={order:i+1,source:a,url};await writeFile(dir+'main-receipts.json',JSON.stringify(receipts,null,2));
   await clickMainImageAndVerify(p,card,receipts.slice(0,i+1).map(r=>r.url),guard,{onEvent:event=>writeFile(dir+'main-click-'+randomUUID()+'.json',JSON.stringify({at:new Date().toISOString(),...event},null,2),{flag:'wx'})});
  });
@@ -549,8 +588,8 @@ export async function fillTask({page:p, task,dir,target,step,guard,executionProf
   for(const [i,a] of details.entries())await step('select-detail-'+(i+1),async()=>{
    await guard();
    if(i<insertedDetails.length){await risk();return;}
-   const name=basename(a.path),search=f.getByPlaceholder('搜索图片名称'),matches=f.locator('.PicList_pic_background__pGTdV').filter({hasText:name});
-   const targetCard=matches.first();
+   const name=materialAssetName(a),search=f.getByPlaceholder('搜索图片名称'),matches=f.locator('.PicList_pic_background__pGTdV').filter({hasText:name});
+   const targetCard=a.preparedMaterial?matches:matches.first();
    // Reuse the current material list during checkpoint recovery. Search only
    // when the required filename is absent, preserving the user's selection.
    if(!await targetCard.isVisible()){await search.fill(name);await search.press('Enter');}
@@ -559,7 +598,7 @@ export async function fillTask({page:p, task,dir,target,step,guard,executionProf
    const card=await checked.count()?checked:targetCard;
    await waitDetailThumbnail(card,guard,detailReadiness);
    await expect(card.locator('.PicList_tip_title__aQfti')).toHaveText(name);
-   const url=await card.locator('.PicList_pic_imgBox__c0HXw img').getAttribute('src');
+   const rawUrl=await card.locator('.PicList_pic_imgBox__c0HXw img').getAttribute('src'),url=a.preparedMaterial?new URL(rawUrl,'https://qn.taobao.com').href:rawUrl;
    assert(await verifyMaterialUploadReceipt(a,card),'SOURCE_OR_ASSET_CHANGED: BOUND_MATERIAL_UPLOAD_UNVERIFIED');
    if(!await card.locator('input[type=checkbox]').isChecked())await card.locator('.PicList_pic_imgBox__c0HXw').click();await expect(card.locator('input[type=checkbox]')).toBeChecked();
    detailReceipts[i]={order:i+1,source:a,url};await writeFile(dir+'detail-receipts.json',JSON.stringify(detailReceipts,null,2));
@@ -569,10 +608,10 @@ export async function fillTask({page:p, task,dir,target,step,guard,executionProf
  await step('pre-submit-review',async()=>{
   await expect(detailImgs).toHaveCount(details.length);const urls=await detailImgs.evaluateAll(es=>es.map(e=>e.src));assert(urls.every((u,i)=>norm(u)===norm(detailReceipts[i]?.url||'')),'DETAIL_ORDER');
   await expect(p.locator('#sell-field-title input')).toHaveValue(task.listing.title);await expect(p.locator('#sell-field-price input')).toHaveValue(String(task.business.price_cny));await expect(p.locator('#sell-field-batchInventory-card input')).toHaveValue(String(task.business.inventory));
-  const {noSku,shippingArea:verifiedShippingArea}=await verifyForm(p,task,target,{main:receipts,details:detailReceipts,shippingArea,materialBindingSha256:materialBinding?.sha256||null},executionProfile,materialBinding);
+  const {noSku,shippingArea:verifiedShippingArea}=await verifyForm(p,task,target,{main:receipts,details:detailReceipts,shippingArea,materialBindingSha256:materialBinding?.sha256||null},executionProfile,materialBinding,preparationRuntime);
   shippingArea=verifiedShippingArea;
   await p.screenshot({path:dir+'pre-submit-full.png',fullPage:true});
-  await writeFile(dir+'review.json',JSON.stringify({at:new Date().toISOString(),decision:'PASS_SOURCE_AND_FORM',mappingVersion:MAPPING_VERSION,order,source:task.source,title:task.listing.title,main:receipts,details:detailReceipts,noSku,executionProfile,shippingArea},null,2));
+  await writeFile(dir+'review.json',JSON.stringify({at:new Date().toISOString(),decision:'PASS_SOURCE_AND_FORM',mappingVersion:MAPPING_VERSION,order,source:task.source,title:task.listing.title,main:receipts,details:detailReceipts,noSku,executionProfile,shippingArea,materialReadiness},null,2));
  });
 
  return {main:receipts,details:detailReceipts,shippingArea,...(materialBinding?{materialBindingSha256:materialBinding.sha256}:{})};
@@ -643,7 +682,7 @@ export async function assertNoSku(page) {
  return {structureVersion:'taobao-no-sku-empty-20261008',status:'VERIFIED_EMPTY',skuCount:0,checkedAt:new Date().toISOString()};
 }
 
-export async function verifyForm(p,task,target,receipts,executionProfile=null,materialBinding=null) {
+export async function verifyForm(p,task,target,receipts,executionProfile=null,materialBinding=null,preparationRuntime=null) {
  assert(newForm(p),'NEW_ITEMS_ONLY');
  await assertTaskFiles(task,{materialBinding});
  if(materialBinding)assert.equal(receipts.materialBindingSha256,materialBinding.sha256,'SOURCE_OR_ASSET_CHANGED: 图片回执与原任务绑定版本不一致');
@@ -663,17 +702,18 @@ export async function verifyForm(p,task,target,receipts,executionProfile=null,ma
  await expect(p.locator('#sell-field-tbExtractWay input[type=checkbox][value="2"]')).toBeChecked();
  await expect(p.locator('#sell-field-tbExtractWay')).toContainText(freightTemplate(task,executionProfile));
  const main=await reconcileMainImages(p,receipts.main,[...effective.assets.main,...effective.assets.secondary]);
- for(const [i,asset]of [...effective.assets.main,...effective.assets.secondary].entries())if(asset.materialVersion)assert(await verifyMaterialUploadReceipt(asset,receipts.main[i]?.url),'SOURCE_OR_ASSET_CHANGED: BOUND_MATERIAL_UPLOAD_UNVERIFIED');
+ for(const [i,original]of [...effective.assets.main,...effective.assets.secondary].entries()){const asset=await preparedMaterialAsset(original,task.shopId,preparationRuntime);if(asset.materialVersion||asset.preparedMaterial)assert(await verifyMaterialUploadReceipt(asset,receipts.main[i]?.url),'SOURCE_OR_ASSET_CHANGED: BOUND_MATERIAL_UPLOAD_UNVERIFIED');}
  const details=await p.locator(selectors.details).evaluateAll(es=>es.map(e=>e.src));
  const expectedDetails=await executionDetailImages(task,executionProfile,materialBinding);
  assert.equal(main.length,5);assert.equal(details.length,expectedDetails.length);
- for(const [i,asset]of expectedDetails.entries()){
+ for(const [i,original]of expectedDetails.entries()){
+  const asset=await preparedMaterialAsset(original,task.shopId,preparationRuntime);
   if(materialBinding||asset.padding||receipts.details[i]?.source?.padding){
    assert.equal(receipts.details[i]?.source?.path,asset.path,'DETAIL_SOURCE_MISMATCH');
    assert.equal(receipts.details[i]?.source?.sha256,asset.sha256,'DETAIL_SOURCE_MISMATCH');
    assert.equal(receipts.details[i]?.source?.padding?.profileSha256,asset.padding?.profileSha256,'DETAIL_SOURCE_MISMATCH');
   }
-  if(asset.materialVersion)assert(await verifyMaterialUploadReceipt(asset,receipts.details[i]?.url),'SOURCE_OR_ASSET_CHANGED: BOUND_MATERIAL_UPLOAD_UNVERIFIED');
+  if(asset.materialVersion||asset.preparedMaterial)assert(await verifyMaterialUploadReceipt(asset,receipts.details[i]?.url),'SOURCE_OR_ASSET_CHANGED: BOUND_MATERIAL_UPLOAD_UNVERIFIED');
  }
   await verifyAttributes(p,task,async()=>{if(await visibleChallenge(p))throw Error('PAUSED_CAPTCHA');});
  assert(details.every((u,i)=>norm(u)===norm(receipts.details[i]?.url||'')),'DETAIL_IMAGE_ORDER');
@@ -726,24 +766,38 @@ export async function openTaskPage(context,task,checkpoint,guard,record,onPage=(
  return p;
 }
 
-export async function submitTask(p,guard,onClicked=async()=>{},{timeout=60000,readBackend}={}) {
+export async function submitTask(p,guard,onClicked=async()=>{},{timeout=60000,readBackend,onDispatch=async()=>{},beforeClick=()=>{},onReceipt=async()=>{}}={}) {
  assert(Number.isFinite(timeout)&&timeout>0&&timeout<=60000,'SUBMISSION_RECEIPT_BUDGET_INVALID');
  await guard();
  assert(newForm(p),'NEW_ITEMS_ONLY');const formUrl=p.url();
- await p.getByRole('button',{name:'提交宝贝信息',exact:true}).click();
- await onClicked();
- let itemId,observationError;
+ // The intent is not a click receipt. Never use it as an actual click time.
+ await onDispatch();
+ beforeClick(); // Recheck a synchronous pause after durable intent, before dispatch.
+ let clickError;
+ try { await p.getByRole('button',{name:'提交宝贝信息',exact:true}).click({noWaitAfter:true}); }
+ catch(error){clickError=error;}
+ if(!clickError)await onClicked();
+ let itemId,observationError,hasReceipt=false;
  try{
   await expect.poll(async()=>{try{await guard();itemId=await readSubmissionReceipt(p,formUrl);return !!itemId;}catch(error){observationError=error;throw error;}},
-   {timeout,message:'已点击提交、回执未读到、正在后台确认；不会再次点击提交'}).toBeTruthy();
+   {timeout:clickError?Math.min(timeout,2000):timeout,message:'已点击提交、回执未读到、正在后台确认；不会再次点击提交'}).toBeTruthy();
+  hasReceipt=true;
  }catch(error){
-  // Only an exhausted receipt wait authorizes the read-only fallback. Changed
-  // page/shop, CAPTCHA, callback and click errors never authorize any retry.
   if(observationError)throw observationError;
+  // A click exception may have followed dispatch. Only an exact receipt on this
+  // same page can resolve it; it never grants another click or a title lookup.
+  if(clickError)throw clickError;
   if(typeof readBackend!=='function')throw error;
   itemId=await readBackend();
  }
- assert(itemId,'SUCCESS_WITHOUT_ITEM_ID');return itemId;
+ assert(itemId,'SUCCESS_WITHOUT_ITEM_ID');
+ // Save the original receipt before screenshot, backend verification or pause.
+ // Backend-derived IDs already have their own durable evidence path.
+ if(hasReceipt){
+  await guard();const receipt=await readSubmissionReceipt(p,formUrl);
+  assert.equal(receipt,itemId,'SUBMISSION_RECEIPT_CHANGED');await onReceipt({itemId,formUrl,successUrl:p.url(),observedAt:new Date().toISOString(),clickReturned:!clickError});
+ }
+ return itemId;
 }
 
 export async function verifyResult(context,task,itemId,target,dir,guard) {

@@ -61,9 +61,10 @@ test('explicit product failure is terminal and does not block next product',asyn
  assert.equal(v.counts.FAILED,1);assert.equal(v.counts.NEW_SUCCESS,2);assert.equal(v.items[0].enteredPublish,true);assert.equal(v.items[0].submitted,false);assert.equal(x.flow.launches.length,3);
 });
 
-test('unrecognized recurring system fault pauses first item without failing rest',async t=>{
+test('three distinct pre-submit unknown failures are terminal and fuse before remaining products',async t=>{
  const x=await fixture(t,7);x.setBehavior(()=>({state:'PAUSED',reason:'selector disappeared'}));const r=await x.create();x.round.start(r.id);await x.round.pending;
- const v=x.round.view(r.id);assert.equal(v.state,'SYSTEM_BLOCKED');assert.equal(v.counts.PENDING,7);assert.equal(v.counts.FAILED,0);assert.equal(x.flow.launches.length,1);
+ const v=x.round.view(r.id);assert.equal(v.state,'SYSTEM_BLOCKED');assert.equal(v.counts.PENDING,4);assert.equal(v.counts.FAILED,3);assert.equal(x.flow.launches.length,3);assert.equal(x.flow.submits,0);
+ assert(v.items.slice(0,3).every(i=>i.state==='FAILED'&&i.submitted===false&&i.attempts===1));assert(v.items.slice(3).every(i=>i.state==='PENDING'&&i.attempts===0));assert.equal(x.round.events(r.id).filter(e=>e.kind==='FAILURE_CIRCUIT_OPENED').length,1);
 });
 
 test('declared safe transient step receives at most two retries; third same error pauses',async t=>{

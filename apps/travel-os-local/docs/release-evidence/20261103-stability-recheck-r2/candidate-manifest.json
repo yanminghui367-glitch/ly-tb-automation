@@ -1,0 +1,41 @@
+{
+  "at": "2026-11-03T15:40:15.738Z",
+  "revision": "20261103-stability-recheck-r2",
+  "fromRevision": "20261103-stability-recheck-r1",
+  "runtimeFiles": [
+    "workbench/operations-catalog-ui.js",
+    "workbench/travel-os.js"
+  ],
+  "files": [
+    {
+      "path": "workbench/travel-os.js",
+      "baselineSha256": "eab42f36b194367c54bee7b06ddd0d6cb93d8114df220ae863ce8fcb6e18c35d",
+      "sha256": "e77371721a002d7445012b1cf12d08f45706a4386e30bc6fd52a22ed476a71f1"
+    },
+    {
+      "path": "workbench/operations-catalog-ui.js",
+      "baselineSha256": "7b828343c4b931fa6c5a66c1daf7e0d493dcd37ceb494a3d2b63b889bb3ce8c5",
+      "sha256": "e9cac1ecf2f5758a98902fc35f7635d08aeb74659aa0b835a7fa067372104aca"
+    },
+    {
+      "path": "workbench/scripts/catalog-copy.test.mjs",
+      "baselineSha256": null,
+      "sha256": "3b5fdbc1acbb9035feb888a24d5ccb7d77df326cbbe4c65b64d0ff8a0712f31b"
+    },
+    {
+      "path": "workbench/kernel-lock.json",
+      "baselineSha256": "cf133c30dc4d16328cddfbf7f6e4b3a07c87b494cfd64bc052305a52d1a3d908",
+      "sha256": "062244e6609bd1a88791f774328d66362a3fa1fc57d4a340b2de7815cf405a7d"
+    }
+  ],
+  "beforeLockSha256": "cf133c30dc4d16328cddfbf7f6e4b3a07c87b494cfd64bc052305a52d1a3d908",
+  "kernelFiles": 92,
+  "deploymentAllowed": false,
+  "requiresIndependentCandidateAndMaintenanceQA": true,
+  "noLive": true,
+  "noNagasakiClaim": true,
+  "noQuota": true,
+  "noBusinessMigration": true,
+  "containsBusinessData": false,
+  "containsBrowserProfile": false
+}

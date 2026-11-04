@@ -1,0 +1,59 @@
+{
+  "at": "2026-11-03T15:42:56.166Z",
+  "verdict": "PASS_CANDIDATE_ONLY",
+  "reviewer": "independent stability_qa; root authored UI implementation",
+  "candidateManifestSha256": "8c8effd0c87765e4f0576ed98c00d1c590538b53b88f6df07923043325d34cc6",
+  "nextLockSha256": "062244e6609bd1a88791f774328d66362a3fa1fc57d4a340b2de7815cf405a7d",
+  "files": {
+    "workbench/travel-os.js": "e77371721a002d7445012b1cf12d08f45706a4386e30bc6fd52a22ed476a71f1",
+    "workbench/operations-catalog-ui.js": "e9cac1ecf2f5758a98902fc35f7635d08aeb74659aa0b835a7fa067372104aca",
+    "workbench/scripts/catalog-copy.test.mjs": "3b5fdbc1acbb9035feb888a24d5ccb7d77df326cbbe4c65b64d0ff8a0712f31b",
+    "workbench/kernel-lock.json": "062244e6609bd1a88791f774328d66362a3fa1fc57d4a340b2de7815cf405a7d"
+  },
+  "kernel": {
+    "ok": true,
+    "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+    "revision": "20261103-stability-recheck-r2",
+    "files": 92,
+    "changed": []
+  },
+  "scope": "Only Chinese diagnostics display in catalog errors/package reasons/row reasons/retry reasons/preview blockers/exclusions and unscoped detail fallback. Original rows, status values, business title/source text, API identifiers, permissions and actions unchanged.",
+  "independent": {
+    "same4BaselineCases": {
+      "pass": 0,
+      "fail": 4,
+      "expectedRed": true
+    },
+    "candidateRelevantTests": {
+      "pass": 58,
+      "fail": 0
+    },
+    "additionalBehaviorCases": {
+      "pass": 3,
+      "fail": 0,
+      "coverage": [
+        "45 rows across3 pages, all-status selection/filter/clear uses no network POST",
+        "Translated diagnostic text stays HTML escaped while original business title remains unchanged",
+        "Synthetic preview retains exact original scope and key payload; only returned diagnostics change in rendered HTML"
+      ]
+    }
+  },
+  "unchangedBackend": {
+    "workbench/browser-environment.mjs": "1278bc8cf61b9cd8a90674d9b66b885d473371969251b23fa83e5940cac76c47",
+    "workbench/taobao-publisher.mjs": "70210c80f901ad27dac9dd61754fa1a6027d65ddbf86debdf7889ede7e4f0f89",
+    "workbench/publishing-materials.mjs": "d349932fc9c58e3685b7a062b022687286e198d49fd1547684fd456fc195ada0"
+  },
+  "evidence": {
+    "independent-copy-baseline.tap": "b185ed3f673940f69dc7209b88a2ef5bdcf53d2e82f212f6f5197ac1cdff55c9",
+    "independent-copy-final.tap": "234442c06b325e855bcdcac4b966086a5eef415bb07fef893ed509f7ec3b0886",
+    "catalog-copy-independent.test.mjs": "5413feaa5d38a7cd8fa43d0dcaa53b0063587e280f778d8c457a66691678909f",
+    "catalog-copy-independent.tap": "88900d5582a1962907b0249933d883e2fba465f9b2ef2dc3553cc166dfb99bee",
+    "final-regression-binding.json": "777e09b56757d5a8f1c8a54b64666b053355034b2a9a3dd9c71f75e4d320cdcd",
+    "copy-behavior-final.log": "88c29d1e2877600c0c0e12f4c63e66775d6021a5865885b84583679e6b4cdeca"
+  },
+  "productionPosts": 0,
+  "realBrowserConnections": 0,
+  "businessWrites": 0,
+  "syntheticMockNote": "One extra preview test records a POST to an in-process mock request function; no socket or real service request is made.",
+  "limits": "Previous r1 backend374 tests and original660 remain their own signed runs for unchanged backend bytes; not added to58. Actual r2 installation/site/data preservation remains separately required."
+}

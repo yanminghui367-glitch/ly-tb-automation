@@ -1,0 +1,86 @@
+{
+  "at": "2026-11-03T15:35:46.288Z",
+  "verdict": "PASS_CANDIDATE_ONLY",
+  "reviewer": "independent stability_qa; root authored runtime fixes",
+  "candidateManifestSha256": "a69963b616043fcef06b8dfea534f7755894566e23bee06969b049761d8656fd",
+  "nextLockSha256": "cf133c30dc4d16328cddfbf7f6e4b3a07c87b494cfd64bc052305a52d1a3d908",
+  "files": {
+    "workbench/taobao-publisher.mjs": "70210c80f901ad27dac9dd61754fa1a6027d65ddbf86debdf7889ede7e4f0f89",
+    "workbench/browser-environment.mjs": "1278bc8cf61b9cd8a90674d9b66b885d473371969251b23fa83e5940cac76c47",
+    "workbench/publishing-materials.mjs": "d349932fc9c58e3685b7a062b022687286e198d49fd1547684fd456fc195ada0",
+    "workbench/scripts/inspection-lifecycle.test.mjs": "944e8268204804469774599003f062bda2d88fd9945b4d509be6c09e9238a7db",
+    "workbench/scripts/material-readiness-budget.test.mjs": "e94bac11dd6651bea88d84ae6876379017d668bf19dfaa243e753d5e03dced12",
+    "workbench/kernel-lock.json": "cf133c30dc4d16328cddfbf7f6e4b3a07c87b494cfd64bc052305a52d1a3d908"
+  },
+  "kernel": {
+    "ok": true,
+    "baseline": "25a47febfe08f8af6bfade20198d787354b76bff",
+    "revision": "20261103-stability-recheck-r1",
+    "files": 92,
+    "changed": []
+  },
+  "resolvedFindings": [
+    "R1 stale positive page identity after closure/navigation",
+    "R2 cleanup failure skipped failed readiness diagnostic",
+    "R3 old close untracked a fresh session",
+    "R4 non-SAFE total guard timeout accidentally entered pre-file reopen"
+  ],
+  "independent": {
+    "sameInputRedGreenProbes": 7,
+    "green": 7,
+    "reverseSafetyTests": 4,
+    "reverseSafetyPass": 4,
+    "relevantBudgetBrowserAndLifecycleTests": 87,
+    "relevantPass": 87,
+    "realBrowserConnections": 0,
+    "productionPosts": 0,
+    "businessWrites": 0
+  },
+  "originalFunctionRegression": {
+    "tests": 374,
+    "pass": 374,
+    "fail": 0,
+    "cancelled": 0,
+    "rootExecuted": true,
+    "isolated": true,
+    "log": "final-regression-correct-environment.log",
+    "logSha256": "b8a5672e5cfab03eabb82c79dc8b0191b32599d3cc804659f57bb4723f2c37f9",
+    "environment": {
+      "WORKBENCH_NO_LISTEN": "1",
+      "WORKBENCH_PORT": "unset; HTTP fixture actually listens on OS-assigned port"
+    },
+    "excludedCases": [
+      {
+        "name": "known pre-submit product failure continues remaining selected tasks; shared and human faults pause",
+        "reason": "Existing baseline expects old FORM_FAILURE blocking policy; same assertion fails 2!=1 in unchanged production. Runtime policy not changed.",
+        "baseline": "known-selection-baseline.log"
+      }
+    ],
+    "initialInvalidRun": {
+      "log": "final-regression.log",
+      "counts": {
+        "pass": 350,
+        "fail": 25
+      },
+      "reason": "23 source-fixture cwd errors + 1 fixture origin/WORKBENCH_PORT mismatch + 1 existing FORM_FAILURE expectation; not counted as passing"
+    },
+    "old660": "Retained as previous verified baseline for unchanged bytes; not added to374 or represented as rerun on new bytes."
+  },
+  "evidence": {
+    "INCREMENTAL-FINDINGS.json": "4b65ab97541ddc66e86527d6741a78d649c4479f62f7d8161da66ef987bee083",
+    "edge-before.json": "e7aeea20ed2e1ced3ef4f602ee7f0ba7f91898a7981a3acc245197c1eb96da34",
+    "edge-candidate.json": "50c97d9d9de3ee3dd9b6e47b59e4b786a65fa64b4cc29633e5c7da9d22a05e95",
+    "close-generation-before.json": "4e193704f919e44ba3f474a43884f430529f66c2e23e2964c9f9a783ffe6d85b",
+    "close-generation-candidate.json": "a06274ec7a5bb5f50db20030b3e4660dcc174da3f0f2e5af8f8e34271dcbd735",
+    "upload-panel-budget-before.json": "e63cbc62f9aec9118dda70770cf502a915a4dfc4457b094d10e39eed3267ec83",
+    "upload-panel-budget-candidate.json": "ed230a9f3982fe1a81446fb5ddc957a3bedc1ec884c8c3dafacedee347ef389a",
+    "safety-evidence-candidate.tap": "351748e02228f556af86a9eb3c9c98349f284eaec8fc448ffc08ef8bd4985285",
+    "independent-targeted.tap": "e1baf44be5807c6d19d2a3e0c84d4cc8947db92096e62e9f79fa1b20a6ad8a3d",
+    "final-regression-binding.json": "4de0cba0c298e024606159c542b0919912f249274e8baca0d29c3bd629e81d6a",
+    "final-regression-correct-environment.log": "b8a5672e5cfab03eabb82c79dc8b0191b32599d3cc804659f57bb4723f2c37f9",
+    "known-selection-baseline.log": "cd923129f367c7de28d90135cecf090dc9a4fd1064285e2930f5a245380c6eb1",
+    "stopped-maintenance-guard.tap": "097a137bac53796aab16273ed385206254bcacb2b7352f5472a4800ca68e65a1"
+  },
+  "productionChangedByQa": false,
+  "scope": "6 delivery files,3 changed runtimes,92 kernel keys retained. Candidate-only release; actual installation and business/material preservation still require final independent read-only verification."
+}

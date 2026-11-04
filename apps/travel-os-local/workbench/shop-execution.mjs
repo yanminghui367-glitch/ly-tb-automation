@@ -28,11 +28,13 @@ export class ShopExecutions {
    const product=new ProductApi({batch,source,owner:this.owner,shop,launch:this.launch,runtime,isShopRemoved:this.isShopRemoved,
     integrity:this.integrity,checkFiles:this.checkFiles});
    product.executionAdapterSupported=true;
+   product.materialPreparationOtherBusy=()=>[...this.entries.entries()].some(([other,e])=>other!==id&&(e.product.materialPreparation?.active||e.source.active||e.batch.active||e.product.capturing||e.product.reconciling||e.product.round?.active));
    if(id!==DEFAULT_EXECUTION_SHOP)product.websiteSettingsFile=join(this.runtime,'product-v1','settings.json');
    this.entries.set(id,{product,source,batch});
   }
   const product=this.entries.get(id).product;product.shop=shop;return product;
  }
- active(){return [...this.entries.values()].some(e=>e.source.active||e.batch.active);}
- async shutdown(){for(const e of this.entries.values()){await e.batch.shutdown();await e.source.shutdown();e.product.closeStreams();}}
+ active(){return [...this.entries.values()].some(e=>e.source.active||e.batch.active||e.product.materialPreparation?.active);}
+ preparing(){return [...this.entries.values()].some(e=>e.product.materialPreparation?.active);}
+ async shutdown(){for(const e of this.entries.values()){await e.product.materialPreparation?.shutdown();await e.batch.shutdown();await e.source.shutdown();e.product.closeStreams();}}
 }

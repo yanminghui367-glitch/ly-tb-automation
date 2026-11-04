@@ -1,0 +1,172 @@
+{
+  "at": "2026-11-01T15:30:21.179Z",
+  "revision": "20261101-recovery-materials-r3",
+  "fromRevision": "20261022-submit-receipt-r2",
+  "beforeLockSha256": "8348e21a78ba56dc16b2b78848d0f96e178084dc6dbf306e7fdef15f3c6a0a80",
+  "previousManifest": "docs/kernel-baselines/20261101-before-recovery-materials-r3.json",
+  "scope": "Stage 1 anomaly locations, recovery guidance and proven pre-submit recovered-page disposal; after independent stage-1 PASS, stage 2 scoped material preparation with per-image receipts, cancellation and no product execution",
+  "runtimeFiles": [
+    "workbench/execution-notifications.mjs",
+    "workbench/travel-os.js",
+    "workbench/round-item-detail.js",
+    "tools/notify-workbench.ps1",
+    "workbench/page-ownership.mjs",
+    "workbench/pre-submit-page-recovery.mjs",
+    "workbench/source-workflow.mjs",
+    "workbench/publishing-materials.mjs",
+    "workbench/taobao-publisher.mjs",
+    "workbench/material-upload-preparation.mjs",
+    "workbench/material-preparation-api.mjs",
+    "workbench/product-api.mjs",
+    "workbench/shop-execution.mjs",
+    "workbench/server.mjs"
+  ],
+  "files": [
+    {
+      "path": "workbench/execution-notifications.mjs",
+      "role": "runtime",
+      "baselineSha256": "1c56e6dc50079f571cd5de4a83d35d5ace927a959872453a1640a214a0ac55ee",
+      "sha256": "a37161febe6554f5101fa49eb2c420e76cd5418bbcb6e68a43e5ac58fd4e3b0a"
+    },
+    {
+      "path": "workbench/travel-os.js",
+      "role": "runtime",
+      "baselineSha256": "c3b2a248270f55329f8360d8bd67b09c8577fb732a423f6be4f2611e8ccc66c2",
+      "sha256": "c13fe4bb6c7046152025cd5d473d06a22b76c9ec1973022a7c725bb7236b3e2c"
+    },
+    {
+      "path": "workbench/round-item-detail.js",
+      "role": "runtime",
+      "baselineSha256": "81b78539c526a7ff047668b069c5a80961eda7d9f2dbdc128c7de7ba84df2007",
+      "sha256": "531325e7a08b79fb7f6752b1bc08f08c298aad1660e43710b1595316045b9307"
+    },
+    {
+      "path": "tools/notify-workbench.ps1",
+      "role": "runtime",
+      "baselineSha256": "583968d721d3a9eb554fe3b3d85fbbb5f49e7305eb923891fa799f7165a60f86",
+      "sha256": "94dfcf63ccbd98c516c33d3f756804361aca2a7debf8ab30a0d802db87e8ba5c"
+    },
+    {
+      "path": "workbench/page-ownership.mjs",
+      "role": "runtime",
+      "baselineSha256": "e084aa11c6761244292c98a221437e6440a147af3adfc3511c37a125a35e47a9",
+      "sha256": "13085292336b5eab5c2ab14d20c1f82f9dc382082417ba7afd6a01d65ba97030"
+    },
+    {
+      "path": "workbench/pre-submit-page-recovery.mjs",
+      "role": "runtime",
+      "baselineSha256": "0f74fb9cec5596553966aa4332a6229812f020710c939eb13f6206c4f70d262f",
+      "sha256": "0208bb1145b9d6591d204506f7147e1581a83e6bdfa99f4d3e5217a8971adb56"
+    },
+    {
+      "path": "workbench/source-workflow.mjs",
+      "role": "runtime",
+      "baselineSha256": "f75ab8bfb2506890d1316820fa9c425dcb2c72564ef67b2f6b4aa1133f6d7307",
+      "sha256": "eb2a4c127a01c4e37e19a72b54bf644ba10a8f85fcb6f8b8f8e16d8a458aae0d"
+    },
+    {
+      "path": "workbench/publishing-materials.mjs",
+      "role": "runtime",
+      "baselineSha256": "304500f53f12f18a08bba327e8d77ca1985c3316c97e94719977708acbd6ea29",
+      "sha256": "16e7d284edb296494465a7ef18eb8633f20688da383643202756c9f02b1b378e"
+    },
+    {
+      "path": "workbench/taobao-publisher.mjs",
+      "role": "runtime",
+      "baselineSha256": "d48fcd1b83b3941cc784b7bb160ee58fde1ac947d199bda83d3447d0aecbe465",
+      "sha256": "f0ed6fef4d1f3997541436e703e18d6ab4af813cce38863ddac7fc77d1d65d35"
+    },
+    {
+      "path": "workbench/material-upload-preparation.mjs",
+      "role": "runtime",
+      "baselineSha256": null,
+      "sha256": "9a20785cc8deb1eaaaab41f052b14f03072beb778540c8a4f058c73c07e782eb"
+    },
+    {
+      "path": "workbench/material-preparation-api.mjs",
+      "role": "runtime",
+      "baselineSha256": null,
+      "sha256": "4250fbae38791fe72a91b15848427b9e5035070ea04fec88fe5315b798f86294"
+    },
+    {
+      "path": "workbench/product-api.mjs",
+      "role": "runtime",
+      "baselineSha256": "1dad14bb972393eca77f5b3674dfac42d7c816b704ee34923193fc3a759334d4",
+      "sha256": "15cafb3e475c5927462857ba54a3469f666602aab6ec7461a04e0a9d1c27fd1a"
+    },
+    {
+      "path": "workbench/shop-execution.mjs",
+      "role": "runtime",
+      "baselineSha256": "aac493caa739bcec0278d24e44765c276edd5d6ef836f1bd451c2b5e1d63c75c",
+      "sha256": "bcd20a5a8ee42bc5e537a4c9aba64fce5e8473e09f64a16734b325b33218c126"
+    },
+    {
+      "path": "workbench/server.mjs",
+      "role": "runtime",
+      "baselineSha256": "1665a7afc3bb7c8bc594626658ed8363127b0096d243b6d5ecf56dbe5bca46ee",
+      "sha256": "63b0cf2ab30b2cbf948a4a3fb9b6c051e1a2bb14888877922ec7df5710b62f03"
+    },
+    {
+      "path": "workbench/scripts/notification-location.test.mjs",
+      "role": "test",
+      "baselineSha256": null,
+      "sha256": "07eef26e84d09d97c6458f9a53454a6b88a0a4ad651d578af4ec529993ee8467"
+    },
+    {
+      "path": "workbench/scripts/recovered-page-disposal.test.mjs",
+      "role": "test",
+      "baselineSha256": null,
+      "sha256": "1eeacf64045a5a70311672be53fd67d52de1112e4c9a57ae9e14858754a3c43b"
+    },
+    {
+      "path": "workbench/scripts/pre-submit-page-recovery.test.mjs",
+      "role": "test",
+      "baselineSha256": "249a3e7de389400b3ab13f434a018cfa4530f661db9abb149bda7f80c0510812",
+      "sha256": "2f842feafb83058cc47cad5fdc8bf85302566122224b0cbac4077cd36bfaf726"
+    },
+    {
+      "path": "workbench/scripts/recovery-location-independent-ui-qa.mjs",
+      "role": "test",
+      "baselineSha256": null,
+      "sha256": "5a91fadac98c390a52018549dfcc91ecb228e83add411feda39f1e34f9e403a5"
+    },
+    {
+      "path": "workbench/scripts/material-upload-preparation.test.mjs",
+      "role": "test",
+      "baselineSha256": null,
+      "sha256": "a8699fc9dcbf028755138d4ce83aebcf754a6b2196f1d701f8482d666c06f553"
+    },
+    {
+      "path": "workbench/scripts/material-upload-native.test.mjs",
+      "role": "test",
+      "baselineSha256": null,
+      "sha256": "35a2800ca417b0ae968a9c419122caffc1894e10bf75f5c95173c403c00dca7d"
+    },
+    {
+      "path": "workbench/scripts/material-preparation-api.test.mjs",
+      "role": "test",
+      "baselineSha256": null,
+      "sha256": "67229491dadbe43d6086050a05aed1bc2cbbd1930e4be7dcf5e4a11346ae2132"
+    },
+    {
+      "path": "workbench/scripts/material-preparation-ui.test.mjs",
+      "role": "test",
+      "baselineSha256": null,
+      "sha256": "7244b2a2366e182b044c0fd8504a0d907a5f16afa447a6f10e9260ed9560f033"
+    },
+    {
+      "path": "workbench/scripts/material-preparation-independent.test.mjs",
+      "role": "test",
+      "baselineSha256": null,
+      "sha256": "acc493fc4e076bc172f46f40752955c12b56dc8be7d603661d25869cd0be8f2f"
+    },
+    {
+      "path": "workbench/scripts/material-revision-independent.test.mjs",
+      "role": "test",
+      "baselineSha256": null,
+      "sha256": "f57451a373764303d95382b5a8cac41af895d49dd23f62e32b63f1288b4ec933"
+    }
+  ],
+  "productionPublishingAllowed": false,
+  "phase1Evidence": "qa-phase1/FINAL-QA.json"
+}
